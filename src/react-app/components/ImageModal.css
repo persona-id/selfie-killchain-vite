@@ -1,14 +1,9 @@
 .image-modal {
   --modal-pad: 3rem;
   --modal-design-width: 629.2px;
-  --modal-design-height: 1032px;
+  --modal-height: 85dvh;
   --image-modal-surface: rgba(255, 255, 255, 0.85);
   --image-modal-border: rgba(255, 255, 255, 0.72);
-  --modal-scale: min(
-    1,
-    calc((100vw - var(--modal-pad) * 2) / var(--modal-design-width)),
-    calc(85dvh / var(--modal-design-height))
-  );
   z-index: 400;
 }
 
@@ -24,15 +19,15 @@
   position: relative;
   z-index: 1;
   flex-shrink: 0;
-  transform: scale(var(--modal-scale));
   transform-origin: center center;
 }
 
 .image-modal__panel {
   position: relative;
   display: flex;
-  width: var(--modal-design-width);
-  height: var(--modal-design-height);
+  width: min(var(--modal-design-width), calc(100vw - var(--modal-pad) * 2));
+  height: var(--modal-height);
+  max-height: var(--modal-height);
   flex-direction: column;
   align-items: center;
   border-radius: 55px;
