@@ -1,0 +1,30 @@
+.stage-nav-pills {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-shell);
+  border-radius: 47px;
+  padding: 20px 32px;
+  gap: 0;
+}
+
+.stage-nav-pills__pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 109px;
+  height: 46px;
+  border: 1px solid var(--border-nav);
+  border-radius: 33px;
+  font-family: var(--font-mono);
+  font-size: calc(17px * var(--type-scale));
+  font-weight: 300;
+  letter-spacing: 0.17px;
+  color: var(--text-faint);
+}
+
+.stage-nav-pills__connector {
+  width: 13px;
+  height: 1px;
+  background: var(--border-nav);
+  flex-shrink: 0;
+}

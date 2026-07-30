@@ -1,0 +1,132 @@
+.killchain-shell-layout {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.killchain-shell-layout__menu-portal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+  background: transparent;
+  min-height: 0;
+}
+
+.killchain-shell-layout__menu-portal .utility-menu {
+  view-transition-name: none;
+}
+
+.killchain-shell-layout__menu-portal--views {
+  --ui-scale: 0.9;
+  --killchain-side-panel-height: calc((100dvh - 2 * var(--page-edge-pad)) / var(--ui-scale));
+  --killchain-right-menu-height: calc((100dvh - 2 * var(--page-edge-pad)) / var(--ui-scale));
+}
+
+.killchain-shell-layout__menu-portal--views .killchain-corner-chrome {
+  zoom: var(--ui-scale);
+}
+
+.killchain-shell-layout__menu-portal--views .killchain-corner-chrome__corner--tr .utility-menu__shell,
+.killchain-shell-layout__menu-portal--views .killchain-corner-chrome__corner--tr .utility-menu__toggle {
+  zoom: 1;
+}
+
+.killchain-shell-layout__menu-portal--globe-route
+  .utility-menu[data-state='idle']
+  .utility-menu__backdrop {
+  background: transparent;
+}
+
+:root {
+  --matrix-chrome-elevation: 0;
+  --matrix-chrome-drop-shadow:
+    drop-shadow(-10px 4px 43px rgba(0, 0, 0, 0.03))
+    drop-shadow(
+      0 calc(14px * var(--matrix-chrome-elevation, 0))
+        calc(40px * var(--matrix-chrome-elevation, 0))
+        rgba(0, 0, 0, calc(0.15 * var(--matrix-chrome-elevation, 0)))
+    );
+}
+
+body:has(.killchain-app--matrix) .killchain-corner-chrome__corner--tl .lib-title-corner__title,
+body:has(.killchain-app--matrix) .killchain-corner-chrome__corner--tl .killchain-top-bar__stages {
+  filter: var(--matrix-chrome-drop-shadow);
+  transition: filter 0.16s linear;
+}
+
+.killchain-shell-layout__menu-portal--globe-modal-open,
+.killchain-shell-layout__menu-portal--globe-intro {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  view-transition-name: none !important;
+}
+
+.killchain-shell-layout__content-stack {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+body:has(.killchain-app--matrix) .killchain-shell-layout__content-stack {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.killchain-shell-layout__globe-persistent {
+  z-index: 0;
+}
+
+.killchain-shell-layout__globe-persistent--active {
+  position: relative;
+}
+
+.killchain-shell-layout__globe-persistent--inactive {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.killchain-shell-layout__overlay-stack {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.killchain-shell-layout__overlay-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-page);
+}
+
+.killchain-shell-layout__content {
+  position: relative;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .killchain-shell-layout__content {
+    view-transition-name: none;
+  }
+
+  .killchain-shell-layout__menu-portal {
+    view-transition-name: none;
+  }
+
+  body:has(.killchain-app--matrix) .killchain-corner-chrome__corner--tl .lib-title-corner__title,
+  body:has(.killchain-app--matrix) .killchain-corner-chrome__corner--tl .killchain-top-bar__stages {
+    transition: none;
+  }
+}

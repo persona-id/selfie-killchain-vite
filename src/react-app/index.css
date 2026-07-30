@@ -1,68 +1,192 @@
-:root {
-	font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-	line-height: 1.5;
-	font-weight: 400;
+@import "tailwindcss";
+@import "./styles/themes.css";
 
-	color-scheme: light dark;
-	color: rgba(255, 255, 255, 0.87);
-	background-color: #242424;
-
-	font-synthesis: none;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+* {
+  box-sizing: border-box;
 }
 
-a {
-	font-weight: 500;
-	color: #646cff;
-	text-decoration: inherit;
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  cursor: none !important;
 }
-a:hover {
-	color: #535bf2;
+
+*,
+*::before,
+*::after {
+  cursor: none !important;
 }
 
 body {
-	margin: 0;
-	display: flex;
-	place-items: center;
-	min-width: 320px;
-	min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  overflow: hidden;
 }
 
-h1 {
-	font-size: 3.2em;
-	line-height: 1.1;
+html.killchain-scroll,
+html.killchain-scroll body,
+html.killchain-scroll #root {
+  height: auto;
+  min-height: 100%;
 }
 
-button {
-	border-radius: 8px;
-	border: 1px solid transparent;
-	padding: 0.6em 1.2em;
-	font-size: 1em;
-	font-weight: 500;
-	font-family: inherit;
-	background-color: #1a1a1a;
-	cursor: pointer;
-	transition: border-color 0.25s;
-}
-button:hover {
-	border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-	outline: 4px auto -webkit-focus-ring-color;
+html.killchain-scroll body {
+  overflow: auto;
 }
 
-@media (prefers-color-scheme: light) {
-	:root {
-		color: #213547;
-		background-color: #ffffff;
-	}
-	a:hover {
-		color: #747bff;
-	}
-	button {
-		background-color: #f9f9f9;
-	}
+@font-face {
+  font-family: "ABC Monument Grotesk";
+  src:
+    url("/fonts/ABCMonumentGrotesk-Light.otf") format("opentype"),
+    url("/fonts/ABCMonumentGrotesk-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ABC Monument Grotesk Semi-Mono";
+  src: url("/fonts/ABCMonumentGroteskSemi-Mono-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DMT LL Var";
+  src: url("/fonts/DMTLLVarTrialWeb-[SIZE,ROTA,wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-monument {
+  font-family: "ABC Monument Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300;
+}
+
+.globe-photo {
+  box-shadow: none !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.globe-photo-media.blur-in-img {
+  opacity: 0;
+  transition:
+    filter 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.globe-photo-media.blur-in-img.is-ready {
+  opacity: 1;
+  transition:
+    filter 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1) var(--globe-reveal-delay, 0ms),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) var(--globe-reveal-delay, 0ms);
+}
+
+.globe-photo-media.blur-in-img.globe-photo-media--intro {
+  transition:
+    filter 1.65s cubic-bezier(0.4, 0, 0.7, 1),
+    opacity 1.45s cubic-bezier(0.4, 0, 0.7, 1),
+    transform 1.65s cubic-bezier(0.4, 0, 0.7, 1);
+}
+
+.globe-photo-media.blur-in-img.globe-photo-media--intro.is-ready {
+  transition:
+    filter 1.65s cubic-bezier(0.4, 0, 0.7, 1),
+    opacity 1.45s cubic-bezier(0.4, 0, 0.7, 1) var(--globe-reveal-delay, 0ms),
+    transform 1.65s cubic-bezier(0.4, 0, 0.7, 1) var(--globe-reveal-delay, 0ms);
+}
+
+.globe-photo-media.blur-in-img.is-loading {
+  filter: blur(22px) saturate(1.08);
+  transform: scale(1.18);
+}
+
+.globe-photo-media.blur-in-img.globe-photo-media--intro.is-loading {
+  opacity: 0.5;
+  filter: blur(12px) saturate(1.06);
+  transform: scale(1.06);
+}
+
+.globe-photo-media.blur-in-img.globe-photo-media--intro.is-loading.is-ready {
+  opacity: 1;
+  filter: blur(8px) saturate(1.05);
+  transform: scale(1.02);
+}
+
+.globe-photo-media.blur-in-img.globe-photo-media--intro.is-ready:not(.is-loading) {
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+
+.globe-photo-clip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  contain: layout style paint;
+}
+
+.globe-photo--circle .globe-photo-clip {
+  border-radius: 50%;
+}
+
+.globe-photo-media {
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+}
+
+.globe-photo img.globe-photo-img {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.blur-in-img-frame {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bg-placeholder);
+}
+
+.blur-in-img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: inherit;
+  opacity: 0;
+  transition: filter 0.55s ease, opacity 0.35s ease, transform 0.55s ease;
+}
+
+.blur-in-img.is-ready {
+  opacity: 1;
+  transition:
+    filter 0.35s ease,
+    opacity 0.35s ease var(--globe-reveal-delay, 0ms),
+    transform 0.55s ease var(--globe-reveal-delay, 0ms);
+}
+
+.blur-in-img.is-loading.is-ready {
+  filter: blur(22px) saturate(1.08);
+  transform: scale(1.18);
+}
+
+.blur-in-img.is-ready:not(.is-loading) {
+  filter: none;
+  transform: none;
 }

@@ -1,0 +1,35 @@
+.menu-toggle-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  overflow: visible;
+  color: var(--corner-icon-idle, #b1b1b1);
+  transition: color var(--utility-menu-toggle-close-duration, 0.4s)
+    var(--utility-shell-ease, cubic-bezier(0.33, 1, 0.68, 1));
+}
+
+.menu-toggle-dots--open {
+  transition: color var(--utility-shell-duration, 0.75s)
+    var(--utility-shell-ease, cubic-bezier(0.33, 1, 0.68, 1));
+}
+
+.menu-toggle-dots__svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+}
+
+.menu-toggle-dots__dot {
+  opacity: 1;
+  transition: opacity var(--utility-menu-toggle-close-duration, 0.4s)
+    var(--utility-shell-ease, cubic-bezier(0.33, 1, 0.68, 1));
+}
+
+.menu-toggle-dots--open .menu-toggle-dots__dot {
+  opacity: var(--close-opacity, 1);
+  transition: opacity var(--utility-shell-duration, 0.75s)
+    var(--utility-shell-ease, cubic-bezier(0.33, 1, 0.68, 1));
+}

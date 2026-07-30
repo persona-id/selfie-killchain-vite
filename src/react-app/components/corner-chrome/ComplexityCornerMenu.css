@@ -1,0 +1,177 @@
+.complexity-corner {
+  position: relative;
+  --corner-complexity-trigger-width: 310px;
+}
+
+.complexity-corner__cluster {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--corner-stack-gap, 12px);
+}
+
+.complexity-corner__trigger-anchor {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--corner-icon-btn-size, 87px);
+  height: var(--corner-icon-btn-size, 87px);
+}
+
+.complexity-corner__list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--corner-stack-gap, 12px);
+  transform-origin: right bottom;
+}
+
+.complexity-corner__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  width: var(--corner-pill-width, 158.501px);
+  height: var(--corner-pill-height, 68.274px);
+  padding: 0 var(--corner-pill-px, 27px);
+  border-radius: var(--corner-pill-radius, 65px);
+  color: #7b7b7b;
+  text-align: left;
+  overflow: hidden;
+  transition: background-color 0.22s ease;
+}
+
+.complexity-corner__item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0);
+  pointer-events: none;
+  transition: background-color 0.22s ease;
+}
+
+.complexity-corner__item:hover::before {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.complexity-corner__label {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: calc(12px * var(--type-scale));
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.complexity-corner__dot {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 9.594px;
+  height: 9.594px;
+  border-radius: 50%;
+  background: rgba(123, 123, 123, 0.35);
+}
+
+.complexity-corner__dot--active {
+  background: var(--accent-green);
+}
+
+.complexity-corner__trigger {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: block;
+  box-sizing: border-box;
+  width: var(--corner-icon-btn-size, 87px);
+  height: var(--corner-icon-btn-size, 87px);
+  padding: 0 var(--corner-icon-btn-size, 87px) 0 0;
+  border: none;
+  border-radius: var(--corner-pill-radius, 65px);
+  color: var(--corner-icon-idle, #b1b1b1);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    width var(--utility-menu-duration, 0.75s) var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
+    padding var(--utility-menu-duration, 0.75s) var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
+    color 0.22s ease,
+    background-color 0.22s ease;
+}
+
+.complexity-corner__icon-slot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--corner-icon-btn-size, 87px);
+  height: var(--corner-icon-btn-size, 87px);
+  pointer-events: none;
+}
+
+.complexity-corner__trigger-label {
+  display: grid;
+  grid-template-columns: 0fr;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+  margin-right: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    grid-template-columns var(--utility-menu-duration, 0.75s)
+      var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
+    margin-right var(--utility-menu-duration, 0.75s)
+      var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
+    opacity calc(var(--utility-menu-duration, 0.75s) * 0.75)
+      var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1));
+}
+
+.complexity-corner__trigger-label-text {
+  display: block;
+  overflow: hidden;
+  min-width: 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: calc(15px * var(--type-scale));
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.75px;
+  text-transform: uppercase;
+  color: #000000;
+}
+
+.complexity-corner__trigger:hover:not(.complexity-corner__trigger--open) {
+  width: var(--corner-complexity-trigger-width, 310px);
+  padding-left: var(--corner-pill-px, 27px);
+}
+
+.complexity-corner__trigger:hover:not(.complexity-corner__trigger--open) .complexity-corner__trigger-label {
+  grid-template-columns: 1fr;
+  margin-right: 8px;
+  opacity: 1;
+}
+
+.complexity-corner__trigger--open,
+.complexity-corner__trigger--open:hover {
+  width: var(--corner-icon-btn-size, 87px);
+  padding-left: 0;
+}
+
+.complexity-corner__trigger--open .complexity-corner__trigger-label,
+.complexity-corner__trigger--open:hover .complexity-corner__trigger-label {
+  grid-template-columns: 0fr;
+  margin-right: 0;
+  opacity: 0;
+}
+
+.complexity-corner__trigger:hover,
+.complexity-corner__trigger--open:hover {
+  color: var(--corner-icon-hover, #000000);
+}

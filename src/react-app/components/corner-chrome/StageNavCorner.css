@@ -1,0 +1,68 @@
+.killchain-corner-chrome .killchain-edge-shell--left {
+  position: relative;
+  top: auto;
+  left: auto;
+  z-index: 1;
+}
+
+body:has(.killchain-app--deconstruct) .killchain-corner-chrome .killchain-edge-shell--left {
+  position: fixed;
+  top: calc(var(--page-edge-pad) / var(--ui-scale, 1));
+  left: calc(var(--page-edge-pad) / var(--ui-scale, 1));
+  width: var(--killchain-side-panel-width);
+  max-width: calc(100vw - 2 * var(--page-edge-pad));
+}
+
+body:has(.killchain-app--deconstruct)
+  .killchain-corner-chrome
+  .killchain-edge-shell--left
+  .killchain-edge-shell__body {
+  padding-top: 56px;
+}
+
+body:has(.killchain-app--deconstruct)
+  .killchain-corner-chrome
+  .killchain-edge-shell--left.killchain-edge-shell--expanded {
+  height: var(--killchain-side-panel-height);
+  max-height: var(--killchain-side-panel-height);
+  background: transparent;
+  box-shadow: none;
+}
+
+body:has(.killchain-app--deconstruct)
+  .killchain-corner-chrome
+  .killchain-edge-shell--left.killchain-edge-shell--expanded
+  .killchain-edge-shell__header {
+  background: transparent;
+}
+
+body:has(.killchain-app--deconstruct)
+  .killchain-corner-chrome
+  .killchain-edge-shell--left.killchain-edge-shell--expanded::before {
+  opacity: 1;
+  background: var(--menu-surface);
+  backdrop-filter: var(--menu-surface-blur);
+  -webkit-backdrop-filter: var(--menu-surface-blur);
+  box-shadow: var(--menu-surface-shadow);
+}
+
+body:has(.killchain-app--deconstruct)
+  .killchain-corner-chrome
+  .killchain-edge-shell--left.killchain-edge-shell--expanded
+  .killchain-top-bar__stages {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.killchain-corner-chrome .killchain-edge-shell--left.killchain-edge-shell--condensed {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.killchain-corner-chrome .killchain-edge-shell--left .killchain-top-bar__stages {
+  box-shadow: var(--menu-surface-shadow);
+}

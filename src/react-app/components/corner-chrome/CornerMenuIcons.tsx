@@ -1,0 +1,100 @@
+import './CornerMenuIcons.css'
+
+const CORNER_MENU_ICON_SRC = {
+  settings: '/icons/corner-chrome/settings.png',
+  complexity: '/icons/corner-chrome/complexity.png',
+} as const
+
+export function CornerMenuIcon({
+  icon,
+  className,
+}: {
+  icon: keyof typeof CORNER_MENU_ICON_SRC
+  className?: string
+}) {
+  return (
+    <img
+      src={CORNER_MENU_ICON_SRC[icon]}
+      alt=""
+      className={`corner-menu__trigger-icon-img${className ? ` ${className}` : ''}`}
+      draggable={false}
+    />
+  )
+}
+
+export function CornerArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="28"
+      height="28"
+      viewBox="0 0 28 28"
+      fill="none"
+      aria-hidden
+    >
+      <rect
+        x="27.916"
+        y="0"
+        width="3.91148"
+        height="3.91148"
+        rx="1.95574"
+        transform="rotate(90 27.916 0)"
+        fill="currentColor"
+      />
+      <rect
+        x="27.916"
+        y="12.002"
+        width="3.91148"
+        height="3.91148"
+        rx="1.95574"
+        transform="rotate(90 27.916 12.002)"
+        fill="currentColor"
+      />
+      <rect
+        x="27.916"
+        y="24.0034"
+        width="3.91148"
+        height="3.91148"
+        rx="1.95574"
+        transform="rotate(90 27.916 24.0034)"
+        fill="currentColor"
+      />
+      <rect
+        x="15.9141"
+        y="0"
+        width="3.91148"
+        height="3.91148"
+        rx="1.95574"
+        transform="rotate(90 15.9141 0)"
+        fill="currentColor"
+      />
+      <rect
+        x="15.9141"
+        y="12.002"
+        width="3.91148"
+        height="3.91148"
+        rx="1.95574"
+        transform="rotate(90 15.9141 12.002)"
+        fill="currentColor"
+      />
+      <rect
+        x="3.91211"
+        y="0"
+        width="3.91148"
+        height="3.91148"
+        rx="1.95574"
+        transform="rotate(90 3.91211 0)"
+        fill="currentColor"
+      />
+      <rect
+        x="3.91211"
+        y="24.0034"
+        width="3.91148"
+        height="3.91148"
+        rx="1.95574"
+        transform="rotate(90 3.91211 24.0034)"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}

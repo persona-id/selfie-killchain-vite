@@ -1,0 +1,127 @@
+.killchain-corner-chrome {
+  position: fixed;
+  inset: var(--page-edge-pad);
+  z-index: 300;
+  pointer-events: none;
+  --corner-icon-idle: #b1b1b1;
+  --corner-icon-hover: #000000;
+}
+
+.killchain-corner-chrome--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.killchain-corner-chrome__corner {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.killchain-corner-chrome__corner--tl {
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  max-width: calc(100% - var(--utility-menu-open-width, 50vw) - 1rem);
+}
+
+.killchain-corner-chrome__corner--tr {
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.killchain-corner-chrome__corner--bl {
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.killchain-corner-chrome__corner--br {
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.killchain-corner-chrome .utility-menu {
+  position: relative;
+  top: auto;
+  right: auto;
+}
+
+.killchain-corner-chrome .hamburger-menu {
+  position: relative;
+  bottom: auto;
+  left: auto;
+}
+
+.killchain-corner-chrome .hamburger-menu--embedded .hamburger-menu__panel {
+  max-height: calc(
+    100dvh - 2 * var(--page-edge-pad) - var(--killchain-left-condensed-height) - 1rem
+  );
+}
+
+.killchain-corner-chrome .hamburger-menu__trigger {
+  color: var(--corner-icon-idle);
+  transition:
+    width var(--utility-menu-duration, 0.75s) var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
+    padding var(--utility-menu-duration, 0.75s) var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
+    color 0.22s ease,
+    background-color 0.22s ease;
+}
+
+.killchain-corner-chrome .hamburger-menu__trigger:hover {
+  color: var(--corner-icon-hover);
+}
+
+.killchain-corner-chrome .complexity-corner__trigger {
+  color: var(--corner-icon-idle);
+  transition:
+    width var(--utility-menu-duration, 0.75s) var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
+    padding var(--utility-menu-duration, 0.75s) var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
+    color 0.22s ease,
+    background-color 0.22s ease;
+}
+
+.killchain-corner-chrome .complexity-corner__trigger:hover {
+  color: var(--corner-icon-hover);
+}
+
+.killchain-corner-chrome .hamburger-menu__trigger:active,
+.killchain-corner-chrome .complexity-corner__trigger:active,
+.killchain-corner-chrome .lib-title-corner__title:active {
+  opacity: 1;
+}
+
+.killchain-corner-chrome .hamburger-menu__trigger,
+.killchain-corner-chrome .complexity-corner__trigger {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.killchain-corner-chrome .hamburger-menu__trigger.glass-surface,
+.killchain-corner-chrome .hamburger-menu__trigger.glass-surface:hover,
+.killchain-corner-chrome .hamburger-menu__trigger.glass-surface:active,
+.killchain-corner-chrome .hamburger-menu__trigger.glass-surface.hamburger-menu__trigger--open,
+.killchain-corner-chrome .complexity-corner__trigger.glass-surface,
+.killchain-corner-chrome .complexity-corner__trigger.glass-surface:hover,
+.killchain-corner-chrome .complexity-corner__trigger.glass-surface:active,
+.killchain-corner-chrome .complexity-corner__trigger.glass-surface.complexity-corner__trigger--open,
+.killchain-corner-chrome .lib-title-corner__title.glass-surface,
+.killchain-corner-chrome .lib-title-corner__title.glass-surface:hover,
+.killchain-corner-chrome .lib-title-corner__title.glass-surface:active {
+  background: var(--menu-surface);
+}
+
+.killchain-corner-chrome .utility-menu__surface {
+  background: var(--menu-surface);
+}
+
+.killchain-corner-chrome
+  .utility-menu:is([data-state='opening'], [data-state='open'])
+  .utility-menu__surface {
+  background: var(--corner-menu-surface, rgba(255, 255, 255, 0.85));
+}

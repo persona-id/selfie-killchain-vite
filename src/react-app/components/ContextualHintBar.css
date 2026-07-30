@@ -1,0 +1,22 @@
+.contextual-hint-bar {
+  position: fixed;
+  bottom: var(--killchain-bottom-chrome-midline);
+  left: 50%;
+  z-index: 10;
+  width: max-content;
+  max-width: min(42rem, calc(100vw - 2 * var(--page-edge-pad)));
+  padding: 0 1rem;
+  text-align: center;
+  transform: translate(-50%, 50%);
+}
+
+.contextual-hint-bar p {
+  margin: 0;
+  font-size: calc(0.75rem + 3pt);
+  color: #000;
+}
+
+.contextual-hint-bar p + p {
+  margin-top: 0.25rem;
+  text-transform: capitalize;
+}

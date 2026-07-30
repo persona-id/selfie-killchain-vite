@@ -1,0 +1,7 @@
+.glass-surface {
+  background: var(--menu-surface);
+  border: 1px solid var(--menu-surface-border);
+  box-shadow: var(--menu-surface-shadow);
+  backdrop-filter: var(--menu-surface-blur);
+  -webkit-backdrop-filter: var(--menu-surface-blur);
+}

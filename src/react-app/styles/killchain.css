@@ -1,0 +1,242 @@
+.killchain-page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--bg-page);
+  pointer-events: none;
+}
+
+.killchain-app {
+  position: relative;
+  z-index: 1;
+  --radius-shell: 47px;
+  --radius-nav-shell: 47.83px;
+  --radius-pill: 43px;
+  --radius-nav-pill: 32.91px;
+  --radius-utility: 94px;
+  --font-sans: 'ABC Monument Grotesk', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'ABC Monument Grotesk Semi-Mono', 'ABC Monument Grotesk', monospace;
+  --page-pad-mult: 1.3;
+  --inactive-node-opacity: 0.4;
+  --page-edge-pad: 50px;
+  --killchain-left-condensed-height: calc(20.5px + 46px + 20.5px);
+  --killchain-chrome-condensed-height: var(--killchain-left-condensed-height);
+  --killchain-chrome-condensed-radius: calc(var(--killchain-chrome-condensed-height) / 2);
+  --corner-pill-height: var(--killchain-chrome-condensed-height);
+  --corner-pill-width: 158.501px;
+  --corner-pill-radius: var(--killchain-chrome-condensed-radius);
+  --corner-pill-pt: 0px;
+  --corner-pill-pb: 0px;
+  --corner-pill-px: 27px;
+  --corner-stack-gap: 12px;
+  --corner-icon-btn-size: var(--killchain-chrome-condensed-height);
+  --corner-menu-trigger-icon-size: calc(24.587px * 1.44);
+  --killchain-bottom-chrome-midline: calc(var(--page-edge-pad) + var(--corner-icon-btn-size) / 2);
+  --corner-settings-panel-width: 327px;
+  --corner-lib-title-width: 156px;
+  --corner-lib-title-height: var(--killchain-chrome-condensed-height);
+  --corner-lib-title-radius: var(--killchain-chrome-condensed-radius);
+  --corner-lib-title-px: 21px;
+  --corner-lib-title-py: 26px;
+  --corner-lib-info-width: 327px;
+  --corner-lib-info-radius: 30px;
+  --corner-lib-gap: 14px;
+  --corner-menu-width: 50vw;
+  --corner-menu-height: 578px;
+  --corner-menu-radius: 29px;
+  --corner-menu-pad-start: 35px;
+  --corner-menu-pad-end: 26px;
+  --corner-menu-pad-y: 26px;
+  --corner-menu-gap: 35px;
+  --corner-menu-modes-width: 432px;
+  --corner-menu-modes-height: 510px;
+  --corner-menu-mode-gap: 18px;
+  --corner-menu-mode-font: 52.9px;
+  --corner-menu-mode-line: 60.95px;
+  --corner-menu-mode-icon: 32.1px;
+  --corner-menu-preview-radius: 22px;
+  --corner-menu-preview-pad-x: 24px;
+  --corner-menu-preview-pad-y: 23px;
+  --corner-menu-preview-frame-height: 315.457px;
+  --corner-menu-preview-frame-radius: 18px;
+  --corner-menu-preview-surface: #ffffff;
+  --corner-menu-preview-bg: #ffffff;
+  --corner-menu-surface: rgba(255, 255, 255, 0.85);
+  --page-top-pad: var(--page-edge-pad);
+  --page-side-pad: var(--page-edge-pad);
+  --page-bottom-pad: var(--page-edge-pad);
+  --killchain-panel-width-boost: 1;
+  --killchain-panel-width-scale: 1.0925;
+  --killchain-side-panel-width: calc(
+    542px * var(--killchain-panel-width-scale) * var(--killchain-panel-width-boost)
+  );
+  --utility-menu-open-width: 50vw;
+  --utility-menu-open-height: 50vh;
+  --killchain-deconstruct-content-width: calc(
+    var(--killchain-side-panel-width) - 2 * var(--killchain-panel-content-inset)
+  );
+  --killchain-deconstruct-scroll-width: var(--killchain-deconstruct-content-width);
+  --killchain-side-panel-height: calc(100vh - 2 * var(--page-edge-pad));
+  --killchain-right-condensed-width: calc(
+    (
+        var(--killchain-panel-content-inset) + 28px + 24px + 28px + 10px + 28px +
+          var(--killchain-panel-content-inset)
+      ) * 1.2
+  );
+  --killchain-right-condensed-width-menu-only: var(--killchain-chrome-condensed-height);
+  --killchain-right-condensed-height: var(--killchain-left-condensed-height);
+  --killchain-panel-content-inset: 36px;
+  --nav-bar-height: var(--killchain-chrome-condensed-height);
+  --nav-content-gap: 15px;
+  --utility-shell-duration: 0.75s;
+  --utility-shell-ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --menu-toggle-close-duration: 1.35s;
+  --menu-toggle-open-duration: 0.85s;
+  --menu-toggle-close-ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --transition-ui: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+
+  min-height: 100vh;
+  background-color: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+@media (min-width: 2560px) {
+  .killchain-app {
+    --killchain-panel-width-boost: 1.15;
+  }
+}
+
+.killchain-app--globe {
+  height: 100%;
+  min-height: 100vh;
+}
+
+.killchain-app__content {
+  min-height: 100vh;
+  padding: 48px;
+}
+
+.killchain-app__content--globe {
+  padding: 0;
+  min-height: 100vh;
+  height: 100vh;
+}
+
+.killchain-app--matrix {
+  --ui-scale: 0.9;
+  --matrix-gutter: calc(var(--page-edge-pad) / var(--ui-scale));
+  --matrix-nav-band-top: calc(
+    var(--page-edge-pad) / var(--ui-scale) + var(--killchain-chrome-condensed-height) +
+      var(--matrix-gutter, calc(var(--page-edge-pad) / var(--ui-scale)))
+  );
+  --matrix-nav-band-bottom: var(--matrix-nav-band-top);
+  width: 100%;
+  background-color: transparent;
+  zoom: var(--ui-scale);
+  --killchain-side-panel-height: calc((100vh - 2 * var(--page-edge-pad)) / var(--ui-scale));
+}
+
+.killchain-app--deconstruct {
+  --ui-scale: 0.9;
+  zoom: var(--ui-scale);
+  --killchain-side-panel-height: calc((100vh - 2 * var(--page-edge-pad)) / var(--ui-scale));
+}
+
+.killchain-app--deconstruct .killchain-edge-shell--left,
+.killchain-app--matrix .killchain-edge-shell--left {
+  left: calc(var(--page-edge-pad) / var(--ui-scale));
+  top: calc(var(--page-edge-pad) / var(--ui-scale));
+}
+
+.killchain-app__content--matrix,
+.killchain-app__content--with-menu {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.killchain-app__content--matrix.killchain-shell-layout__content {
+  min-height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+.killchain-shell-layout__route-content {
+  min-height: 100vh;
+  background-color: var(--bg-page);
+}
+
+.killchain__nav-fixed {
+  position: fixed;
+  top: var(--page-top-pad);
+  left: var(--page-side-pad);
+  right: var(--page-side-pad);
+  z-index: 100;
+}
+
+.killchain__inner {
+  width: 100%;
+  max-width: 1825px;
+  margin: 0 auto;
+}
+
+.killchain__drop-spacer {
+  height: calc(var(--nav-bar-height) + var(--nav-content-gap));
+  flex-shrink: 0;
+}
+
+.killchain-side-panel {
+  position: fixed;
+  z-index: 101;
+  width: var(--killchain-side-panel-width);
+  max-width: calc(100vw - 2 * var(--page-edge-pad));
+  border-radius: var(--radius-nav-shell);
+  box-shadow: var(--shell-shadow);
+}
+
+.killchain-side-panel--left {
+  left: var(--page-edge-pad);
+  top: var(--page-edge-pad);
+  height: var(--killchain-side-panel-height);
+  max-height: var(--killchain-side-panel-height);
+  transform: none;
+}
+
+.killchain-side-panel--right {
+  right: var(--page-edge-pad);
+  top: var(--page-edge-pad);
+  height: var(--killchain-side-panel-height);
+  max-height: var(--killchain-side-panel-height);
+}
+
+body.killchain-menu-open .killchain__nav-fixed {
+  z-index: 250;
+}
+
+body.killchain-menu-open .killchain--matrix .killchain-edge-shell--left {
+  z-index: 250;
+}
+
+body.killchain-menu-open
+  .killchain-shell-layout__menu-portal--views:not(
+    .killchain-shell-layout__menu-portal--deconstruct-route
+  )
+  .killchain-edge-shell--left
+  .killchain-top-bar__stages,
+body.killchain-menu-open .killchain--matrix .killchain-edge-shell--left .killchain-top-bar__stages {
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity var(--utility-shell-duration, 0.42s) var(--utility-shell-ease, cubic-bezier(0.33, 1, 0.68, 1));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    background-color: var(--bg-page);
+  }
+}

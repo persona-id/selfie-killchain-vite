@@ -1,0 +1,47 @@
+.killchain-top-bar__stages {
+  flex: 0 0 auto;
+}
+
+.killchain-edge-shell--left .stage-nav {
+  width: 100%;
+}
+
+.killchain-top-bar__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  overflow: visible;
+  transition: color var(--transition-ui);
+}
+
+.killchain-top-bar__icon-btn:not(:disabled):not(.killchain-top-bar__icon-btn--inactive):hover
+  .utility-nav-icon--action:not(.utility-nav-icon--action-active) {
+  color: #666666;
+}
+
+.killchain-top-bar__icon-btn:not(:disabled):not(.killchain-top-bar__icon-btn--inactive):hover
+  .utility-nav-icon--view-end:not(.utility-nav-icon--view-end-active) {
+  opacity: 0.62;
+}
+
+.killchain-top-bar__icon-btn--inactive {
+  cursor: default;
+  pointer-events: none;
+}
+
+.killchain-top-bar__icon-btn--spacer {
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.killchain-top-bar__icon-btn:disabled {
+  cursor: not-allowed;
+}

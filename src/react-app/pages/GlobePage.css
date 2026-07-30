@@ -1,0 +1,26 @@
+.globe-page {
+  background-color: transparent;
+}
+
+.globe-page--loading {
+  background-color: transparent;
+}
+
+.globe-view {
+  background-color: transparent;
+}
+
+.globe-view--empty {
+  background-color: transparent;
+}
+
+.globe-page__nav {
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.globe-page__nav > * {
+  pointer-events: auto;
+}

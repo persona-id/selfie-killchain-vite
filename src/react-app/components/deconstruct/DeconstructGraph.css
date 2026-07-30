@@ -1,0 +1,120 @@
+.deconstruct-graph__viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  background-color: transparent;
+}
+
+.deconstruct-graph__dots {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.deconstruct-graph__dots--revealed {
+  opacity: 1;
+}
+
+.deconstruct-graph__dots--instant {
+  transition: none;
+}
+
+.deconstruct-graph__dots--instant.deconstruct-graph__dots--revealed {
+  opacity: 1;
+}
+
+.deconstruct-graph__viewport:active {
+  cursor: grabbing;
+}
+
+.deconstruct-graph--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  color: #696969;
+  font-size: calc(16px * var(--type-scale));
+}
+
+.deconstruct-graph__canvas {
+  position: relative;
+  z-index: 1;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.deconstruct-graph__edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 2;
+}
+
+.deconstruct-graph__edge-flow {
+  stroke: #9a9a9a;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.deconstruct-graph__edge-flow--flowing {
+  stroke-dasharray: 6.4 4.8;
+  animation: deconstruct-edge-flow 3.4s ease-in-out infinite;
+}
+
+@keyframes deconstruct-edge-flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+
+  100% {
+    stroke-dashoffset: -22.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deconstruct-graph__dots {
+    transition: none;
+    opacity: 1;
+  }
+
+  .deconstruct-graph__edge-flow {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+
+.deconstruct-graph__junction {
+  fill: #747474;
+}
+
+.deconstruct-graph--result-focus .deconstruct-node:not(.deconstruct-node--result) {
+  background: var(--bg-card-selected);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.deconstruct-graph--result-focus .deconstruct-node:not(.deconstruct-node--result) .deconstruct-node__id {
+  color: #696969;
+}
+
+.deconstruct-graph--result-focus .deconstruct-node:not(.deconstruct-node--result) .deconstruct-node__name {
+  color: #fff;
+}
+
+.deconstruct-graph--result-focus .deconstruct-graph__edge-flow,
+.deconstruct-graph__edge-flow--result-focus {
+  stroke: #0cca32;
+}
+
+.deconstruct-graph__nodes {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
