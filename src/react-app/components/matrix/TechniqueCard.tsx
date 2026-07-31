@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { ensureTrailingPeriod, formatDisplayDescription } from '../../utils/formatDisplayText'
 import { techniqueImageUrl } from '../../data/techniqueImages'
+import { GALLERY_DISPLAY_IMAGE, galleryDisplayImageUrl } from '../../lib/taxonomy'
 import type { Technique } from '../../types/killchain'
 import type { TechniqueState } from '../../utils/taxonomyHelpers'
 import { BlurInImage } from '../BlurInImage'
@@ -81,7 +82,10 @@ export default memo(function TechniqueCard({
   const isSelected = state === 'selected'
   const selectDisabled = state === 'locked' || state === 'unavailable' || (selectionLocked && isSelected)
   const clickable = !selectDisabled && (state === 'available' || state === 'alternative' || isSelected)
-  const imageUrl = imageOverride ?? techniqueImageUrl(tech.id)
+  const imageUrl = galleryDisplayImageUrl(
+    imageOverride ?? techniqueImageUrl(tech.id),
+    GALLERY_DISPLAY_IMAGE.techniqueThumb,
+  )
 
   return (
     <article

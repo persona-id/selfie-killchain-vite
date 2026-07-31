@@ -28,9 +28,37 @@ export function imageUrl(relPath: string): string {
 export const GLOBE_THUMB_WIDTH = 112
 export const GLOBE_THUMB_HEIGHT = 148
 
-export function globeThumbnailUrl(fullUrl: string): string {
+type GalleryDisplayImageOptions = {
+  width: number
+  height: number
+  quality?: number
+}
+
+export const GALLERY_DISPLAY_IMAGE = {
+  modal: { width: 572, height: 572, quality: 85 },
+  deconstructPanel: { width: 572, height: 564, quality: 85 },
+  deconstructNode: { width: 484, height: 476, quality: 85 },
+  techniqueThumb: { width: 400, height: 400, quality: 80 },
+} as const satisfies Record<string, GalleryDisplayImageOptions>
+
+export function galleryDisplayImageUrl(
+  fullUrl: string | null | undefined,
+  options: GalleryDisplayImageOptions,
+): string | null {
+  if (!fullUrl) return null
+  if (fullUrl.includes('wsrv.nl/?url=')) return fullUrl
+
+  const { width, height, quality = 85 } = options
   const encoded = encodeURIComponent(fullUrl)
-  return `https://wsrv.nl/?url=${encoded}&w=${GLOBE_THUMB_WIDTH}&h=${GLOBE_THUMB_HEIGHT}&fit=cover&q=78&output=webp&n=-1`
+  return `https://wsrv.nl/?url=${encoded}&w=${width}&h=${height}&fit=cover&q=${quality}&output=webp&n=-1`
+}
+
+export function globeThumbnailUrl(fullUrl: string): string {
+  return galleryDisplayImageUrl(fullUrl, {
+    width: GLOBE_THUMB_WIDTH,
+    height: GLOBE_THUMB_HEIGHT,
+    quality: 78,
+  })!
 }
 
 export function resolveGlobeImageSrc(item: {

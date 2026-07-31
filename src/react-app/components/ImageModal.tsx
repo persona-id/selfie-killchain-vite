@@ -9,6 +9,7 @@ import ta04TagIcon from '../assets/icons/ta-04-tag.png'
 import { BlurInImage } from './BlurInImage'
 import { findExactPathForTags } from '../utils/resolvePathFromTags'
 import { formatDisplayDescription } from '../utils/formatDisplayText'
+import { GALLERY_DISPLAY_IMAGE, galleryDisplayImageUrl } from '../lib/taxonomy'
 import './ImageModal.css'
 
 const MODAL_FADE_MS = 380
@@ -211,9 +212,14 @@ export function ImageModal() {
                 <div className="image-modal__core">
                   <div className="image-modal__image-box">
                     <BlurInImage
-                      src={presentedItem.imageUrl}
-                      alt={presentedItem.description}
+                      src={galleryDisplayImageUrl(
+                        presentedItem.imageUrl,
+                        GALLERY_DISPLAY_IMAGE.modal,
+                      )}
+                      alt=""
                       className="object-cover object-center"
+                      loading="eager"
+                      fetchPriority="high"
                     />
                   </div>
 

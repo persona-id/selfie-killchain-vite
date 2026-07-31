@@ -7,6 +7,7 @@ import {
 } from '../../utils/deconstructIntro'
 import { BlurInImage } from '../BlurInImage'
 import { ViewEndNodeNavIcon } from '../UtilityNavIcons'
+import { GALLERY_DISPLAY_IMAGE, galleryDisplayImageUrl } from '../../lib/taxonomy'
 
 import './DeconstructNode.css'
 
@@ -110,9 +111,13 @@ export default function DeconstructNodeCard({
       >
         <div className="deconstruct-node__result-image-wrap">
           <BlurInImage
-            src={node.imageUrl}
+            src={galleryDisplayImageUrl(
+              node.imageUrl,
+              GALLERY_DISPLAY_IMAGE.deconstructNode,
+            )}
             alt=""
             className="deconstruct-node__result-image"
+            loading="eager"
           />
         </div>
         <div className="deconstruct-node__result-label">

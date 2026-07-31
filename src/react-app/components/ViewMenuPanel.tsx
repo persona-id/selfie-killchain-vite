@@ -13,8 +13,8 @@ import {
   ensureHuggingFacePreconnect,
   preloadTechniqueImages,
 } from '../utils/preloadTechniqueImages'
-import MenuToggleDots from './MenuToggleDots'
 import './ViewMenuPanel.css'
+import { CornerArrowIcon } from './corner-chrome/CornerMenuIcons'
 
 const MODES: {
   id: ViewMode
@@ -72,7 +72,7 @@ function WarningIcon() {
 }
 
 function ModeArrowIcon() {
-  return <MenuToggleDots open={false} />
+  return <CornerArrowIcon />
 }
 
 type PanelTab = 'changelog' | 'research' | 'disclaimer'

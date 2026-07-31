@@ -11,6 +11,7 @@ import type { GalleryItem } from '../../types/gallery'
 import type { TechniqueState } from '../../utils/taxonomyHelpers'
 import { formatDisplayDescription } from '../../utils/formatDisplayText'
 import { getStageIdFromTechnique } from '../../utils/techniqueStage'
+import { GALLERY_DISPLAY_IMAGE, galleryDisplayImageUrl } from '../../lib/taxonomy'
 
 import './DeconstructBreakdownPanel.css'
 import { TECHNIQUE_CARD_EXPAND_MS } from '../../constants/techniqueCardMotion'
@@ -102,9 +103,14 @@ function ResultContent({ item }: ResultContentProps) {
           </p>
           <div className="deconstruct-panel__image-wrap">
             <BlurInImage
-              src={item.imageUrl}
-              alt={item.description}
+              src={galleryDisplayImageUrl(
+                item.imageUrl,
+                GALLERY_DISPLAY_IMAGE.deconstructPanel,
+              )}
+              alt=""
               className="deconstruct-panel__image"
+              loading="eager"
+              fetchPriority="high"
             />
           </div>
         </div>
