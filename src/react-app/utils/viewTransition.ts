@@ -1,4 +1,4 @@
-import type { NavigateFunction, NavigateOptions } from 'react-router-dom'
+import type { NavigateFunction, NavigateOptions } from 'react-router'
 
 export function navigateWithViewTransition(
   navigate: NavigateFunction,

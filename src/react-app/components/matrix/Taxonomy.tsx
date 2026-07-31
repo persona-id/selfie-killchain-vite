@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { motion, useReducedMotion } from 'framer-motion'
 
 import { observedPaths, taxonomy } from '../../data/taxonomyData'

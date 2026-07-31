@@ -1565,7 +1565,7 @@ export function GlobeView({
           !linkClusterFocusRef.current,
       )
 
-      let effectiveCameraZ = interactionState.cameraDistance
+      let effectiveCameraZ: number
 
       if (introLockedRef.current || introExitBlend > 0.01) {
         const introOverviewZ = overviewCameraZRef.current

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router'
 import { useGallery } from '../context/GalleryContext'
 import type { GalleryItem } from '../types/gallery'
 import { ComplexityBadge } from './ComplexityBadge'
