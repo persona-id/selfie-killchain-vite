@@ -1,5 +1,5 @@
 .killchain-corner-chrome {
-  --corner-menu-trigger-icon-size: calc(24.587px * 1.44);
+  --corner-menu-trigger-icon-size: 24.587px;
 }
 
 .killchain-corner-chrome .corner-menu__trigger-icon,
@@ -13,20 +13,18 @@
   max-height: none;
   flex-shrink: 0;
   object-fit: contain;
+  color: inherit;
 }
 
 .killchain-corner-chrome .corner-menu__trigger-icon-img {
-  transition:
-    filter 0.22s ease,
-    transform var(--utility-menu-duration, 0.75s)
-      var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1));
+  transition: transform var(--utility-menu-duration, 0.75s)
+    var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1));
 }
 
 .killchain-corner-chrome .complexity-corner__icon-slot--open .corner-menu__trigger-icon-img {
   transform: rotate(45deg);
 }
 
-.killchain-corner-chrome .hamburger-menu__trigger:hover .corner-menu__trigger-icon-img,
 .killchain-corner-chrome .complexity-corner__trigger:hover .corner-menu__trigger-icon-img {
   filter: brightness(0);
 }

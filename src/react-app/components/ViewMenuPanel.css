@@ -267,12 +267,12 @@
 
 .view-menu-panel__mode-arrow svg {
   width: clamp(32.2px, 5.175vw, 52.9px);
-  height: auto;
+  height: clamp(32.2px, 5.175vw, 52.9px);
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-arrow svg {
-  width: var(--corner-menu-mode-icon, 32.1px);
-  height: var(--corner-menu-mode-icon, 32.1px);
+  width: clamp(32.2px, 5.175vw, 52.9px);
+  height: clamp(32.2px, 5.175vw, 52.9px);
 }
 
 .view-menu-panel__mode:not(.view-menu-panel__mode--active):not(:disabled):hover .view-menu-panel__mode-label,

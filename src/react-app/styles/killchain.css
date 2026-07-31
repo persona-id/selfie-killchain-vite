@@ -30,7 +30,7 @@
   --corner-pill-px: 27px;
   --corner-stack-gap: 12px;
   --corner-icon-btn-size: var(--killchain-chrome-condensed-height);
-  --corner-menu-trigger-icon-size: calc(24.587px * 1.44);
+  --corner-menu-trigger-icon-size: 24.587px;
   --killchain-bottom-chrome-midline: calc(var(--page-edge-pad) + var(--corner-icon-btn-size) / 2);
   --corner-settings-panel-width: 327px;
   --corner-lib-title-width: 156px;
