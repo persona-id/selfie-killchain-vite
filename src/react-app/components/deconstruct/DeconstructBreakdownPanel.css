@@ -92,13 +92,11 @@
   min-width: 0;
   width: 100%;
   padding-bottom: 16px;
-  background: var(--bg-shell);
+  background: transparent;
 }
 
 .deconstruct-panel--embedded .deconstruct-panel__stage-header {
-  background: var(--deconstruct-panel-surface, rgba(255, 255, 255, 0.84));
-  backdrop-filter: var(--menu-surface-blur);
-  -webkit-backdrop-filter: var(--menu-surface-blur);
+  background: transparent;
 }
 
 .deconstruct-panel__technique-viewport {
