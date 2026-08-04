@@ -142,7 +142,6 @@
 .killchain-app--deconstruct {
   --ui-scale: 0.9;
   --deconstruct-panel-surface: rgba(255, 255, 255, 0.84);
-  --deconstruct-panel-header-surface: rgba(255, 255, 255, 0.97);
   zoom: var(--ui-scale);
   --killchain-side-panel-height: calc((100vh - 2 * var(--page-edge-pad)) / var(--ui-scale));
 }

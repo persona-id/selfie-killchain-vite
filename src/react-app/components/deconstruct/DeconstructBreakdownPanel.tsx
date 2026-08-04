@@ -173,11 +173,11 @@ function TechniqueContent({
         showBottomFade ? ' deconstruct-panel__technique-viewport--fade-bottom' : ''
       }`}
     >
+      <div className="deconstruct-panel__stage-header">
+        <h2 className="deconstruct-panel__stage-title">{stage.stage}</h2>
+        <p className="deconstruct-panel__stage-desc">{stage.description}</p>
+      </div>
       <div className="deconstruct-panel__technique-scroll" ref={listScrollRef}>
-        <div className="deconstruct-panel__stage-header">
-          <h2 className="deconstruct-panel__stage-title">{stage.stage}</h2>
-          <p className="deconstruct-panel__stage-desc">{stage.description}</p>
-        </div>
         <div className="deconstruct-panel__technique-list">
           {stage.techniques.map((tech) => {
             const isActive = tech.id === techniqueId
@@ -258,11 +258,16 @@ export default function DeconstructBreakdownPanel({
     )
     if (!activeItem) return
 
-    const headerEl = scrollEl.querySelector<HTMLElement>('.deconstruct-panel__stage-header')
-    const headerHeight = headerEl?.offsetHeight ?? 0
     const targetTop = getRelativeTop(activeItem, scrollEl)
     const maxScrollTop = Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight)
-    const desiredScrollTop = Math.max(0, targetTop - headerHeight - 12)
+    let desiredScrollTop = Math.max(0, targetTop)
+
+    const previousItem = activeItem.previousElementSibling as HTMLElement | null
+    if (previousItem) {
+      const previousBottom =
+        getRelativeTop(previousItem, scrollEl) + previousItem.offsetHeight
+      desiredScrollTop = Math.max(desiredScrollTop, previousBottom)
+    }
 
     scrollEl.scrollTop = Math.min(maxScrollTop, desiredScrollTop)
   }, [selectedTechniqueId])
