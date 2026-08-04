@@ -117,7 +117,6 @@ export default function KillchainShellLayout() {
         entranceReady={chromeEntranceReady}
         hidden={hideChrome}
         chromeEntranceKey={chromeEntranceKey}
-        fadeInGlobeEntrance={shouldAnimateGlobeEntrance}
       />
     </div>,
     document.body,

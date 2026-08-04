@@ -6,7 +6,6 @@ import type {
 import { HamburgerMenu } from '../HamburgerMenu'
 import UtilityMenu from '../utility-menu/UtilityMenu'
 import { ComplexityCornerMenu } from './ComplexityCornerMenu'
-import { LibTitleCorner } from './LibTitleCorner'
 import { StageNavCorner } from './StageNavCorner'
 import './KillchainCornerChrome.css'
 import './StageNavCorner.css'
@@ -20,7 +19,6 @@ interface KillchainCornerChromeProps {
   entranceReady: boolean
   hidden: boolean
   chromeEntranceKey: string
-  fadeInGlobeEntrance?: boolean
 }
 
 export function KillchainCornerChrome({
@@ -30,11 +28,9 @@ export function KillchainCornerChrome({
   entranceReady,
   hidden,
   chromeEntranceKey,
-  fadeInGlobeEntrance = false,
 }: KillchainCornerChromeProps) {
   const { introActive, chromeRevealReady } = useGlobeIntro()
   const isGlobe = variant === 'globe'
-  const showLibTitle = isGlobe && left.visible
   const showStageNavShell = !isGlobe && left.visible && Boolean(left.stageNav)
   const showComplexity = Boolean(left.complexityNav) && isGlobe
   const showSettings = isGlobe
@@ -46,15 +42,6 @@ export function KillchainCornerChrome({
       aria-hidden={hidden}
     >
       <div className="killchain-corner-chrome__corner killchain-corner-chrome__corner--tl">
-        {showLibTitle ? (
-          <LibTitleCorner
-            stageNav={null}
-            expanded={false}
-            body={null}
-            entranceReady={entranceReady}
-            fadeIn={fadeInGlobeEntrance}
-          />
-        ) : null}
         {showStageNavShell && left.stageNav ? (
           <StageNavCorner
             stageNav={left.stageNav}
