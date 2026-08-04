@@ -95,19 +95,6 @@
   fill: #747474;
 }
 
-.deconstruct-graph--result-focus .deconstruct-node:not(.deconstruct-node--result) {
-  background: var(--bg-card-selected);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-}
-
-.deconstruct-graph--result-focus .deconstruct-node:not(.deconstruct-node--result) .deconstruct-node__id {
-  color: #696969;
-}
-
-.deconstruct-graph--result-focus .deconstruct-node:not(.deconstruct-node--result) .deconstruct-node__name {
-  color: #fff;
-}
-
 .deconstruct-graph--result-focus .deconstruct-graph__edge-flow,
 .deconstruct-graph__edge-flow--result-focus {
   stroke: #0cca32;
