@@ -7,10 +7,12 @@
   --image-modal-surface: rgba(255, 255, 255, 0.85);
   --image-modal-border: rgba(255, 255, 255, 0.72);
   z-index: 400;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   overflow-y: auto;
   overscroll-behavior: contain;
+  min-height: 100dvh;
+  box-sizing: border-box;
 }
 
 .image-modal__route-veil {
@@ -26,7 +28,7 @@
   z-index: 1;
   flex-shrink: 0;
   width: min(var(--modal-design-width), calc(100vw - var(--modal-pad) * 2));
-  margin: var(--modal-pad) auto;
+  margin: auto;
   transform-origin: center center;
 }
 
@@ -34,9 +36,13 @@
   position: relative;
   display: flex;
   width: 100%;
-  height: auto;
+  height: clamp(
+    min(var(--modal-min-height), var(--modal-max-height)),
+    var(--modal-height),
+    var(--modal-max-height)
+  );
   min-height: min(var(--modal-min-height), var(--modal-max-height));
-  max-height: none;
+  max-height: var(--modal-max-height);
   flex-direction: column;
   align-items: center;
   border-radius: 55px;
@@ -46,16 +52,19 @@
   box-shadow: var(--menu-surface-shadow);
   backdrop-filter: var(--menu-surface-blur);
   -webkit-backdrop-filter: var(--menu-surface-blur);
-  overflow: visible;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
 }
 
 .image-modal__body {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 33px;
   padding: 33px 27px 0;
 }
@@ -234,6 +243,30 @@
   backdrop-filter: var(--menu-surface-blur);
   -webkit-backdrop-filter: var(--menu-surface-blur);
   will-change: opacity;
+}
+
+@media (max-height: 820px) {
+  .image-modal {
+    align-items: flex-start;
+    min-height: 100dvh;
+  }
+
+  .image-modal__panel-host {
+    margin: var(--modal-pad) auto;
+  }
+
+  .image-modal__panel {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .image-modal__body {
+    flex: 0 0 auto;
+    min-height: auto;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-height: 900px) {
