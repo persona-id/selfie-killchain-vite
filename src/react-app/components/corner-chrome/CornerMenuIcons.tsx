@@ -1,8 +1,8 @@
 import './CornerMenuIcons.css'
 
 const CORNER_MENU_ICON_SRC = {
-  settings: '/icons/corner-chrome/complexity.png',
-  complexity: '/icons/corner-chrome/settings.png',
+  settings: '/icons/corner-chrome/settings.png',
+  complexity: '/icons/corner-chrome/complexity.png',
 } as const
 
 export function CornerMenuIcon({
