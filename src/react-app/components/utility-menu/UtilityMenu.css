@@ -473,10 +473,10 @@
   container-name: utility-menu;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 1400px), (max-height: 820px) {
   .utility-menu[data-state='opening'] .utility-menu__shell,
   .utility-menu[data-state='open'] .utility-menu__shell {
-    width: calc(100vw - 2 * var(--page-edge-pad));
+    width: min(var(--utility-menu-open-width, 50vw), calc(100vw - 2 * var(--page-edge-pad)));
     height: auto;
     min-height: 0;
     max-height: calc(100dvh - 2 * var(--page-edge-pad));
@@ -507,9 +507,15 @@
   }
 }
 
-@container utility-menu (max-width: 700px) {
-  .utility-menu__shell {
+@media (max-width: 700px) {
+  .utility-menu[data-state='opening'] .utility-menu__shell,
+  .utility-menu[data-state='open'] .utility-menu__shell {
     width: calc(100vw - 2 * var(--page-edge-pad));
+  }
+}
+
+@container utility-menu (max-width: 960px) {
+  .utility-menu__shell {
     height: auto;
     min-height: 0;
     max-height: calc(100dvh - 2 * var(--page-edge-pad));
