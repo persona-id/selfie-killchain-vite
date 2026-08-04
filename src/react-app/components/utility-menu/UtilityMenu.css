@@ -109,8 +109,15 @@
 .utility-menu[data-state='open'] .utility-menu__shell {
   width: var(--utility-menu-open-width, 50vw);
   max-width: calc(100vw - 2 * var(--page-edge-pad));
-  height: var(--utility-menu-open-height, 50vh);
-  max-height: var(--utility-menu-open-height, 50vh);
+  height: min(
+    var(--utility-menu-open-height, 58vh),
+    calc(100dvh - 2 * var(--page-edge-pad))
+  );
+  min-height: min(
+    var(--utility-menu-open-min-height, 540px),
+    calc(100dvh - 2 * var(--page-edge-pad))
+  );
+  max-height: calc(100dvh - 2 * var(--page-edge-pad));
   border-radius: var(--corner-menu-radius, 29px);
   display: flex;
   flex-direction: column;
@@ -206,6 +213,8 @@
   height: 100%;
   min-height: 0;
   opacity: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transition:
     flex var(--utility-menu-duration) var(--utility-menu-ease),
     height var(--utility-menu-duration) var(--utility-menu-ease),

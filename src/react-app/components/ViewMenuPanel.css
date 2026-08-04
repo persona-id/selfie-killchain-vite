@@ -101,6 +101,7 @@
   flex-direction: row;
   align-items: stretch;
   gap: var(--corner-menu-gap, 35px);
+  min-height: 0;
 }
 
 .utility-menu[data-state='closing'] .view-menu-panel {
@@ -143,10 +144,10 @@
   flex-direction: column;
   justify-content: flex-end;
   align-items: flex-start;
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-width: 0;
-  height: 100%;
-  min-height: 100%;
+  min-height: 0;
+  height: auto;
 }
 
 .view-menu-panel__modes {
@@ -254,8 +255,8 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-label {
-  font-size: calc(var(--corner-menu-mode-font, 52.9px) * var(--type-scale));
-  line-height: var(--corner-menu-mode-line, 60.95px);
+  font-size: calc(clamp(28px, 4.2vw, var(--corner-menu-mode-font, 52.9px)) * var(--type-scale));
+  line-height: 1.12;
 }
 
 .view-menu-panel__mode-arrow {
@@ -312,10 +313,11 @@
   min-height: 0;
   margin-top: 0;
   padding: 0;
-  height: 100%;
-  gap: clamp(16px, 2.5vh, 24px);
+  height: auto;
+  gap: clamp(12px, 2vh, 24px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .utility-menu[data-state='closing'] .view-menu-panel__footer {
@@ -374,15 +376,26 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__content-shell {
-  flex: 1 1 auto;
-  height: 100%;
+  flex: 1 1 0;
+  height: auto;
   min-height: 0;
-  gap: clamp(20px, 3vh, 50px);
+  gap: clamp(12px, 2vh, 24px);
   background: var(--corner-menu-preview-surface, var(--menu-surface-muted));
   border-radius: var(--corner-menu-preview-radius, 22px);
-  padding: clamp(16px, 2.2vh, 24px) clamp(16px, 2.5vw, 28px);
+  padding: clamp(12px, 1.8vh, 24px) clamp(12px, 2vw, 28px);
+  overflow: hidden;
   backdrop-filter: var(--menu-surface-blur);
   -webkit-backdrop-filter: var(--menu-surface-blur);
+}
+
+.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__content {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-header {
+  flex-shrink: 0;
 }
 
 .view-menu-panel__content {
@@ -472,19 +485,22 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-shell {
-  flex: 0 0 auto;
-  margin-top: auto;
+  flex: 1 1 0;
+  min-height: clamp(96px, 16vh, 220px);
+  margin-top: 0;
   align-items: stretch;
   justify-content: flex-end;
   width: 100%;
+  overflow: hidden;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-frame {
   width: 100%;
-  height: auto;
+  height: 100%;
   max-height: 100%;
-  aspect-ratio: 16 / 9;
-  flex: 0 0 auto;
+  min-height: 0;
+  aspect-ratio: auto;
+  flex: 1 1 auto;
   border-radius: var(--corner-menu-preview-frame-radius, 18px);
 }
 
@@ -550,6 +566,10 @@
   width: 100%;
 }
 
+.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__tabs {
+  flex-shrink: 0;
+}
+
 .view-menu-panel__tab {
   flex: 1;
   min-height: 46px;
@@ -590,5 +610,35 @@
   .view-menu-panel__content-shell {
     height: clamp(260px, 46vh, 400px);
     min-height: clamp(260px, 46vh, 400px);
+  }
+}
+
+@media (max-width: 1100px), (max-height: 780px) {
+  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel {
+    gap: clamp(16px, 2.5vw, 28px);
+  }
+
+  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-label {
+    font-size: calc(clamp(24px, 3.6vw, 40px) * var(--type-scale));
+  }
+
+  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__intro-text {
+    font-size: calc(clamp(14px, 1.6vw, 18px) * var(--type-scale));
+    line-height: 1.35;
+  }
+}
+
+@media (max-width: 900px), (max-height: 700px) {
+  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel {
+    flex-direction: column;
+  }
+
+  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__upper {
+    flex: 0 0 auto;
+  }
+
+  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__footer {
+    flex: 1 1 auto;
+    min-height: clamp(280px, 42vh, 420px);
   }
 }

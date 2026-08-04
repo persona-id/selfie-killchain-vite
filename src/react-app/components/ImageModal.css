@@ -1,7 +1,9 @@
 .image-modal {
-  --modal-pad: 3rem;
+  --modal-pad: clamp(1rem, 3vw, 3rem);
   --modal-design-width: 629.2px;
+  --modal-min-height: 680px;
   --modal-height: 85dvh;
+  --modal-max-height: calc(100dvh - var(--modal-pad) * 2);
   --image-modal-surface: rgba(255, 255, 255, 0.85);
   --image-modal-border: rgba(255, 255, 255, 0.72);
   z-index: 400;
@@ -26,17 +28,24 @@
   position: relative;
   display: flex;
   width: min(var(--modal-design-width), calc(100vw - var(--modal-pad) * 2));
-  height: var(--modal-height);
-  max-height: var(--modal-height);
+  height: clamp(
+    min(var(--modal-min-height), var(--modal-max-height)),
+    var(--modal-height),
+    var(--modal-max-height)
+  );
+  min-height: min(var(--modal-min-height), var(--modal-max-height));
+  max-height: var(--modal-max-height);
   flex-direction: column;
   align-items: center;
   border-radius: 55px;
   background: var(--image-modal-surface, var(--menu-surface));
   border: 1px solid var(--image-modal-border, var(--menu-surface-border));
-  padding: 38px 36px 40px;
+  padding: clamp(24px, 4vh, 38px) clamp(20px, 3vw, 36px) clamp(24px, 4vh, 40px);
   box-shadow: var(--menu-surface-shadow);
   backdrop-filter: var(--menu-surface-blur);
   -webkit-backdrop-filter: var(--menu-surface-blur);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .image-modal__body {
@@ -222,4 +231,32 @@
   backdrop-filter: var(--menu-surface-blur);
   -webkit-backdrop-filter: var(--menu-surface-blur);
   will-change: opacity;
+}
+
+@media (max-height: 820px) {
+  .image-modal {
+    --modal-min-height: 620px;
+  }
+
+  .image-modal__body {
+    gap: clamp(16px, 3vh, 33px);
+    padding-top: clamp(16px, 3vh, 33px);
+  }
+
+  .image-modal__core {
+    gap: clamp(16px, 3vh, 33px);
+  }
+
+  .image-modal__image-box {
+    width: clamp(220px, 38vw, 286px);
+    height: clamp(220px, 38vw, 286px);
+  }
+
+  .image-modal__description {
+    font-size: calc(clamp(20px, 2.8vw, 24px) * var(--type-scale));
+  }
+
+  .image-modal__footer {
+    padding-top: clamp(16px, 3vh, 28px);
+  }
 }
