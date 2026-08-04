@@ -168,18 +168,18 @@ function TechniqueContent({
   if (!stage) return null
 
   return (
-    <>
+    <div
+      className={`deconstruct-panel__technique-scroll${
+        showBottomFade ? ' deconstruct-panel__technique-scroll--fade-bottom' : ''
+      }`}
+      ref={listScrollRef}
+    >
       <div className="deconstruct-panel__stage-header">
         <h2 className="deconstruct-panel__stage-title">{stage.stage}</h2>
         <p className="deconstruct-panel__stage-desc">{stage.description}</p>
       </div>
-      <div
-        className={`deconstruct-panel__technique-scroll${
-          showBottomFade ? ' deconstruct-panel__technique-scroll--fade-bottom' : ''
-        }`}
-      >
-        <div ref={listScrollRef} className="deconstruct-panel__technique-list">
-          {stage.techniques.map((tech) => {
+      <div className="deconstruct-panel__technique-list">
+        {stage.techniques.map((tech) => {
             const isActive = tech.id === techniqueId
             const isInPath = pathTechniques.has(tech.id)
             const state = getCardState(isInPath)
@@ -203,9 +203,8 @@ function TechniqueContent({
               </div>
             )
           })}
-        </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -258,7 +257,13 @@ export default function DeconstructBreakdownPanel({
     )
     if (!activeItem) return
 
-    scrollEl.scrollTop = Math.max(0, getRelativeTop(activeItem, scrollEl))
+    const headerEl = scrollEl.querySelector<HTMLElement>('.deconstruct-panel__stage-header')
+    const headerHeight = headerEl?.offsetHeight ?? 0
+    const targetTop = getRelativeTop(activeItem, scrollEl)
+    const maxScrollTop = Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight)
+    const desiredScrollTop = Math.max(0, targetTop - headerHeight - 12)
+
+    scrollEl.scrollTop = Math.min(maxScrollTop, desiredScrollTop)
   }, [selectedTechniqueId])
 
   useLayoutEffect(() => {
@@ -272,7 +277,10 @@ export default function DeconstructBreakdownPanel({
     const el = listScrollRef.current
     if (!el) return
 
-    const resizeObserver = new ResizeObserver(updateBottomFade)
+    const resizeObserver = new ResizeObserver(() => {
+      updateBottomFade()
+      scrollToActiveTechnique()
+    })
     resizeObserver.observe(el)
     el.addEventListener('scroll', updateBottomFade, { passive: true })
 
@@ -280,7 +288,7 @@ export default function DeconstructBreakdownPanel({
       resizeObserver.disconnect()
       el.removeEventListener('scroll', updateBottomFade)
     }
-  }, [mode, selectedTechniqueId, updateBottomFade])
+  }, [mode, selectedTechniqueId, updateBottomFade, scrollToActiveTechnique])
 
   useLayoutEffect(() => {
     if (mode !== 'technique' || !selectedTechniqueId) return
