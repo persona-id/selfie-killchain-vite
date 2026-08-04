@@ -65,6 +65,11 @@
   min-height: 0;
 }
 
+.deconstruct-panel--embedded .deconstruct-panel__technique-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .deconstruct-panel--embedded .deconstruct-panel__technique-list {
   justify-content: flex-start;
 }
@@ -88,13 +93,48 @@
   width: 100%;
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
   padding-bottom: 16px;
-  background: var(--menu-surface, var(--bg-shell));
+  background: var(--bg-shell);
 }
 
 .deconstruct-panel--embedded .deconstruct-panel__stage-header {
-  background: var(--menu-surface, rgba(255, 255, 255, 0.85));
+  background: var(--deconstruct-panel-header-surface, rgba(255, 255, 255, 0.97));
+  backdrop-filter: var(--menu-surface-blur);
+  -webkit-backdrop-filter: var(--menu-surface-blur);
+}
+
+.deconstruct-panel__technique-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.deconstruct-panel__technique-viewport::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 72px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    var(--deconstruct-panel-surface, rgba(255, 255, 255, 0.84))
+  );
+  z-index: 2;
+}
+
+.deconstruct-panel__technique-viewport--fade-bottom::after {
+  opacity: 1;
 }
 
 .deconstruct-panel__technique-scroll {
@@ -124,28 +164,6 @@
 .deconstruct-panel__technique-scroll::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.14);
   border-radius: 999px;
-}
-
-.deconstruct-panel__technique-scroll::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: calc(88px * 0.55);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.18s ease;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0),
-    var(--menu-surface, rgba(255, 255, 255, 0.54))
-  );
-  z-index: 2;
-}
-
-.deconstruct-panel__technique-scroll--fade-bottom::after {
-  opacity: 1;
 }
 
 .deconstruct-panel__technique-list {

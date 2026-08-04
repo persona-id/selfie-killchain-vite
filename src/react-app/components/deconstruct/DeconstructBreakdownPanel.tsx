@@ -169,17 +169,17 @@ function TechniqueContent({
 
   return (
     <div
-      className={`deconstruct-panel__technique-scroll${
-        showBottomFade ? ' deconstruct-panel__technique-scroll--fade-bottom' : ''
+      className={`deconstruct-panel__technique-viewport${
+        showBottomFade ? ' deconstruct-panel__technique-viewport--fade-bottom' : ''
       }`}
-      ref={listScrollRef}
     >
-      <div className="deconstruct-panel__stage-header">
-        <h2 className="deconstruct-panel__stage-title">{stage.stage}</h2>
-        <p className="deconstruct-panel__stage-desc">{stage.description}</p>
-      </div>
-      <div className="deconstruct-panel__technique-list">
-        {stage.techniques.map((tech) => {
+      <div className="deconstruct-panel__technique-scroll" ref={listScrollRef}>
+        <div className="deconstruct-panel__stage-header">
+          <h2 className="deconstruct-panel__stage-title">{stage.stage}</h2>
+          <p className="deconstruct-panel__stage-desc">{stage.description}</p>
+        </div>
+        <div className="deconstruct-panel__technique-list">
+          {stage.techniques.map((tech) => {
             const isActive = tech.id === techniqueId
             const isInPath = pathTechniques.has(tech.id)
             const state = getCardState(isInPath)
@@ -203,6 +203,7 @@ function TechniqueContent({
               </div>
             )
           })}
+        </div>
       </div>
     </div>
   )
