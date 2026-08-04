@@ -51,6 +51,11 @@
   position: relative;
   top: auto;
   right: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--page-edge-pad));
 }
 
 .killchain-corner-chrome .hamburger-menu {
