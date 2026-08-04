@@ -7,6 +7,10 @@
   --image-modal-surface: rgba(255, 255, 255, 0.85);
   --image-modal-border: rgba(255, 255, 255, 0.72);
   z-index: 400;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .image-modal__route-veil {
@@ -21,20 +25,18 @@
   position: relative;
   z-index: 1;
   flex-shrink: 0;
+  width: min(var(--modal-design-width), calc(100vw - var(--modal-pad) * 2));
+  margin: var(--modal-pad) auto;
   transform-origin: center center;
 }
 
 .image-modal__panel {
   position: relative;
   display: flex;
-  width: min(var(--modal-design-width), calc(100vw - var(--modal-pad) * 2));
-  height: clamp(
-    min(var(--modal-min-height), var(--modal-max-height)),
-    max(var(--modal-min-height), var(--modal-height)),
-    var(--modal-max-height)
-  );
+  width: 100%;
+  height: auto;
   min-height: min(var(--modal-min-height), var(--modal-max-height));
-  max-height: var(--modal-max-height);
+  max-height: none;
   flex-direction: column;
   align-items: center;
   border-radius: 55px;
@@ -44,24 +46,23 @@
   box-shadow: var(--menu-surface-shadow);
   backdrop-filter: var(--menu-surface-blur);
   -webkit-backdrop-filter: var(--menu-surface-blur);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
 }
 
 .image-modal__body {
   display: flex;
-  min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   width: 100%;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 33px;
   padding: 33px 27px 0;
 }
 
 .image-modal__description {
   max-width: 430px;
+  flex: 0 0 auto;
   flex-shrink: 0;
   text-align: center;
   font-size: calc(24px * var(--type-scale));
@@ -110,6 +111,8 @@
   display: flex;
   width: 100%;
   max-width: 472px;
+  flex: 0 0 auto;
+  flex-shrink: 0;
   flex-direction: column;
   align-items: center;
   gap: 10px;
@@ -241,5 +244,11 @@
 
   .image-modal__core {
     gap: clamp(20px, 3vh, 33px);
+  }
+}
+
+@media (max-width: 680px) {
+  .image-modal__tag-row {
+    flex-wrap: wrap;
   }
 }

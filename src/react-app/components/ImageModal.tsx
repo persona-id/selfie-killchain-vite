@@ -185,7 +185,7 @@ export function ImageModal() {
       {isVisible && presentedItem ? (
         <motion.div
           key="image-modal"
-          className="font-monument image-modal fixed inset-0 flex cursor-none items-center justify-center"
+          className="font-monument image-modal fixed inset-0 flex cursor-none"
           style={{ padding: 'var(--modal-pad, 1.5rem)' }}
           variants={modalRootVariants}
           initial="hidden"
