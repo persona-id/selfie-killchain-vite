@@ -1,7 +1,7 @@
 .image-modal {
   --modal-pad: clamp(1rem, 3vw, 3rem);
   --modal-design-width: 629.2px;
-  --modal-min-height: 680px;
+  --modal-min-height: 800px;
   --modal-height: 85dvh;
   --modal-max-height: calc(100dvh - var(--modal-pad) * 2);
   --image-modal-surface: rgba(255, 255, 255, 0.85);
@@ -30,7 +30,7 @@
   width: min(var(--modal-design-width), calc(100vw - var(--modal-pad) * 2));
   height: clamp(
     min(var(--modal-min-height), var(--modal-max-height)),
-    var(--modal-height),
+    max(var(--modal-min-height), var(--modal-height)),
     var(--modal-max-height)
   );
   min-height: min(var(--modal-min-height), var(--modal-max-height));
@@ -233,30 +233,13 @@
   will-change: opacity;
 }
 
-@media (max-height: 820px) {
-  .image-modal {
-    --modal-min-height: 620px;
-  }
-
+@media (max-height: 900px) {
   .image-modal__body {
-    gap: clamp(16px, 3vh, 33px);
-    padding-top: clamp(16px, 3vh, 33px);
+    gap: clamp(20px, 3vh, 33px);
+    padding-top: clamp(20px, 3vh, 33px);
   }
 
   .image-modal__core {
-    gap: clamp(16px, 3vh, 33px);
-  }
-
-  .image-modal__image-box {
-    width: clamp(220px, 38vw, 286px);
-    height: clamp(220px, 38vw, 286px);
-  }
-
-  .image-modal__description {
-    font-size: calc(clamp(20px, 2.8vw, 24px) * var(--type-scale));
-  }
-
-  .image-modal__footer {
-    padding-top: clamp(16px, 3vh, 28px);
+    gap: clamp(20px, 3vh, 33px);
   }
 }
