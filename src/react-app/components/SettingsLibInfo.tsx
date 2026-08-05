@@ -8,7 +8,7 @@ export function SettingsLibInfo() {
 
   return (
     <div className="settings-lib-info">
-      <div className="settings-lib-info__grid">
+      <div className="settings-lib-info__top">
         <div className="settings-lib-info__copy">
           <p className="settings-lib-info__primary">
             {siteTitle}
@@ -30,18 +30,18 @@ export function SettingsLibInfo() {
               {'\n\n'}
             </span>
           </p>
-          <p className="settings-lib-info__status">
-            <span className="settings-lib-info__changes-row">
-              <span>{hfChanges}+ Changes</span>
-              <span className="settings-lib-info__muted"> (last 30 mins)</span>
-            </span>
-            <span className="settings-lib-info__muted">{'\n'}</span>
-            <span>{imagesLoaded.toLocaleString()}</span>
-            <span className="settings-lib-info__muted"> Images loaded</span>
-          </p>
         </div>
         <NetworkDotOrb load={networkLoad} size={25} />
       </div>
+      <p className="settings-lib-info__status">
+        <span className="settings-lib-info__changes-row">
+          <span>{hfChanges}+ Changes</span>
+          <span className="settings-lib-info__muted"> (last 30 mins)</span>
+        </span>
+        <span className="settings-lib-info__muted">{'\n'}</span>
+        <span>{imagesLoaded.toLocaleString()}</span>
+        <span className="settings-lib-info__muted"> Images loaded</span>
+      </p>
     </div>
   )
 }
