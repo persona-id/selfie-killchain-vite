@@ -232,8 +232,8 @@
   justify-content: space-between;
   gap: clamp(12px, 2vw, 20px);
   width: 100%;
-  height: var(--corner-menu-mode-line, 60.95px);
-  min-height: 0;
+  min-height: var(--corner-menu-mode-line, 60.95px);
+  height: auto;
   padding: 0;
   border: none;
   background: none;
@@ -274,7 +274,7 @@
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-label {
   font-size: calc(var(--corner-menu-mode-font, 52.9px) * var(--type-scale));
-  line-height: 1;
+  line-height: var(--corner-menu-mode-line, 60.95px);
 }
 
 .view-menu-panel__mode-arrow {

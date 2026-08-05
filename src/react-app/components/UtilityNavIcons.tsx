@@ -66,18 +66,18 @@ export function FitToScreenNavIcon({ active = false }: { active?: boolean }) {
 
 export function ResetNavIcon({ active = false }: { active?: boolean }) {
   return (
-    <UtilityActionIcon active={active} viewBox="0 0 28 28">
+    <UtilityActionIcon active={active} viewBox="0 0 28 30">
       <path
-        d="M14 8v3.5M14 8a6 6 0 1 1-6 6"
+        d="M16.25 5.25C9.25 5.25 4.75 9.75 4.75 15.25C4.75 20.25 8.25 24.25 13.25 25.25"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1.5"
         strokeLinecap="round"
         fill="none"
       />
       <path
-        d="M10 8h4V4"
+        d="M11.25 5.25H16.25L14.75 9.25"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"

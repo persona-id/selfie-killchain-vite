@@ -33,9 +33,9 @@ export function CornerArrowIcon({ className }: { className?: string }) {
       aria-hidden
     >
       <path
-        d="M8.5 23.5L23.5 8.5M23.5 8.5H14.5M23.5 8.5V17.5"
+        d="M2 29.5L30 2M30 2V7"
         stroke="currentColor"
-        strokeWidth="1.25"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
