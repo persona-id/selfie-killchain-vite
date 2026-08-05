@@ -265,13 +265,6 @@
   white-space: nowrap;
 }
 
-.view-menu-panel__mode-index {
-  display: inline-block;
-  min-width: 1.35em;
-  margin-right: 0.2em;
-  font-variant-numeric: tabular-nums;
-}
-
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-label {
   font-size: calc(var(--corner-menu-mode-font, 52.9px) * var(--type-scale));
   line-height: var(--corner-menu-mode-line, 60.95px);
