@@ -147,11 +147,13 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   min-width: 0;
+  min-height: 0;
   width: 100%;
   padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 16px);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .view-menu-panel__modes {
@@ -162,10 +164,19 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__modes {
-  gap: var(--corner-menu-mode-gap, 18px);
+  flex: 1 1 auto;
+  gap: 0;
   width: 100%;
-  height: auto;
-  justify-content: flex-start;
+  min-height: 0;
+  height: 100%;
+  justify-content: space-evenly;
+}
+
+.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+  gap: 0;
+  justify-content: center;
 }
 
 .view-menu-panel__mode-wrap {
@@ -173,11 +184,6 @@
   flex-direction: column;
   gap: clamp(10px, 1.8vh, 18px);
   width: 100%;
-}
-
-.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-wrap {
-  flex: 0 0 auto;
-  gap: var(--corner-menu-mode-gap, 18px);
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']).utility-menu--cascade-in
@@ -321,15 +327,22 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__footer {
-  flex: 1 1 auto;
-  min-width: 0;
+  display: contents;
+}
+
+.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__content-shell {
+  flex: 1 1 0;
+  height: 100%;
   min-height: 0;
-  margin-top: clamp(24px, 4vh, 40px);
-  padding: 0;
-  height: auto;
-  gap: clamp(16px, 2.5vh, 24px);
-  display: flex;
-  flex-direction: column;
+  gap: clamp(12px, 2vh, 24px);
+  background: var(--corner-menu-preview-surface, #ffffff);
+  border-radius: var(--corner-menu-preview-radius, 22px);
+  padding: clamp(16px, 2.2vh, 24px) clamp(16px, 2.5vw, 28px);
+}
+
+.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__tabs {
+  flex: 0 0 auto;
+  margin-top: clamp(16px, 2.5vh, 24px);
 }
 
 .utility-menu[data-state='closing'] .view-menu-panel__footer {
