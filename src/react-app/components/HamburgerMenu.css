@@ -120,11 +120,15 @@
   left: 0;
   width: var(--corner-settings-panel-width, 327px);
   max-width: calc(100vw - 2 * var(--page-edge-pad, 50px) - var(--corner-icon-btn-size, 87px));
-  max-height: calc(
-    100dvh - var(--page-edge-pad, 50px) - var(--page-edge-pad, 50px) -
-      var(--killchain-left-condensed-height, 87px) - 3.25rem
+  max-height: min(
+    85dvh,
+    calc(
+      100dvh - var(--page-edge-pad, 50px) - var(--corner-icon-btn-size, 87px) -
+        var(--corner-stack-gap, 12px) - 1rem
+    )
   );
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: var(--corner-lib-info-radius, 30px);
   padding: var(--corner-lib-title-py, 26px) 23px;
 }

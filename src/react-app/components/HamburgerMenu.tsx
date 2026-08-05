@@ -3,13 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGallery } from '../context/GalleryContext'
 import { CATEGORIES, type Category } from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
-import { MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT } from '../lib/globe'
+import { MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT, ARRANGEMENT_OPTIONS } from '../lib/globe'
 import { SETTINGS_MENU_ENTRANCE } from '../constants/shellMotion'
 import {
   UTILITY_MENU_CLOSE_MS,
   UTILITY_MENU_TRANSITION_MS,
 } from '../constants/utilityMenuMotion'
 import { useChromeEntranceReady } from '../hooks/useChromeEntranceReady'
+import { SettingsLibInfo } from './SettingsLibInfo'
 import './HamburgerMenu.css'
 import { CornerMenuIcon } from './corner-chrome/CornerMenuIcons'
 
@@ -72,6 +73,10 @@ export function HamburgerMenu({
     setGlobeItemCount,
     globeDisplay,
     setGlobeDisplay,
+    globeArrangement,
+    setGlobeArrangement,
+    linkCluster,
+    setLinkCluster,
     cameraControls,
     setCameraControls,
     filteredItems,
@@ -98,6 +103,28 @@ export function HamburgerMenu({
     MIN_GLOBE_ITEM_COUNT,
     Math.min(MAX_GLOBE_ITEM_COUNT, filteredItems.length),
   )
+  const isCategoryGroup = globeArrangement === 'clusters'
+  const isClusterGroup = linkCluster.enabled
+  const standardArrangements = ARRANGEMENT_OPTIONS.filter((option) => option.id !== 'clusters')
+
+  const selectCategoryGroup = () => {
+    setLinkCluster({ enabled: false })
+    setGlobeArrangement('clusters')
+  }
+
+  const selectClusterGroup = () => {
+    if (globeArrangement === 'clusters') {
+      setGlobeArrangement('even')
+    }
+    setLinkCluster({ enabled: true })
+  }
+
+  const clearGroupModes = () => {
+    setLinkCluster({ enabled: false })
+    if (globeArrangement === 'clusters') {
+      setGlobeArrangement('even')
+    }
+  }
 
   const menuContent = (
     <>
@@ -129,7 +156,41 @@ export function HamburgerMenu({
             transition={{ duration: 0.22, ease: 'easeOut' }}
             className="hamburger-menu__panel glass-surface"
           >
-            <p className="hamburger-menu__section-label">Images</p>
+            <SettingsLibInfo />
+
+            <p className="hamburger-menu__section-label">Group by</p>
+            <div className="hamburger-menu__pill-row">
+              <PillButton
+                label="Category"
+                active={isCategoryGroup}
+                onClick={() => (isCategoryGroup ? clearGroupModes() : selectCategoryGroup())}
+              />
+              <PillButton
+                label="Cluster"
+                active={isClusterGroup}
+                onClick={() => (isClusterGroup ? clearGroupModes() : selectClusterGroup())}
+              />
+            </div>
+
+            {!isCategoryGroup ? (
+              <>
+                <p className="hamburger-menu__subsection-label">Arrangement</p>
+                <div className="hamburger-menu__pill-row">
+                  {standardArrangements.map((option) => (
+                    <PillButton
+                      key={option.id}
+                      label={option.label}
+                      active={globeArrangement === option.id}
+                      onClick={() => setGlobeArrangement(option.id)}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : null}
+
+            <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
+              Images
+            </p>
             <SliderControl
               label="Included"
               min={MIN_GLOBE_ITEM_COUNT}
@@ -272,6 +333,26 @@ export function HamburgerMenu({
     >
       {menuContent}
     </motion.div>
+  )
+}
+
+function PillButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`hamburger-menu__pill${active ? ' hamburger-menu__pill--active' : ''}`}
+    >
+      {label}
+    </button>
   )
 }
 

@@ -1,0 +1,71 @@
+.settings-lib-info {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-nav, rgba(0, 0, 0, 0.08));
+}
+
+.settings-lib-info__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 1.25rem;
+  align-items: start;
+}
+
+.settings-lib-info__copy {
+  font-family: var(--font-mono);
+  font-size: 11pt;
+  font-weight: 300;
+  line-height: 15.4pt;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #8e8e8e;
+  white-space: pre-wrap;
+}
+
+.settings-lib-info__primary {
+  margin: 0 0 11.59px;
+  color: #6e6e6e;
+}
+
+.settings-lib-info__muted {
+  color: rgba(142, 142, 142, 0.33);
+}
+
+.settings-lib-info__brackets {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  vertical-align: baseline;
+}
+
+.settings-lib-info__online-dot {
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 50%;
+  background: var(--accent-green, #6af4a1);
+  animation: settings-lib-info-online-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes settings-lib-info-online-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.settings-lib-info__status {
+  margin: 0;
+  color: #6e6e6e;
+}
+
+.settings-lib-info .network-dot-orb {
+  width: 50px;
+  height: 50px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+}
