@@ -59,6 +59,7 @@ import {
   type ImageCluster,
 } from '../../lib/threads'
 import type { GalleryItem } from '../../types/gallery'
+import { CATEGORIES } from '../../types/gallery'
 import {
   clusterElementPositions,
   CLUSTER_FOCUS_CAMERA_Z,
@@ -108,6 +109,7 @@ import {
 
 const COMPLEXITY_FOCUS_DURATION_MS = 1000
 const COMPLEXITY_BLEND_RATE = 0.012
+const CATEGORY_BLEND_RATE = 0.012
 const COMPREHENSIVE_ZOOM_SMOOTH = 0.0025
 
 export function GlobeView({
@@ -136,6 +138,7 @@ export function GlobeView({
     selectedItem,
     activeComplexity,
     comprehensiveMode,
+    highlightedCategories,
   } = useGallery()
   const containerRef = useRef<HTMLDivElement>(null)
   const threadCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -204,6 +207,8 @@ export function GlobeView({
   const displayItemsRef = useRef<GalleryItem[]>([])
   const activeComplexityRef = useRef(activeComplexity)
   const complexityBlendRef = useRef(0)
+  const categoryBlendRef = useRef(0)
+  const highlightedCategoriesRef = useRef(highlightedCategories)
   const complexityFocusAnimRef = useRef<{
     startX: number
     startY: number
@@ -454,6 +459,7 @@ export function GlobeView({
   displayItemsRef.current = displayItems
   activeComplexityRef.current = activeComplexity
   comprehensiveModeRef.current = comprehensiveMode
+  highlightedCategoriesRef.current = highlightedCategories
 
   const applyComprehensiveCameraTarget = (complexity: typeof activeComplexity) => {
     const state = interactionStateRef.current
@@ -1461,6 +1467,13 @@ export function GlobeView({
         (complexityBlendTarget - complexityBlendRef.current) *
         (1 - Math.pow(COMPLEXITY_BLEND_RATE, timeScale))
 
+      const categoryHighlightActive =
+        highlightedCategoriesRef.current.size < CATEGORIES.length
+      const categoryBlendTarget = categoryHighlightActive ? 1 : 0
+      categoryBlendRef.current +=
+        (categoryBlendTarget - categoryBlendRef.current) *
+        (1 - Math.pow(CATEGORY_BLEND_RATE, timeScale))
+
       if (isClusters) {
         focusBlendTarget.current = clusterFocusRef.current ? 1 : 0
       } else if (
@@ -1714,7 +1727,9 @@ export function GlobeView({
         : null
 
       const complexityBlend = complexityBlendRef.current
+      const categoryBlend = categoryBlendRef.current
       const activeComplexity = activeComplexityRef.current
+      const highlightedCategories = highlightedCategoriesRef.current
       const comprehensiveActive =
         comprehensiveModeRef.current &&
         Boolean(activeComplexity) &&
@@ -1991,6 +2006,17 @@ export function GlobeView({
           }
         }
 
+        if (
+          !clusterDimActive &&
+          !constellationFocusId &&
+          categoryHighlightActive &&
+          categoryBlend > 0.01
+        ) {
+          if (!highlightedCategories.has(item.category)) {
+            opacity *= 1 - categoryBlend * (1 - COMPLEXITY_DIM_OPACITY)
+          }
+        }
+
         if (el.style.zIndex !== zIndex) el.style.zIndex = zIndex
 
         if (depthFade > 0) {
@@ -2021,13 +2047,20 @@ export function GlobeView({
             obj.userData.globePointerEvents = nextPointerEvents
           }
         } else if (
-          activeComplexity &&
-          complexityBlend > 0.01 &&
           !clusterDimActive &&
-          !constellationFocusId
+          !constellationFocusId &&
+          ((activeComplexity && complexityBlend > 0.01) ||
+            (categoryHighlightActive && categoryBlend > 0.01))
         ) {
-          const inComplexitySelection = item.complexity === activeComplexity
-          const nextPointerEvents = inComplexitySelection ? 'auto' : 'none'
+          const complexityFilterActive =
+            Boolean(activeComplexity) && complexityBlend > 0.01
+          const categoryFilterActive = categoryHighlightActive && categoryBlend > 0.01
+          const matchesComplexity =
+            !complexityFilterActive || item.complexity === activeComplexity
+          const matchesCategory =
+            !categoryFilterActive || highlightedCategories.has(item.category)
+          const nextPointerEvents =
+            matchesComplexity && matchesCategory ? 'auto' : 'none'
           if (obj.userData.globePointerEvents !== nextPointerEvents) {
             el.style.pointerEvents = nextPointerEvents
             obj.userData.globePointerEvents = nextPointerEvents
@@ -2138,6 +2171,7 @@ export function GlobeView({
       setGlobeDraggingRef.current(false)
       setHoverLabel(null)
       complexityBlendRef.current = 0
+      categoryBlendRef.current = 0
       complexityFocusAnimRef.current = null
     }
   }, [

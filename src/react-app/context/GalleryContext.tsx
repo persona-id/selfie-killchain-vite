@@ -72,6 +72,9 @@ type GalleryContextValue = {
   activeCategories: Set<Category>
   toggleCategory: (category: Category) => void
   selectAllCategories: () => void
+  highlightedCategories: Set<Category>
+  toggleHighlightCategory: (category: Category) => void
+  selectAllHighlightCategories: () => void
   activeComplexity: Complexity | null
   setActiveComplexity: (complexity: Complexity | null) => void
   filteredItems: GalleryItem[]
@@ -201,6 +204,9 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   const [activeCategories, setActiveCategories] = useState<Set<Category>>(
     () => new Set(stored.activeCategories),
   )
+  const [highlightedCategories, setHighlightedCategories] = useState<Set<Category>>(
+    () => new Set(CATEGORIES),
+  )
   const [activeComplexity, setActiveComplexityState] = useState<Complexity | null>(
     stored.activeComplexity,
   )
@@ -308,6 +314,23 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
 
   const selectAllCategories = useCallback(() => {
     setActiveCategories(new Set(CATEGORIES))
+  }, [])
+
+  const toggleHighlightCategory = useCallback((category: Category) => {
+    setHighlightedCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(category)) {
+        if (next.size === 1) return prev
+        next.delete(category)
+      } else {
+        next.add(category)
+      }
+      return next
+    })
+  }, [])
+
+  const selectAllHighlightCategories = useCallback(() => {
+    setHighlightedCategories(new Set(CATEGORIES))
   }, [])
 
   const setActiveComplexity = useCallback((complexity: Complexity | null) => {
@@ -438,6 +461,9 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     activeCategories,
     toggleCategory,
     selectAllCategories,
+    highlightedCategories,
+    toggleHighlightCategory,
+    selectAllHighlightCategories,
     activeComplexity,
     setActiveComplexity,
     filteredItems,

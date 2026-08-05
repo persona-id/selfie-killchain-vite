@@ -24,7 +24,7 @@
 }
 
 .killchain-corner-chrome .complexity-corner__icon-slot--open .corner-menu__trigger-icon-img {
-  transform: rotate(45deg);
+  transform: none;
 }
 
 .killchain-corner-chrome .hamburger-menu__trigger:hover .corner-menu__trigger-icon-img,

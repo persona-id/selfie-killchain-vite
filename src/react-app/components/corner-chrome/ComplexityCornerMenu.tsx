@@ -1,7 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { Complexity } from '../../types/gallery'
+import { useGallery } from '../../context/GalleryContext'
+import { categoryLabel } from '../../lib/taxonomy'
+import { CATEGORIES, type Category, type Complexity } from '../../types/gallery'
 import { SETTINGS_MENU_ENTRANCE } from '../../constants/shellMotion'
 import {
   UTILITY_MENU_CASCADE_STAGGER_MS,
@@ -11,17 +13,21 @@ import {
 import './ComplexityCornerMenu.css'
 import { CornerMenuIcon } from './CornerMenuIcons'
 
-const COMPLEXITY_ORDER: Complexity[] = ['High', 'Moderate', 'Low']
+const COMPLEXITY_ORDER: Complexity[] = ['Low', 'Moderate', 'High']
 
 const ITEM_TRANSITION = {
   duration: 0.32,
   ease: [0.33, 1, 0.68, 1] as const,
 }
 
-type ComplexityMenuState = 'idle' | 'opening' | 'open' | 'closing'
+type FilterMenuState = 'idle' | 'opening' | 'open' | 'closing'
 
-function useComplexityMenuState() {
-  const [state, setState] = useState<ComplexityMenuState>('idle')
+type FilterRow =
+  | { kind: 'complexity'; value: Complexity }
+  | { kind: 'category'; value: Category }
+
+function useFilterMenuState() {
+  const [state, setState] = useState<FilterMenuState>('idle')
 
   useEffect(() => {
     if (state === 'opening') {
@@ -43,38 +49,83 @@ function useComplexityMenuState() {
     })
   }, [])
 
-  const close = useCallback(() => {
-    setState((current) => {
-      if (current === 'opening' || current === 'open') return 'closing'
-      return current
-    })
-  }, [])
-
   return {
     state,
     toggle,
-    close,
-    showList: state === 'open',
+    showPanel: state === 'open',
     triggerLocked: state !== 'idle',
   }
 }
 
 interface ComplexityCornerMenuProps {
-  activeComplexity: Complexity | null
-  onSelect: (complexity: Complexity) => void
   entranceReady?: boolean
   hidden?: boolean
 }
 
 export function ComplexityCornerMenu({
-  activeComplexity,
-  onSelect,
   entranceReady = true,
   hidden = false,
 }: ComplexityCornerMenuProps) {
-  const { state, toggle, close, showList, triggerLocked } = useComplexityMenuState()
-  const iconOpen = state === 'opening' || state === 'open'
+  const {
+    activeComplexity,
+    setActiveComplexity,
+    highlightedCategories,
+    toggleHighlightCategory,
+  } = useGallery()
+  const { state, toggle, showPanel, triggerLocked } = useFilterMenuState()
   const visible = entranceReady && !hidden
+
+  const filterRows = useMemo<FilterRow[]>(
+    () => [
+      ...COMPLEXITY_ORDER.map((value) => ({ kind: 'complexity' as const, value })),
+      ...CATEGORIES.map((value) => ({ kind: 'category' as const, value })),
+    ],
+    [],
+  )
+
+  const handleComplexitySelect = (complexity: Complexity) => {
+    setActiveComplexity(activeComplexity === complexity ? null : complexity)
+  }
+
+  const renderFilterButton = (row: FilterRow, index: number) => {
+    const staggerIndex = filterRows.length - 1 - index
+    const isActive =
+      row.kind === 'complexity'
+        ? row.value === activeComplexity
+        : highlightedCategories.has(row.value)
+    const label =
+      row.kind === 'complexity' ? row.value : categoryLabel(row.value)
+    const onClick =
+      row.kind === 'complexity'
+        ? () => handleComplexitySelect(row.value)
+        : () => toggleHighlightCategory(row.value)
+
+    return (
+      <motion.button
+        key={`${row.kind}-${row.value}`}
+        type="button"
+        className={`complexity-corner__item${
+          isActive ? ' complexity-corner__item--active' : ''
+        }`}
+        onClick={onClick}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{
+          ...ITEM_TRANSITION,
+          delay: staggerIndex * (UTILITY_MENU_CASCADE_STAGGER_MS / 1000),
+        }}
+      >
+        <span className="complexity-corner__label">{label}</span>
+        <span
+          className={`complexity-corner__dot${
+            isActive ? ' complexity-corner__dot--active' : ''
+          }`}
+          aria-hidden
+        />
+      </motion.button>
+    )
+  }
 
   return (
     <motion.div
@@ -86,73 +137,55 @@ export function ComplexityCornerMenu({
     >
       <div className="complexity-corner__cluster">
         <AnimatePresence initial={false}>
-          {showList ? (
+          {showPanel ? (
             <motion.div
-              key="complexity-list"
-              className="complexity-corner__list"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              key="filter-panel"
+              className="complexity-corner__panel glass-surface"
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={ITEM_TRANSITION}
             >
-              {COMPLEXITY_ORDER.map((complexity, index) => {
-                const isActive = complexity === activeComplexity
-                const staggerIndex = COMPLEXITY_ORDER.length - 1 - index
-                return (
-                  <motion.button
-                    key={complexity}
-                    type="button"
-                    className={`complexity-corner__item glass-surface${
-                      isActive ? ' complexity-corner__item--active' : ''
-                    }`}
-                    onClick={() => {
-                      if (isActive) close()
-                      onSelect(complexity)
-                    }}
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 12 }}
-                    transition={{
-                      ...ITEM_TRANSITION,
-                      delay: staggerIndex * (UTILITY_MENU_CASCADE_STAGGER_MS / 1000),
-                    }}
-                  >
-                    <span className="complexity-corner__label">{complexity}</span>
-                    <span
-                      className={`complexity-corner__dot${
-                        isActive ? ' complexity-corner__dot--active' : ''
-                      }`}
-                      aria-hidden
-                    />
-                  </motion.button>
-                )
-              })}
+              <div className="complexity-corner__section">
+                <p className="complexity-corner__section-label">Complexity</p>
+                <div className="complexity-corner__items">
+                  {COMPLEXITY_ORDER.map((complexity, index) =>
+                    renderFilterButton({ kind: 'complexity', value: complexity }, index),
+                  )}
+                </div>
+              </div>
+
+              <div className="complexity-corner__section">
+                <p className="complexity-corner__section-label">Categories</p>
+                <div className="complexity-corner__items">
+                  {CATEGORIES.map((category, index) =>
+                    renderFilterButton(
+                      { kind: 'category', value: category },
+                      COMPLEXITY_ORDER.length + index,
+                    ),
+                  )}
+                </div>
+              </div>
             </motion.div>
           ) : null}
         </AnimatePresence>
 
-        <div className="complexity-corner__trigger-anchor">
-          <button
-            type="button"
-            className={`complexity-corner__trigger glass-surface${
-              triggerLocked ? ' complexity-corner__trigger--open' : ''
-            }`}
-            aria-label={iconOpen ? 'Close Fraud Complexity menu' : 'Fraud Complexity'}
-            aria-expanded={state === 'open' || state === 'opening'}
-            onClick={toggle}
-          >
-            <span className="complexity-corner__trigger-label">
-              <span className="complexity-corner__trigger-label-text">Fraud Complexity</span>
-            </span>
-            <span
-              className={`complexity-corner__icon-slot${
-                triggerLocked ? ' complexity-corner__icon-slot--open' : ''
-              }`}
-              aria-hidden
-            >
-              <CornerMenuIcon icon="complexity" className="corner-menu__trigger-icon" />
-            </span>
-          </button>
-        </div>
+        <button
+          type="button"
+          className={`complexity-corner__trigger glass-surface${
+            triggerLocked ? ' complexity-corner__trigger--open' : ''
+          }`}
+          aria-label={showPanel ? 'Close filter menu' : 'Filter'}
+          aria-expanded={state === 'open' || state === 'opening'}
+          onClick={toggle}
+        >
+          <span className="complexity-corner__trigger-label">
+            <span className="complexity-corner__trigger-label-text">Filter</span>
+          </span>
+          <span className="complexity-corner__icon-slot" aria-hidden>
+            <CornerMenuIcon icon="search" className="corner-menu__trigger-icon" />
+          </span>
+        </button>
       </div>
     </motion.div>
   )

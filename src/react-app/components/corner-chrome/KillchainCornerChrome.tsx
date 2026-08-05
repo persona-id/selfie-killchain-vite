@@ -76,10 +76,8 @@ export function KillchainCornerChrome({
       ) : null}
 
       <div className="killchain-corner-chrome__corner killchain-corner-chrome__corner--br">
-        {showComplexity && left.complexityNav ? (
+        {showComplexity ? (
           <ComplexityCornerMenu
-            activeComplexity={left.complexityNav.activeComplexity}
-            onSelect={left.complexityNav.onSelect}
             entranceReady={entranceReady && !hidden}
             hidden={hidden}
           />

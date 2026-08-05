@@ -3,6 +3,7 @@ import './CornerMenuIcons.css'
 const CORNER_MENU_ICON_SRC = {
   settings: '/icons/corner-chrome/settings.png',
   complexity: '/icons/corner-chrome/complexity.png',
+  search: '/icons/search.svg',
 } as const
 
 export function CornerMenuIcon({
