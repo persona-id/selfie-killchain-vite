@@ -66,23 +66,17 @@ export function FitToScreenNavIcon({ active = false }: { active?: boolean }) {
 
 export function ResetNavIcon({ active = false }: { active?: boolean }) {
   return (
-    <UtilityActionIcon active={active} viewBox="0 0 28 30">
-      <path
-        d="M16.25 5.25C9.25 5.25 4.75 9.75 4.75 15.25C4.75 20.25 8.25 24.25 13.25 25.25"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M11.25 5.25H16.25L14.75 9.25"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </UtilityActionIcon>
+    <img
+      src="/icons/utility/reset.png"
+      alt=""
+      width={UTILITY_ICON_SIZE}
+      height={UTILITY_ICON_SIZE}
+      className={`utility-nav-icon utility-nav-icon--action${
+        active ? ' utility-nav-icon--action-active' : ''
+      }`}
+      draggable={false}
+      aria-hidden
+    />
   )
 }
 
