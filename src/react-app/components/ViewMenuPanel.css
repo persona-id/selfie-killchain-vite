@@ -282,16 +282,19 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
 .view-menu-panel__mode-arrow svg {
   width: clamp(32.2px, 5.175vw, 52.9px);
   height: auto;
+  overflow: visible;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-arrow svg {
   width: var(--corner-menu-mode-icon, 32.1px);
   height: var(--corner-menu-mode-icon, 32.1px);
+  overflow: visible;
 }
 
 .view-menu-panel__mode:not(.view-menu-panel__mode--active):not(:disabled):hover .view-menu-panel__mode-label,

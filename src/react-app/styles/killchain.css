@@ -53,7 +53,7 @@
   --corner-menu-modes-height: 510px;
   --corner-menu-mode-gap: 0px;
   --corner-menu-mode-font: 52.9px;
-  --corner-menu-mode-line: 60.95px;
+  --corner-menu-mode-line: calc(60.95px * 1.25);
   --corner-menu-mode-icon: 32.1px;
   --view-menu-panel-section-gap: 24px;
   --corner-menu-titles-block-min-height: calc(3 * var(--corner-menu-mode-line) + 2px);

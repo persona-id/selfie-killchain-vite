@@ -28,8 +28,9 @@ export function CornerArrowIcon({ className }: { className?: string }) {
       className={className}
       width="32"
       height="32"
-      viewBox="0 0 32 32"
+      viewBox="-2 -2 36 36"
       fill="none"
+      overflow="visible"
       aria-hidden
     >
       <path
