@@ -19,6 +19,7 @@ import {
   computeAnimationZoomOffset,
   computeClusterLayout,
   computeComplexityFocusRotation,
+  computeComprehensiveCameraZ,
   computeGlobeOverviewCameraZ,
   createGlobeRenderers,
   createPhotoElement,
@@ -26,6 +27,7 @@ import {
   getGlobePositions,
   globeStaggeredLoadDelayMs,
   imageDimensions,
+  isGlobePointFacingCamera,
   layoutBoundingRadius,
   placeOnSphere,
   pullClusterIntoViewport,
@@ -33,6 +35,9 @@ import {
   shortestAngleDelta,
   viewAxisAngularDistance,
   updateObjectVisibility,
+  applyComplexityPositionPull,
+  COMPLEXITY_FOCUS_PULL_AWAY,
+  COMPLEXITY_FOCUS_PULL_TOWARD,
 } from '../../lib/globe'
 import {
   attachGlobeInteraction,
@@ -103,6 +108,7 @@ import {
 
 const COMPLEXITY_FOCUS_DURATION_MS = 1000
 const COMPLEXITY_BLEND_RATE = 0.012
+const COMPREHENSIVE_ZOOM_SMOOTH = 0.0025
 
 export function GlobeView({
   introLocked = false,
@@ -129,6 +135,7 @@ export function GlobeView({
     closeModal,
     selectedItem,
     activeComplexity,
+    comprehensiveMode,
   } = useGallery()
   const containerRef = useRef<HTMLDivElement>(null)
   const threadCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -204,6 +211,9 @@ export function GlobeView({
     targetY: number
     startedAt: number
   } | null>(null)
+  const comprehensiveModeRef = useRef(comprehensiveMode)
+  const comprehensiveZoomTargetRef = useRef<number | null>(null)
+  const preComprehensiveCameraZRef = useRef<number | null>(null)
   const cssRendererRef = useRef<ReturnType<typeof createGlobeRenderers>['cssRenderer'] | null>(null)
   const globeGroupRef = useRef<THREE.Group | null>(null)
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
@@ -443,6 +453,55 @@ export function GlobeView({
   globeArrangementRef.current = globeArrangement
   displayItemsRef.current = displayItems
   activeComplexityRef.current = activeComplexity
+  comprehensiveModeRef.current = comprehensiveMode
+
+  const applyComprehensiveCameraTarget = (complexity: typeof activeComplexity) => {
+    const state = interactionStateRef.current
+    if (!state || !comprehensiveModeRef.current) return
+
+    if (complexity) {
+      if (preComprehensiveCameraZRef.current == null) {
+        preComprehensiveCameraZRef.current = state.cameraDistance
+      }
+      const targetZ = computeComprehensiveCameraZ(layoutFieldRadiusRef.current)
+      state.targetCameraDistance = targetZ
+      comprehensiveZoomTargetRef.current = targetZ
+      startComplexityFocusAnimation()
+      return
+    }
+
+    const restoreZ =
+      preComprehensiveCameraZRef.current ?? overviewCameraZRef.current
+    state.targetCameraDistance = restoreZ
+    comprehensiveZoomTargetRef.current = null
+    preComprehensiveCameraZRef.current = null
+  }
+
+  useEffect(() => {
+    if (!comprehensiveMode) {
+      const state = interactionStateRef.current
+      if (state && comprehensiveZoomTargetRef.current != null) {
+        state.targetCameraDistance = overviewCameraZRef.current
+        comprehensiveZoomTargetRef.current = null
+        preComprehensiveCameraZRef.current = null
+      }
+      for (const obj of objectsRef.current) {
+        const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
+        if (sphereLocal) obj.position.copy(sphereLocal)
+      }
+      return
+    }
+    applyComprehensiveCameraTarget(activeComplexity)
+  }, [comprehensiveMode, activeComplexity])
+
+  useEffect(() => {
+    if (comprehensiveMode && !activeComplexity) {
+      for (const obj of objectsRef.current) {
+        const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
+        if (sphereLocal) obj.position.copy(sphereLocal)
+      }
+    }
+  }, [comprehensiveMode, activeComplexity])
 
   useEffect(() => {
     if (introLocked) {
@@ -527,7 +586,11 @@ export function GlobeView({
   }
 
   useEffect(() => {
-    startComplexityFocusAnimation()
+    if (!comprehensiveModeRef.current) {
+      startComplexityFocusAnimation()
+      return
+    }
+    applyComprehensiveCameraTarget(activeComplexity)
   }, [activeComplexity, displayItems, globeArrangement])
 
   const setHoverLabel = (item: GalleryItem | null) => {
@@ -1587,17 +1650,24 @@ export function GlobeView({
       const focusSnap =
         clusterFocused && focusEnterAge < 1200 && Math.abs(delta) > 0.5
       const focusPullBack = clusterFocused && delta > 0
-      const zoomSmooth = focusSnap
-        ? 1
-        : focusPullBack
-          ? 1 - Math.pow(0.015, timeScale)
-          : 1 - Math.pow(0.0012, timeScale)
+      const comprehensiveZoomActive =
+        comprehensiveModeRef.current &&
+        Boolean(activeComplexityRef.current) &&
+        comprehensiveZoomTargetRef.current != null
+      const zoomSmooth = comprehensiveZoomActive
+        ? 1 - Math.pow(COMPREHENSIVE_ZOOM_SMOOTH, timeScale)
+        : focusSnap
+          ? 1
+          : focusPullBack
+            ? 1 - Math.pow(0.015, timeScale)
+            : 1 - Math.pow(0.0012, timeScale)
       interactionState.cameraDistance += delta * zoomSmooth
 
       const allowAutoZoom =
         !interactionState.dragActive &&
         !clusterFocused &&
         !inComplexityFocus &&
+        !comprehensiveZoomActive &&
         !selectedItemRef.current
       const autoZoomRamp = 1 - introExitBlend
       const autoZoomOffset =
@@ -1645,6 +1715,13 @@ export function GlobeView({
 
       const complexityBlend = complexityBlendRef.current
       const activeComplexity = activeComplexityRef.current
+      const comprehensiveActive =
+        comprehensiveModeRef.current &&
+        Boolean(activeComplexity) &&
+        complexityBlend > 0.01 &&
+        !clusterDimActive &&
+        !constellationFocusId &&
+        !linkClusterFocused
 
       const introLockedNow = introLockedRef.current
       const introVisualProgress = introLockedNow ? introProgress : 1
@@ -1691,7 +1768,29 @@ export function GlobeView({
 
         const item = obj.userData.item as GalleryItem
 
+        const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
+        if (sphereLocal && comprehensiveActive) {
+          const pullAmount =
+            item.complexity === activeComplexity
+              ? COMPLEXITY_FOCUS_PULL_TOWARD * complexityBlend
+              : -COMPLEXITY_FOCUS_PULL_AWAY * complexityBlend
+          applyComplexityPositionPull(
+            obj,
+            globe,
+            camera,
+            sphereLocal,
+            pullAmount,
+          )
+        }
+
         if (!updateObjectVisibility(obj, camera, el, visibilityZ)) continue
+
+        if (comprehensiveActive && isGlobePointFacingCamera(obj, camera)) {
+          if (el.style.opacity !== '0') el.style.opacity = '0'
+          el.style.pointerEvents = 'none'
+          obj.userData.globePointerEvents = 'none'
+          continue
+        }
 
         if (introVisualActive) {
           const isRingMember = Boolean(obj.userData.introIsRingMember)

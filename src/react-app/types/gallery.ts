@@ -97,6 +97,8 @@ export type ConstellationSettings = {
   lineOpacity: number
 }
 
+export const DEFAULT_COMPREHENSIVE_MODE = false
+
 export const DEFAULT_CONSTELLATION: ConstellationSettings = {
   clusterSpread: 1,
   elementSeparation: 1,
@@ -109,8 +111,6 @@ export const DEFAULT_CONSTELLATION: ConstellationSettings = {
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'
-
-export const DEFAULT_COMPREHENSIVE_MODE = false
 
 export type GalleryItem = {
   id: string

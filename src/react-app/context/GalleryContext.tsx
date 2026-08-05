@@ -22,6 +22,7 @@ import {
   DEFAULT_LINK_CLUSTER,
   DEFAULT_CAMERA_CONTROLS,
   DEFAULT_CONSTELLATION,
+  DEFAULT_COMPREHENSIVE_MODE,
   type Complexity,
 } from '../types/gallery'
 import {
@@ -36,7 +37,6 @@ const STORAGE_KEY = 'persona-fas-gallery'
 type StoredState = {
   activeCategories: Category[]
   activeComplexity: Complexity | null
-  comprehensiveMode: boolean
   backgroundColor: string
   globeArrangement: GlobeArrangement
   globeAnimation: GlobeAnimation
@@ -45,6 +45,7 @@ type StoredState = {
   linkCluster: LinkClusterSettings
   cameraControls: CameraControlSettings
   constellation: ConstellationSettings
+  comprehensiveMode: boolean
 }
 
 type GalleryContextValue = {
@@ -66,13 +67,13 @@ type GalleryContextValue = {
   setCameraControls: (settings: Partial<CameraControlSettings>) => void
   setConstellation: (settings: Partial<ConstellationSettings>) => void
   setGlobeAnimation: (animation: GlobeAnimation) => void
+  comprehensiveMode: boolean
+  setComprehensiveMode: (enabled: boolean) => void
   activeCategories: Set<Category>
   toggleCategory: (category: Category) => void
   selectAllCategories: () => void
   activeComplexity: Complexity | null
   setActiveComplexity: (complexity: Complexity | null) => void
-  comprehensiveMode: boolean
-  setComprehensiveMode: (enabled: boolean) => void
   filteredItems: GalleryItem[]
   categoryCounts: Record<Category, number>
   selectedItem: GalleryItem | null
@@ -108,7 +109,6 @@ function loadStoredState(): StoredState {
       return {
         activeCategories: [...CATEGORIES],
         activeComplexity: null,
-        comprehensiveMode: false,
         backgroundColor: KILLCHAIN_PAGE_BG,
         globeArrangement: 'even',
         globeAnimation: 'drift',
@@ -117,6 +117,7 @@ function loadStoredState(): StoredState {
         linkCluster: { ...DEFAULT_LINK_CLUSTER },
         cameraControls: { ...DEFAULT_CAMERA_CONTROLS },
         constellation: { ...DEFAULT_CONSTELLATION },
+        comprehensiveMode: DEFAULT_COMPREHENSIVE_MODE,
       }
     }
     const parsed = JSON.parse(raw) as StoredState
@@ -125,7 +126,6 @@ function loadStoredState(): StoredState {
         ? parsed.activeCategories
         : [...CATEGORIES],
       activeComplexity: parsed.activeComplexity ?? null,
-      comprehensiveMode: parsed.comprehensiveMode ?? false,
       backgroundColor: normalizeHex(
         parsed.backgroundColor?.toLowerCase() === '#eeeeee'
           ? KILLCHAIN_PAGE_BG
@@ -175,12 +175,12 @@ function loadStoredState(): StoredState {
         fieldLayout:
           parsed.constellation?.fieldLayout ?? DEFAULT_CONSTELLATION.fieldLayout,
       },
+      comprehensiveMode: parsed.comprehensiveMode ?? DEFAULT_COMPREHENSIVE_MODE,
     }
   } catch {
     return {
       activeCategories: [...CATEGORIES],
       activeComplexity: null,
-      comprehensiveMode: false,
       backgroundColor: KILLCHAIN_PAGE_BG,
       globeArrangement: 'even',
       globeAnimation: 'drift',
@@ -189,6 +189,7 @@ function loadStoredState(): StoredState {
       linkCluster: { ...DEFAULT_LINK_CLUSTER },
       cameraControls: { ...DEFAULT_CAMERA_CONTROLS },
       constellation: { ...DEFAULT_CONSTELLATION },
+      comprehensiveMode: DEFAULT_COMPREHENSIVE_MODE,
     }
   }
 }
@@ -202,9 +203,6 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   )
   const [activeComplexity, setActiveComplexityState] = useState<Complexity | null>(
     stored.activeComplexity,
-  )
-  const [comprehensiveMode, setComprehensiveModeState] = useState(
-    stored.comprehensiveMode,
   )
   const [backgroundColor, setBackgroundColorState] = useState(
     normalizeHex(stored.backgroundColor),
@@ -230,6 +228,9 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   const [constellation, setConstellationState] = useState<ConstellationSettings>(
     stored.constellation,
   )
+  const [comprehensiveMode, setComprehensiveModeState] = useState(
+    stored.comprehensiveMode,
+  )
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
   const [modalScope, setModalScope] = useState<GalleryItem[] | null>(null)
 
@@ -246,7 +247,6 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       JSON.stringify({
         activeCategories: [...activeCategories],
         activeComplexity,
-        comprehensiveMode,
         backgroundColor,
         globeArrangement,
         globeAnimation,
@@ -255,13 +255,13 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
         linkCluster,
         cameraControls,
         constellation,
+        comprehensiveMode,
       }),
     )
 
   }, [
     activeCategories,
     activeComplexity,
-    comprehensiveMode,
     backgroundColor,
     globeArrangement,
     globeAnimation,
@@ -270,6 +270,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     linkCluster,
     cameraControls,
     constellation,
+    comprehensiveMode,
   ])
 
   const categoryCounts = useMemo(() => {
@@ -311,10 +312,6 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
 
   const setActiveComplexity = useCallback((complexity: Complexity | null) => {
     setActiveComplexityState(complexity)
-  }, [])
-
-  const setComprehensiveMode = useCallback((enabled: boolean) => {
-    setComprehensiveModeState(enabled)
   }, [])
 
   const setBackgroundColor = useCallback((color: string) => {
@@ -388,6 +385,10 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const setComprehensiveMode = useCallback((enabled: boolean) => {
+    setComprehensiveModeState(enabled)
+  }, [])
+
   const openModal = useCallback((item: GalleryItem) => {
     setModalScope(null)
     setSelectedItem(item)
@@ -432,13 +433,13 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     setCameraControls,
     constellation,
     setConstellation,
+    comprehensiveMode,
+    setComprehensiveMode,
     activeCategories,
     toggleCategory,
     selectAllCategories,
     activeComplexity,
     setActiveComplexity,
-    comprehensiveMode,
-    setComprehensiveMode,
     filteredItems,
     categoryCounts,
     selectedItem,

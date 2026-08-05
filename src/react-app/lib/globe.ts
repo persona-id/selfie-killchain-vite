@@ -17,6 +17,7 @@ export const MAX_GLOBE_ITEM_COUNT = 500
 export const GLOBE_RADIUS = 420
 export const GLOBE_CAMERA_FOV = 42
 export const GLOBE_OVERVIEW_SCREEN_FRACTION = 0.6
+export const GLOBE_COMPREHENSIVE_SCREEN_FRACTION = 1
 export const GLOBE_LOAD_SPAN_MS = 2400
 export const GLOBE_BLUR_IN_MIN_MS = 900
 export const GLOBE_INTRO_BLUR_IN_MIN_MS = 600
@@ -447,6 +448,38 @@ export function computeGlobeOverviewCameraZ(
   return boundingRadius / tan
 }
 
+/** Closest overview zoom so the globe fills the viewport (comprehensive mode). */
+export function computeComprehensiveCameraZ(
+  boundingRadius: number,
+  fovDeg = GLOBE_CAMERA_FOV,
+): number {
+  const fillZ = computeGlobeOverviewCameraZ(
+    boundingRadius,
+    fovDeg,
+    GLOBE_COMPREHENSIVE_SCREEN_FRACTION,
+  )
+  return Math.min(fillZ, MIN_CAMERA_Z)
+}
+
+const _globeFacingOrigin = new THREE.Vector3()
+const _globeFacingOutward = new THREE.Vector3()
+const _globeFacingToCamera = new THREE.Vector3()
+
+export function isGlobePointFacingCamera(
+  object: CSS3DObject,
+  camera: THREE.Camera,
+  globeCenter = _globeFacingOrigin,
+): boolean {
+  _worldPos.setFromMatrixPosition(object.matrixWorld)
+  _globeFacingOutward.copy(_worldPos).sub(globeCenter)
+  if (_globeFacingOutward.lengthSq() < 1e-6) return true
+  _globeFacingOutward.normalize()
+  _globeFacingToCamera.copy(camera.position).sub(_worldPos)
+  if (_globeFacingToCamera.lengthSq() < 1e-6) return true
+  _globeFacingToCamera.normalize()
+  return _globeFacingOutward.dot(_globeFacingToCamera) > 0.04
+}
+
 export function layoutBoundingRadius(
   positions: THREE.Vector3[],
   fallbackRadius: number,
@@ -869,28 +902,6 @@ export function billboardTowardCamera(
   camera: THREE.Camera,
 ): void {
   object.lookAt(camera.position)
-}
-
-export const COMPREHENSIVE_VIEWPORT_MARGIN = 0.02
-
-const _hemGlobeCenter = new THREE.Vector3()
-const _hemObjDir = new THREE.Vector3()
-const _hemCamDir = new THREE.Vector3()
-
-export function isGlobeObjectCameraFacing(
-  object: CSS3DObject,
-  globe: THREE.Group,
-  camera: THREE.Camera,
-  threshold = 0.05,
-): boolean {
-  _hemGlobeCenter.setFromMatrixPosition(globe.matrixWorld)
-  _hemObjDir.setFromMatrixPosition(object.matrixWorld).sub(_hemGlobeCenter)
-  if (_hemObjDir.lengthSq() < 1e-6) return false
-  _hemObjDir.normalize()
-  _hemCamDir.copy(camera.position).sub(_hemGlobeCenter)
-  if (_hemCamDir.lengthSq() < 1e-6) return false
-  _hemCamDir.normalize()
-  return _hemObjDir.dot(_hemCamDir) > threshold
 }
 
 export function updateObjectVisibility(

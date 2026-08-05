@@ -160,7 +160,24 @@ export function HamburgerMenu({
           >
             <SettingsLibInfo />
 
-            <p className="hamburger-menu__section-label">Group by</p>
+            <p className="hamburger-menu__section-label">Comprehensive mode</p>
+            <button
+              type="button"
+              onClick={() => setComprehensiveMode(!comprehensiveMode)}
+              className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                comprehensiveMode
+                  ? 'hamburger-menu__list-btn--active'
+                  : 'hamburger-menu__list-btn--inactive'
+              }`}
+            >
+              {comprehensiveMode
+                ? 'On — zoom fills screen on complexity'
+                : 'Off — standard globe view'}
+            </button>
+
+            <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
+              Group by
+            </p>
             <div className="hamburger-menu__pill-row">
               <PillButton
                 label="Category"
@@ -189,21 +206,6 @@ export function HamburgerMenu({
                 </div>
               </>
             ) : null}
-
-            <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
-              View
-            </p>
-            <button
-              type="button"
-              onClick={() => setComprehensiveMode(!comprehensiveMode)}
-              className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                comprehensiveMode
-                  ? 'hamburger-menu__list-btn--active'
-                  : 'hamburger-menu__list-btn--inactive'
-              }`}
-            >
-              Comprehensive mode
-            </button>
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
               Images
