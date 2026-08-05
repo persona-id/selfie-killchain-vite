@@ -23,7 +23,7 @@
   left: 0;
   display: flex;
   align-items: flex-start;
-  max-width: calc(100% - var(--utility-menu-open-min-width, 432px) - 1rem);
+  max-width: calc(100% - var(--killchain-side-panel-width) - 1rem);
 }
 
 .killchain-corner-chrome__corner--tr {

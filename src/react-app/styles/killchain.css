@@ -41,11 +41,9 @@
   --corner-lib-info-width: 327px;
   --corner-lib-info-radius: 30px;
   --corner-lib-gap: 14px;
-  --corner-menu-min-width: 432px;
-  --corner-menu-max-width: calc(100vw - 2 * var(--page-edge-pad));
-  --utility-menu-open-min-width: var(--corner-menu-min-width);
-  --utility-menu-open-max-width: var(--corner-menu-max-width);
-  --utility-menu-open-max-height: 80vh;
+  --utility-menu-open-width: var(--killchain-side-panel-width);
+  --utility-menu-open-max-width: calc(100vw - 2 * var(--page-edge-pad));
+  --utility-menu-open-max-height: var(--killchain-side-panel-height);
   --corner-menu-radius: 29px;
   --corner-menu-pad-start: 35px;
   --corner-menu-pad-end: 26px;
@@ -73,7 +71,6 @@
   --killchain-side-panel-width: calc(
     542px * var(--killchain-panel-width-scale) * var(--killchain-panel-width-boost)
   );
-  --utility-menu-open-width: max-content;
   --killchain-deconstruct-content-width: calc(
     var(--killchain-side-panel-width) - 2 * var(--killchain-panel-content-inset)
   );

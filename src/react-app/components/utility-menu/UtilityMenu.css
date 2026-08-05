@@ -107,11 +107,11 @@
 
 .utility-menu[data-state='opening'] .utility-menu__shell,
 .utility-menu[data-state='open'] .utility-menu__shell {
-  width: var(--utility-menu-open-width, max-content);
-  min-width: var(--utility-menu-open-min-width, 432px);
+  width: var(--utility-menu-open-width, var(--killchain-side-panel-width));
+  min-width: 0;
   max-width: var(--utility-menu-open-max-width, calc(100vw - 2 * var(--page-edge-pad)));
-  height: auto;
-  max-height: var(--utility-menu-open-max-height, 80vh);
+  height: var(--utility-menu-open-max-height, var(--killchain-side-panel-height));
+  max-height: var(--utility-menu-open-max-height, var(--killchain-side-panel-height));
   border-radius: var(--corner-menu-radius, 29px);
   display: flex;
   flex-direction: column;
@@ -203,7 +203,7 @@
 .utility-menu[data-state='opening'] .utility-menu__body,
 .utility-menu[data-state='open'] .utility-menu__body {
   flex: 1 1 auto;
-  height: auto;
+  height: 100%;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -219,9 +219,10 @@
 .utility-menu[data-state='opening'] .utility-menu__body .view-menu-panel,
 .utility-menu[data-state='open'] .utility-menu__body .view-menu-panel {
   box-sizing: border-box;
-  width: max-content;
-  min-width: 100%;
-  height: auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
   padding: var(--corner-menu-pad-y, 26px) var(--corner-menu-pad-end, 26px)
     var(--corner-menu-pad-y, 26px) var(--corner-menu-pad-start, 35px);
   opacity: 1;
