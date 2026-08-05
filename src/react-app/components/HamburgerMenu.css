@@ -128,7 +128,6 @@
         var(--corner-stack-gap, 12px) - 1rem
     )
   );
-  overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;

@@ -1,18 +1,14 @@
 .settings-lib-info {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 25px;
-  gap: 0 1.25rem;
-  align-items: start;
+  position: relative;
   width: 100%;
   min-width: 0;
   margin-bottom: 1.25rem;
+  padding-right: calc(25px + 1.25rem);
   padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border-nav, rgba(0, 0, 0, 0.08));
 }
 
 .settings-lib-info__copy {
-  grid-column: 1;
-  grid-row: 1;
   min-width: 0;
   font-family: var(--font-mono);
   font-size: 11pt;
@@ -65,8 +61,6 @@
 }
 
 .settings-lib-info__metrics {
-  grid-column: 1;
-  grid-row: 2;
   margin: 0;
   min-width: 0;
   font-family: var(--font-mono);
@@ -85,12 +79,10 @@
 }
 
 .settings-lib-info .network-dot-orb {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
+  position: absolute;
+  top: 0;
+  right: 0;
   width: 25px;
   height: 25px;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
   flex-shrink: 0;
 }
