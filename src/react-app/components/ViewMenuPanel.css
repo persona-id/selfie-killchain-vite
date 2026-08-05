@@ -98,6 +98,7 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel {
+  display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0;
@@ -105,8 +106,6 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
 }
 
 .utility-menu[data-state='closing'] .view-menu-panel {
@@ -149,13 +148,11 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  grid-row: 1;
+  flex: 0 0 auto;
   min-width: 0;
-  min-height: 0;
   width: 100%;
   padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 16px);
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .view-menu-panel__modes {
@@ -166,19 +163,17 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__modes {
-  flex: 1 1 auto;
-  gap: 0;
+  flex: 0 0 auto;
+  gap: var(--corner-menu-mode-gap, 18px);
   width: 100%;
-  min-height: 0;
-  height: 100%;
-  justify-content: space-evenly;
+  height: auto;
+  justify-content: flex-start;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-wrap {
-  flex: 1 1 0;
-  min-height: 0;
-  gap: 0;
-  justify-content: center;
+  flex: 0 0 auto;
+  gap: var(--corner-menu-mode-gap, 18px);
+  justify-content: flex-start;
 }
 
 .view-menu-panel__mode-wrap {
@@ -329,23 +324,31 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__footer {
-  display: contents;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  margin-top: auto;
+  padding: 0;
+  gap: clamp(16px, 2.5vh, 24px);
+  justify-content: flex-end;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__content-shell {
-  grid-row: 2;
+  flex: 0 0 auto;
+  width: 100%;
   min-height: 0;
-  height: 100%;
-  gap: clamp(12px, 2vh, 24px);
+  height: auto;
+  gap: clamp(16px, 2vh, 24px);
   background: var(--corner-menu-preview-surface, #ffffff);
   border-radius: var(--corner-menu-preview-radius, 22px);
-  padding: clamp(16px, 2.2vh, 24px) clamp(16px, 2.5vw, 28px);
+  padding: var(--corner-menu-preview-pad-y, 23px) var(--corner-menu-preview-pad-x, 24px);
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__tabs {
-  grid-row: 3;
   flex: 0 0 auto;
-  margin-top: clamp(16px, 2.5vh, 24px);
+  margin-top: 0;
 }
 
 .utility-menu[data-state='closing'] .view-menu-panel__footer {
@@ -487,9 +490,13 @@
   width: 100%;
 }
 
+.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-header {
+  flex: 0 0 auto;
+}
+
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-shell {
-  flex: 1 1 auto;
-  margin-top: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
   min-height: 0;
   align-items: stretch;
   justify-content: flex-end;
@@ -498,10 +505,11 @@
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-frame {
   width: 100%;
-  height: auto;
-  max-height: 100%;
-  aspect-ratio: 16 / 9;
-  flex: 0 0 auto;
+  height: var(--corner-menu-preview-frame-height, 315.457px);
+  min-height: var(--corner-menu-preview-frame-height, 315.457px);
+  max-height: var(--corner-menu-preview-frame-height, 315.457px);
+  aspect-ratio: auto;
+  flex: 0 0 var(--corner-menu-preview-frame-height, 315.457px);
   border-radius: var(--corner-menu-preview-frame-radius, 18px);
 }
 
@@ -600,11 +608,14 @@
 }
 
 @media (max-height: 760px) {
-  .view-menu-panel__footer {
-    margin-top: clamp(16px, 3vh, 28px);
+  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__footer {
+    margin-top: auto;
   }
 
-  .view-menu-panel__content-shell {
-    min-height: clamp(200px, 30vh, 300px);
+  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-frame {
+    height: min(var(--corner-menu-preview-frame-height, 315.457px), 28vh);
+    min-height: min(var(--corner-menu-preview-frame-height, 315.457px), 28vh);
+    max-height: min(var(--corner-menu-preview-frame-height, 315.457px), 28vh);
+    flex-basis: min(var(--corner-menu-preview-frame-height, 315.457px), 28vh);
   }
 }
