@@ -64,6 +64,28 @@ export function FitToScreenNavIcon({ active = false }: { active?: boolean }) {
   )
 }
 
+export function ResetNavIcon({ active = false }: { active?: boolean }) {
+  return (
+    <UtilityActionIcon active={active} viewBox="0 0 28 28">
+      <path
+        d="M14 8v3.5M14 8a6 6 0 1 1-6 6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M10 8h4V4"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </UtilityActionIcon>
+  )
+}
+
 export function ViewEndNodeNavIcon({ active = false }: { active?: boolean }) {
   return (
     <img

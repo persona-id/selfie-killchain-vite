@@ -38,6 +38,7 @@ export type LeftChromeState = {
 export type TopBarChromeState = {
   onFitToScreen?: () => void
   onViewResult?: () => void
+  onReset?: () => void
   fitToScreenActive: boolean
   viewResultActive: boolean
   utilityActionHint: string | null

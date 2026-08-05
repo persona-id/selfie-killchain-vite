@@ -9,7 +9,7 @@ import {
 import { navigateWithViewTransition } from '../../utils/viewTransition'
 import MenuToggleDots from '../MenuToggleDots'
 import { ViewMenuPanel } from '../ViewMenuPanel'
-import { FitToScreenNavIcon, ViewEndNodeNavIcon } from '../UtilityNavIcons'
+import { FitToScreenNavIcon, ResetNavIcon, ViewEndNodeNavIcon } from '../UtilityNavIcons'
 import './UtilityMenu.css'
 
 export type UtilityMenuLayout = 'menu-only' | 'full'
@@ -17,6 +17,7 @@ export type UtilityMenuState = 'idle' | 'opening' | 'open' | 'closing'
 
 const FIT_TO_SCREEN_LABEL = 'FIT'
 const VIEW_RESULT_LABEL = 'RESULT'
+const RESET_LABEL = 'RESET'
 
 function useUtilityMenuState(open: boolean) {
   const [state, setState] = useState<UtilityMenuState>('idle')
@@ -51,6 +52,7 @@ interface UtilityMenuProps {
   entranceReady?: boolean
   onFitToScreen?: () => void
   onViewResult?: () => void
+  onReset?: () => void
   fitToScreenActive?: boolean
   viewResultActive?: boolean
 }
@@ -89,16 +91,31 @@ function UtilityMenuBackdrop({
 function UtilityMenuActions({
   onFitToScreen,
   onViewResult,
+  onReset,
   fitToScreenActive = false,
   viewResultActive = false,
 }: {
   onFitToScreen?: () => void
   onViewResult?: () => void
+  onReset?: () => void
   fitToScreenActive?: boolean
   viewResultActive?: boolean
 }) {
   return (
     <div className="utility-menu__actions">
+      {onReset ? (
+        <button
+          type="button"
+          className="utility-menu__action"
+          aria-label="Reset path"
+          onClick={onReset}
+        >
+          <span className="utility-menu__action-label">
+            <span className="utility-menu__action-label-text">{RESET_LABEL}</span>
+          </span>
+          <ResetNavIcon />
+        </button>
+      ) : null}
       {onFitToScreen ? (
         <button
           type="button"
@@ -136,6 +153,7 @@ export default function UtilityMenu({
   entranceReady = true,
   onFitToScreen,
   onViewResult,
+  onReset,
   fitToScreenActive = false,
   viewResultActive = false,
 }: UtilityMenuProps) {
@@ -245,6 +263,7 @@ export default function UtilityMenu({
               <UtilityMenuActions
                 onFitToScreen={onFitToScreen}
                 onViewResult={onViewResult}
+                onReset={onReset}
                 fitToScreenActive={fitToScreenActive}
                 viewResultActive={viewResultActive}
               />

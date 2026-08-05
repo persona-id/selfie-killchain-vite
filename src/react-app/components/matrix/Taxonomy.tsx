@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 
 import { observedPaths, taxonomy } from '../../data/taxonomyData'
@@ -11,6 +11,7 @@ import { buildMatrixImageOverrides, selectedTechniqueIds } from '../../utils/cha
 import { getMatrixStageNavStages, getStageNavStatus } from '../../utils/stageNav'
 import { MATRIX_STAGE_ORDER, getStageIdFromTechnique } from '../../utils/techniqueStage'
 import { buildMatrixCardModel, matrixCardKey, type TechniqueState } from '../../utils/taxonomyHelpers'
+import { hasMatrixBuiltPath } from '../../utils/viewMenuNavigation'
 import {
   getMatrixCardDelay,
   getMatrixColumnHeaderDelay,
@@ -202,6 +203,7 @@ interface TaxonomyProps {
 
 export default function Taxonomy({ initialPathId, initialTags, initialImageUrl }: TaxonomyProps) {
   const location = useLocation()
+  const navigate = useNavigate()
   const { setLeftChrome, setTopBarChrome, setMatrixSelections } = useKillchainChrome()
   const reduceMotion = useReducedMotion()
   const hasPresetPath = hasInitialChainContext(initialPathId, initialTags)
@@ -418,6 +420,18 @@ export default function Taxonomy({ initialPathId, initialTags, initialImageUrl }
     setSelections(newSel)
   }, [])
 
+  const handleReset = useCallback(() => {
+    const emptySelections: Selections = { TA: null, AC: null, AR: [], DL: null }
+    setSelections(emptySelections)
+    setExpandedCardKeys(new Set())
+    setRevealedStageIndex(MATRIX_STAGE_ORDER.length - 1)
+    setEntranceNavComplete(true)
+    setMatrixContentEntranceComplete(true)
+    navigate('/matrix', { replace: true })
+  }, [navigate])
+
+  const showReset = hasPresetPath || hasMatrixBuiltPath(selections)
+
   const matrixStageNav = useMemo(
     () => getMatrixStageNavStages(selections, MATRIX_STAGE_ORDER),
     [selections],
@@ -480,17 +494,20 @@ export default function Taxonomy({ initialPathId, initialTags, initialImageUrl }
     setTopBarChrome({
       onFitToScreen: undefined,
       onViewResult: undefined,
+      onReset: showReset ? handleReset : undefined,
       fitToScreenActive: false,
       viewResultActive: false,
     })
   }, [
     entranceNavComplete,
+    handleReset,
     location.pathname,
     matrixStageNav,
     reduceMotion,
     revealedStageIndex,
     setLeftChrome,
     setTopBarChrome,
+    showReset,
   ])
 
   const entranceMotion = reduceMotion

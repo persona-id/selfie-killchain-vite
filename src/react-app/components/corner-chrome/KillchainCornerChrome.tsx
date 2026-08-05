@@ -35,6 +35,8 @@ export function KillchainCornerChrome({
   const showComplexity = Boolean(left.complexityNav) && isGlobe
   const showSettings = isGlobe
   const settingsHidden = hidden || (isGlobe && introActive && !chromeRevealReady)
+  const utilityMenuLayout =
+    variant === 'deconstruct' || (variant === 'matrix' && topBar.onReset) ? 'full' : 'menu-only'
 
   return (
     <div
@@ -53,10 +55,11 @@ export function KillchainCornerChrome({
 
       <div className="killchain-corner-chrome__corner killchain-corner-chrome__corner--tr">
         <UtilityMenu
-          layout={variant === 'deconstruct' ? 'full' : 'menu-only'}
+          layout={utilityMenuLayout}
           entranceReady={entranceReady && !hidden}
           onFitToScreen={topBar.onFitToScreen}
           onViewResult={topBar.onViewResult}
+          onReset={topBar.onReset}
           fitToScreenActive={topBar.fitToScreenActive}
           viewResultActive={topBar.viewResultActive}
         />
