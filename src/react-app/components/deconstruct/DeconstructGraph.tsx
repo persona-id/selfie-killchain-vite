@@ -81,6 +81,7 @@ const DeconstructGraph = forwardRef<DeconstructGraphHandle, DeconstructGraphProp
   const [canvasHovered, setCanvasHovered] = useState(false)
   const [dotsRevealed, setDotsRevealed] = useState(skipIntro)
   const [nodesReady, setNodesReady] = useState(skipIntro)
+  const [introComplete, setIntroComplete] = useState(skipIntro)
   const reduceMotion = useReducedMotion()
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(
     null,
@@ -135,6 +136,7 @@ const DeconstructGraph = forwardRef<DeconstructGraphHandle, DeconstructGraphProp
     if (!path) return
 
     introCompleteFiredRef.current = false
+    setIntroComplete(Boolean(reduceMotion || skipIntro))
 
     if (reduceMotion || skipIntro) {
       setDotsRevealed(true)
@@ -163,6 +165,7 @@ const DeconstructGraph = forwardRef<DeconstructGraphHandle, DeconstructGraphProp
     const completeIntro = () => {
       if (introCompleteFiredRef.current) return
       introCompleteFiredRef.current = true
+      setIntroComplete(true)
       if (!skipIntro) markDeconstructIntroPlayed(introSessionKey)
       onIntroComplete()
     }
@@ -298,13 +301,17 @@ const DeconstructGraph = forwardRef<DeconstructGraphHandle, DeconstructGraphProp
 
   useEffect(() => {
     if (!onHintChange || !path) return
-    const primary =
-      canvasHovered && !hoveredNode
+    const isLoadingIntoDeconstruct =
+      !skipIntro && !reduceMotion && (!nodesReady || !introComplete)
+    const primary = isLoadingIntoDeconstruct
+      ? 'Loading kill chain nodes…'
+      : canvasHovered && !hoveredNode
         ? 'Scroll to zoom · drag to move'
         : 'Click any part of the flow to view details'
-    const secondary = hoveredNode ? getDeconstructNodeDescriptor(hoveredNode) : null
+    const secondary =
+      isLoadingIntoDeconstruct ? null : hoveredNode ? getDeconstructNodeDescriptor(hoveredNode) : null
     onHintChange({ primary, secondary })
-  }, [canvasHovered, hoveredNode, onHintChange, path])
+  }, [canvasHovered, hoveredNode, introComplete, nodesReady, onHintChange, path, reduceMotion, skipIntro])
 
   if (!path) {
     return (

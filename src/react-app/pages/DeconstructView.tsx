@@ -64,7 +64,7 @@ export default function DeconstructView() {
   const [techniqueInfoExpanded, setTechniqueInfoExpanded] = useState(false)
   const [fitToScreenActive, setFitToScreenActive] = useState(false)
   const [graphHint, setGraphHint] = useState({
-    primary: 'Click any part of the flow to view details',
+    primary: 'Loading kill chain nodes…',
     secondary: null as string | null,
   })
   const suppressAutoResultRef = useRef(false)
