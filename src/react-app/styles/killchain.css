@@ -61,7 +61,12 @@
   --corner-menu-preview-frame-height: 315.457px;
   --corner-menu-preview-frame-radius: 18px;
   --corner-menu-preview-frame-ratio: 16 / 9;
-  --corner-menu-preview-intro-height: 5.75rem;
+  --corner-menu-preview-content-gap: 16px;
+  --corner-menu-preview-intro-height: 11rem;
+  --corner-menu-preview-shell-height: calc(
+    var(--corner-menu-preview-pad-y) * 2 + var(--corner-menu-preview-intro-height) +
+      var(--corner-menu-preview-content-gap) + var(--corner-menu-preview-frame-height)
+  );
   --corner-menu-preview-surface: #ffffff;
   --corner-menu-preview-bg: #ffffff;
   --corner-menu-surface: rgba(255, 255, 255, 0.85);
@@ -106,6 +111,17 @@
 @media (min-width: 2560px) {
   .killchain-app {
     --killchain-panel-width-boost: 1.15;
+  }
+}
+
+@media (max-height: 760px) {
+  .killchain-app {
+    --corner-menu-preview-frame-height: min(315.457px, 28vh);
+    --corner-menu-preview-intro-height: min(11rem, 14vh);
+    --corner-menu-preview-shell-height: calc(
+      var(--corner-menu-preview-pad-y) * 2 + var(--corner-menu-preview-intro-height) +
+        var(--corner-menu-preview-content-gap) + var(--corner-menu-preview-frame-height)
+    );
   }
 }
 
