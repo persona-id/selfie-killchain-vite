@@ -221,8 +221,8 @@
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  height: 100%;
-  min-height: 0;
+  height: auto;
+  min-height: 100%;
   padding: var(--corner-menu-pad-y, 26px) var(--corner-menu-pad-end, 26px)
     var(--corner-menu-pad-y, 26px) var(--corner-menu-pad-start, 35px);
   opacity: 1;
