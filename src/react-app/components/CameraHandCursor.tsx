@@ -27,7 +27,7 @@ export function CameraHandCursor({
         width: size,
         height: size,
         transform: `translate(-50%, -50%) scale(${scale})`,
-        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.18)',
+        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.216)',
       }}
       aria-hidden
     />

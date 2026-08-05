@@ -24,22 +24,12 @@ export function CornerMenuIcon({
 
 export function CornerArrowIcon({ className }: { className?: string }) {
   return (
-    <svg
+    <img
+      src="/icons/menu-arrow.png"
+      alt=""
       className={className}
-      width="32"
-      height="32"
-      viewBox="-2 -2 36 36"
-      fill="none"
-      overflow="visible"
+      draggable={false}
       aria-hidden
-    >
-      <path
-        d="M2 29.5L30 2M30 2V7"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   )
 }

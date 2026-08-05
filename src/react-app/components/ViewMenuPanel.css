@@ -285,12 +285,16 @@
   overflow: visible;
 }
 
+.view-menu-panel__mode-arrow img,
 .view-menu-panel__mode-arrow svg {
   width: clamp(32.2px, 5.175vw, 52.9px);
   height: auto;
+  display: block;
+  object-fit: contain;
   overflow: visible;
 }
 
+.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-arrow img,
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-arrow svg {
   width: var(--corner-menu-mode-icon, 32.1px);
   height: var(--corner-menu-mode-icon, 32.1px);
