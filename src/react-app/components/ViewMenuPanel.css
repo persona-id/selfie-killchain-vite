@@ -101,9 +101,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--view-menu-panel-section-gap, 24px);
+  gap: 0;
   flex: 1 1 auto;
-  min-height: min-content;
+  min-height: 100%;
   height: auto;
   overflow: visible;
 }
@@ -115,7 +115,6 @@
   align-items: flex-start;
   flex: 0 0 auto;
   min-width: 0;
-  min-height: var(--corner-menu-upper-min-height);
   width: 100%;
   padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 16px);
   box-sizing: border-box;
@@ -123,7 +122,7 @@
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__modes {
   flex: 0 0 auto;
-  gap: var(--corner-menu-mode-gap, 18px);
+  gap: 0;
   width: 100%;
   min-height: var(--corner-menu-titles-block-min-height);
   height: auto;
@@ -168,20 +167,20 @@
 .view-menu-panel__modes {
   display: flex;
   flex-direction: column;
-  gap: var(--corner-menu-mode-gap, 18px);
+  gap: 0;
   width: 100%;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-wrap {
   flex: 0 0 auto;
-  gap: var(--corner-menu-mode-gap, 18px);
+  gap: 0;
   justify-content: flex-start;
 }
 
 .view-menu-panel__mode-wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--corner-menu-mode-gap, 18px);
+  gap: 0;
   width: 100%;
 }
 
@@ -233,7 +232,8 @@
   justify-content: space-between;
   gap: clamp(12px, 2vw, 20px);
   width: 100%;
-  min-height: var(--corner-menu-mode-line, 60.95px);
+  height: var(--corner-menu-mode-line, 60.95px);
+  min-height: 0;
   padding: 0;
   border: none;
   background: none;
@@ -274,7 +274,7 @@
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-label {
   font-size: calc(var(--corner-menu-mode-font, 52.9px) * var(--type-scale));
-  line-height: var(--corner-menu-mode-line, 60.95px);
+  line-height: 1;
 }
 
 .view-menu-panel__mode-arrow {
@@ -336,7 +336,7 @@
     var(--corner-menu-video-block-min-height) + var(--view-menu-panel-section-gap, 24px) + 46px
   );
   width: 100%;
-  margin-top: 0;
+  margin-top: auto;
   padding: 0;
   gap: var(--view-menu-panel-section-gap, 24px);
   justify-content: flex-end;
