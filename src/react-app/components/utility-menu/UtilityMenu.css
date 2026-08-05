@@ -478,7 +478,7 @@
 @container utility-menu-shell (max-width: 900px) {
   .utility-menu__shell {
     height: auto;
-    min-height: 0;
+    min-height: min(540px, calc(100dvh - 2 * var(--page-edge-pad)));
     max-height: calc(100dvh - 2 * var(--page-edge-pad));
   }
 
@@ -493,7 +493,7 @@
   .utility-menu__body .view-menu-panel {
     height: auto;
     min-height: 0;
-    padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 32px);
+    padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 40px);
     padding-left: calc(var(--corner-menu-pad-start, 35px) + 28px + 20px);
   }
 
