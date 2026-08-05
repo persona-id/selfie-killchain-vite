@@ -118,6 +118,7 @@
   position: absolute;
   bottom: calc(100% + var(--corner-stack-gap, 12px));
   left: 0;
+  box-sizing: border-box;
   width: var(--corner-settings-panel-width, 327px);
   max-width: calc(100vw - 2 * var(--page-edge-pad, 50px) - var(--corner-icon-btn-size, 87px));
   max-height: min(
@@ -127,7 +128,9 @@
         var(--corner-stack-gap, 12px) - 1rem
     )
   );
+  overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--corner-lib-info-radius, 30px);
   padding: var(--corner-lib-title-py, 26px) 23px;

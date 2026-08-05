@@ -8,39 +8,35 @@ export function SettingsLibInfo() {
 
   return (
     <div className="settings-lib-info">
-      <div className="settings-lib-info__top">
-        <div className="settings-lib-info__copy">
-          <p className="settings-lib-info__primary">
-            {siteTitle}
-            <span className="settings-lib-info__muted">
-              {'\n'}Ver. {version}
-              {'\n\n'}
-              <span className="settings-lib-info__brackets">
-                [
-                <span className="settings-lib-info__online-dot" aria-hidden />
-                ]
-              </span>
+      <div className="settings-lib-info__copy">
+        <p className="settings-lib-info__primary">
+          {siteTitle}
+          <span className="settings-lib-info__muted">
+            {'\n'}Ver. {version}
+            {'\n\n'}
+            <span className="settings-lib-info__brackets">
+              [
+              <span className="settings-lib-info__online-dot" aria-hidden />
+              ]
             </span>
-            <span className="settings-lib-info__status">
-              {'\n'}Initialized — ONline
-            </span>
-            <span className="settings-lib-info__muted">
-              {'\n'}
-              {accessStamp}
-              {'\n\n'}
-            </span>
-          </p>
-        </div>
-        <NetworkDotOrb load={networkLoad} size={25} />
+          </span>
+          <span className="settings-lib-info__status">
+            {'\n'}Initialized — ONline
+          </span>
+          <span className="settings-lib-info__muted">
+            {'\n'}
+            {accessStamp}
+            {'\n\n'}
+          </span>
+        </p>
       </div>
-      <p className="settings-lib-info__status">
+      <NetworkDotOrb load={networkLoad} size={25} />
+      <p className="settings-lib-info__metrics">
         <span className="settings-lib-info__changes-row">
-          <span>{hfChanges}+ Changes</span>
-          <span className="settings-lib-info__muted"> (last 30 mins)</span>
+          {hfChanges}+ Changes (last 30 mins)
         </span>
-        <span className="settings-lib-info__muted">{'\n'}</span>
-        <span>{imagesLoaded.toLocaleString()}</span>
-        <span className="settings-lib-info__muted"> Images loaded</span>
+        {'\n'}
+        {imagesLoaded.toLocaleString()} Images loaded
       </p>
     </div>
   )

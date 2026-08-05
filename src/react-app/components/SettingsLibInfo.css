@@ -1,4 +1,8 @@
 .settings-lib-info {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 25px;
+  gap: 0 1.25rem;
+  align-items: start;
   width: 100%;
   min-width: 0;
   margin-bottom: 1.25rem;
@@ -6,17 +10,9 @@
   border-bottom: 1px solid var(--border-nav, rgba(0, 0, 0, 0.08));
 }
 
-.settings-lib-info__top {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-  width: 100%;
-  min-width: 0;
-  margin-bottom: 0;
-}
-
 .settings-lib-info__copy {
-  flex: 1;
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
   font-family: var(--font-mono);
   font-size: 11pt;
@@ -29,7 +25,7 @@
 }
 
 .settings-lib-info__primary {
-  margin: 0 0 11.59px;
+  margin: 0;
   color: #6e6e6e;
 }
 
@@ -65,19 +61,36 @@
 }
 
 .settings-lib-info__status {
-  margin: 0;
   color: #6e6e6e;
+}
+
+.settings-lib-info__metrics {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 11pt;
+  font-weight: 300;
+  line-height: 15.4pt;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #6e6e6e;
+  white-space: pre-wrap;
 }
 
 .settings-lib-info__changes-row {
   display: block;
-  width: 100%;
   white-space: nowrap;
 }
 
 .settings-lib-info .network-dot-orb {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
   width: 25px;
   height: 25px;
   aspect-ratio: 1 / 1;
+  overflow: hidden;
   flex-shrink: 0;
 }
