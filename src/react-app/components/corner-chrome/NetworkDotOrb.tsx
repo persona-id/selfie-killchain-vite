@@ -4,7 +4,6 @@ import * as THREE from 'three'
 
 import { ANIMATION_PRESETS } from '../../lib/globe'
 
-const ORB_PX = 50
 const SPHERE_RADIUS = 1
 const DOT_PX = 2.7
 const ICOSPHERE_DETAIL = 1
@@ -37,7 +36,7 @@ function waveOpacity(projection: number, waveTime: number): number {
   return DIM_OPACITY + lead * (1 - DIM_OPACITY)
 }
 
-export function NetworkDotOrb({ load }: { load: number }) {
+export function NetworkDotOrb({ load, size = 50 }: { load: number; size?: number }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
 
@@ -57,7 +56,7 @@ export function NetworkDotOrb({ load }: { load: number }) {
       powerPreference: 'low-power',
     })
     renderer.setPixelRatio(dpr)
-    renderer.setSize(ORB_PX, ORB_PX, false)
+    renderer.setSize(size, size, false)
     renderer.setClearColor(0x000000, 0)
     renderer.domElement.className = 'network-dot-orb__canvas'
     host.appendChild(renderer.domElement)
@@ -82,7 +81,7 @@ export function NetworkDotOrb({ load }: { load: number }) {
       transparent: true,
       depthWrite: false,
       uniforms: {
-        uSize: { value: DOT_PX * dpr },
+        uSize: { value: DOT_PX * dpr * (size / 50) },
         uColor: { value: new THREE.Color(0x0e0e0e) },
       },
       vertexShader: `
@@ -157,7 +156,14 @@ export function NetworkDotOrb({ load }: { load: number }) {
       renderer.dispose()
       renderer.domElement.remove()
     }
-  }, [load, reduceMotion])
+  }, [load, reduceMotion, size])
 
-  return <div ref={hostRef} className="network-dot-orb" aria-hidden />
+  return (
+    <div
+      ref={hostRef}
+      className="network-dot-orb"
+      style={{ width: size, height: size }}
+      aria-hidden
+    />
+  )
 }

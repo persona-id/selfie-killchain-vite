@@ -31,14 +31,16 @@ export function SettingsLibInfo() {
             </span>
           </p>
           <p className="settings-lib-info__status">
-            <span>{hfChanges}+ Changes</span>
-            <span className="settings-lib-info__muted"> (last 30 mins)</span>
+            <span className="settings-lib-info__changes-row">
+              <span>{hfChanges}+ Changes</span>
+              <span className="settings-lib-info__muted"> (last 30 mins)</span>
+            </span>
             <span className="settings-lib-info__muted">{'\n'}</span>
             <span>{imagesLoaded.toLocaleString()}</span>
             <span className="settings-lib-info__muted"> Images loaded</span>
           </p>
         </div>
-        <NetworkDotOrb load={networkLoad} />
+        <NetworkDotOrb load={networkLoad} size={25} />
       </div>
     </div>
   )

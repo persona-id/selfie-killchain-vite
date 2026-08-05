@@ -155,8 +155,8 @@
 
 .network-dot-orb__canvas {
   display: block;
-  width: 50px !important;
-  height: 50px !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 @media (max-width: 900px) {

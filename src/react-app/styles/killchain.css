@@ -32,7 +32,7 @@
   --corner-icon-btn-size: var(--killchain-chrome-condensed-height);
   --corner-menu-trigger-icon-size: 24.587px;
   --killchain-bottom-chrome-midline: calc(var(--page-edge-pad) + var(--corner-icon-btn-size) / 2);
-  --corner-settings-panel-width: 327px;
+  --corner-settings-panel-width: 380px;
   --corner-lib-title-width: 156px;
   --corner-lib-title-height: var(--killchain-chrome-condensed-height);
   --corner-lib-title-radius: var(--killchain-chrome-condensed-radius);
