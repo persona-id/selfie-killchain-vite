@@ -92,20 +92,19 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  height: auto;
+  height: 100%;
   width: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel {
-  flex-direction: column;
+  flex-direction: row;
   align-items: stretch;
-  gap: clamp(16px, 2.5vh, 28px);
-  min-height: 0;
+  gap: var(--corner-menu-gap, 35px);
 }
 
 .utility-menu[data-state='closing'] .view-menu-panel {
-  flex-direction: column;
+  flex-direction: row;
   align-items: stretch;
   gap: 0;
   transition: gap var(--utility-menu-duration) var(--utility-menu-ease);
@@ -142,13 +141,12 @@
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__upper {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: flex-start;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   min-width: 0;
-  min-height: 0;
-  height: auto;
-  width: 100%;
+  height: 100%;
+  min-height: 100%;
 }
 
 .view-menu-panel__modes {
@@ -235,8 +233,7 @@
 .view-menu-panel__mode-divider {
   width: 100%;
   height: 1px;
-  background: var(--text-menu);
-  opacity: 0.2;
+  background: var(--border-nav);
   flex-shrink: 0;
 }
 
@@ -250,15 +247,15 @@
 }
 
 .view-menu-panel__mode-label {
-  font-size: calc(var(--corner-menu-mode-font, 52.9px) * var(--type-scale));
+  font-size: calc(clamp(32.2px, 4.83vw, 52.9px) * var(--type-scale));
   font-weight: 300;
-  line-height: 1.12;
+  line-height: 1.15;
   letter-spacing: 0.53px;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-label {
   font-size: calc(var(--corner-menu-mode-font, 52.9px) * var(--type-scale));
-  line-height: 1.12;
+  line-height: var(--corner-menu-mode-line, 60.95px);
 }
 
 .view-menu-panel__mode-arrow {
@@ -269,8 +266,8 @@
 }
 
 .view-menu-panel__mode-arrow svg {
-  width: var(--corner-menu-mode-icon, 32.1px);
-  height: var(--corner-menu-mode-icon, 32.1px);
+  width: clamp(32.2px, 5.175vw, 52.9px);
+  height: auto;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-arrow svg {
@@ -310,17 +307,15 @@
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__footer {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
-  min-height: clamp(320px, 42dvh, 560px);
+  min-height: 0;
   margin-top: 0;
   padding: 0;
-  height: auto;
-  width: 100%;
-  gap: clamp(12px, 2vh, 24px);
+  height: 100%;
+  gap: clamp(16px, 2.5vh, 24px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .utility-menu[data-state='closing'] .view-menu-panel__footer {
@@ -380,29 +375,14 @@
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__content-shell {
   flex: 1 1 auto;
-  height: auto;
-  min-height: clamp(280px, 38dvh, 500px);
-  gap: clamp(12px, 2vh, 24px);
+  height: 100%;
+  min-height: 0;
+  gap: clamp(20px, 3vh, 50px);
   background: var(--corner-menu-preview-surface, var(--menu-surface-muted));
   border-radius: var(--corner-menu-preview-radius, 22px);
-  padding: clamp(12px, 1.8vh, 24px) clamp(12px, 2vw, 28px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  padding: clamp(16px, 2.2vh, 24px) clamp(16px, 2.5vw, 28px);
   backdrop-filter: var(--menu-surface-blur);
   -webkit-backdrop-filter: var(--menu-surface-blur);
-}
-
-.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__content {
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-header {
-  flex-shrink: 0;
 }
 
 .view-menu-panel__content {
@@ -435,9 +415,7 @@
   display: flex;
   flex-direction: column;
   gap: clamp(6px, 1vh, 10px);
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
+  flex: 0 0 auto;
 }
 
 .view-menu-panel__intro-label {
@@ -486,42 +464,28 @@
 .view-menu-panel__preview-shell {
   display: flex;
   flex: 1 1 auto;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
   min-height: 0;
   margin-top: auto;
   width: 100%;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-shell {
-  flex: 1 1 0;
-  margin-top: 0;
+  flex: 0 0 auto;
+  margin-top: auto;
   align-items: stretch;
   justify-content: flex-end;
   width: 100%;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-frame {
   width: 100%;
-  aspect-ratio: 16 / 9;
   height: auto;
   max-height: 100%;
+  aspect-ratio: 16 / 9;
   flex: 0 0 auto;
   border-radius: var(--corner-menu-preview-frame-radius, 18px);
-}
-
-.view-menu-panel__preview-frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  height: auto;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: 19px;
-  background: var(--corner-menu-preview-bg, #ffffff);
 }
 
 .view-menu-panel__preview-shell--hidden {
@@ -533,6 +497,17 @@
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.view-menu-panel__preview-frame {
+  position: relative;
+  width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
+  flex: 0 1 auto;
+  overflow: hidden;
+  border-radius: 19px;
+  background: var(--corner-menu-preview-bg, #ffffff);
 }
 
 .view-menu-panel__preview-video {
@@ -575,10 +550,6 @@
   width: 100%;
 }
 
-.utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__tabs {
-  flex-shrink: 0;
-}
-
 .view-menu-panel__tab {
   flex: 1;
   min-height: 46px;
@@ -611,9 +582,13 @@
   background: var(--menu-surface-muted);
 }
 
-@media (max-width: 700px) {
-  .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__mode-label,
-  .view-menu-panel__mode-label {
-    font-size: calc(clamp(36px, 10vw, var(--corner-menu-mode-font, 52.9px)) * var(--type-scale));
+@media (max-height: 760px) {
+  .view-menu-panel__footer {
+    padding-top: clamp(20px, 4vh, 40px);
+  }
+
+  .view-menu-panel__content-shell {
+    height: clamp(260px, 46vh, 400px);
+    min-height: clamp(260px, 46vh, 400px);
   }
 }

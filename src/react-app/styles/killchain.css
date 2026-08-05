@@ -70,9 +70,8 @@
   --killchain-side-panel-width: calc(
     542px * var(--killchain-panel-width-scale) * var(--killchain-panel-width-boost)
   );
-  --utility-menu-open-width: min(50vw, calc(100vw - 2 * var(--page-edge-pad)));
-  --utility-menu-open-height: min(85dvh, calc(100dvh - 2 * var(--page-edge-pad)));
-  --utility-menu-open-min-height: min(540px, calc(100dvh - 2 * var(--page-edge-pad)));
+  --utility-menu-open-width: 50vw;
+  --utility-menu-open-height: 50vh;
   --killchain-deconstruct-content-width: calc(
     var(--killchain-side-panel-width) - 2 * var(--killchain-panel-content-inset)
   );
