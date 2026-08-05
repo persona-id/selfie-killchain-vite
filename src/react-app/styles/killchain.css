@@ -58,9 +58,13 @@
   --corner-menu-preview-radius: 22px;
   --corner-menu-preview-pad-x: 24px;
   --corner-menu-preview-pad-y: 23px;
-  --corner-menu-preview-frame-height: 315.457px;
-  --corner-menu-preview-frame-radius: 18px;
+  --corner-menu-preview-inner-width: calc(
+    var(--killchain-side-panel-width) - var(--corner-menu-pad-start) - var(--corner-menu-pad-end) -
+      2 * var(--corner-menu-preview-pad-x)
+  );
   --corner-menu-preview-frame-ratio: 16 / 9;
+  --corner-menu-preview-frame-height: calc(var(--corner-menu-preview-inner-width) * 9 / 16);
+  --corner-menu-preview-frame-radius: 18px;
   --corner-menu-preview-content-gap: 16px;
   --corner-menu-preview-intro-height: 11rem;
   --corner-menu-preview-shell-height: calc(
@@ -116,7 +120,10 @@
 
 @media (max-height: 760px) {
   .killchain-app {
-    --corner-menu-preview-frame-height: min(315.457px, 28vh);
+    --corner-menu-preview-frame-height: min(
+      calc(var(--corner-menu-preview-inner-width) * 9 / 16),
+      28vh
+    );
     --corner-menu-preview-intro-height: min(11rem, 14vh);
     --corner-menu-preview-shell-height: calc(
       var(--corner-menu-preview-pad-y) * 2 + var(--corner-menu-preview-intro-height) +
