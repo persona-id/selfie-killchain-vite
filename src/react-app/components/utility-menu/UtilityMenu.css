@@ -119,6 +119,8 @@
 .utility-menu[data-state='opening'] .utility-menu__surface,
 .utility-menu[data-state='open'] .utility-menu__surface {
   background: var(--corner-menu-surface, rgba(255, 255, 255, 0.85));
+  backdrop-filter: var(--menu-surface-blur);
+  -webkit-backdrop-filter: var(--menu-surface-blur);
 }
 
 .utility-menu[data-layout='menu-only']:is([data-state='opening'], [data-state='open']) .utility-menu__rail {
@@ -153,11 +155,8 @@
 .utility-menu[data-layout='full']:is([data-state='opening'], [data-state='open']) .utility-menu__rail {
   position: absolute;
   top: var(--corner-menu-pad-y, 26px);
+  right: var(--corner-menu-pad-end, 26px);
   left: var(--corner-menu-pad-start, 35px);
-  right: calc(
-    50% + (var(--corner-menu-gap, 35px) / 2) +
-      ((var(--corner-menu-pad-end, 26px) - var(--corner-menu-pad-start, 35px)) / 2)
-  );
   width: auto;
   height: auto;
   padding: 0;

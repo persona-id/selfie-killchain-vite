@@ -24,14 +24,6 @@ const MODES: {
   intro: string
 }[] = [
   {
-    id: 'globe',
-    label: 'Globe',
-    path: '/',
-    previewSrc: '/mode-previews/globe.mov',
-    intro:
-      'Explore the dataset as a spatial field of faces, clustered by category and complexity across the full gallery.',
-  },
-  {
     id: 'deconstruct',
     label: 'Deconstruct',
     path: '/deconstruct',
@@ -46,6 +38,14 @@ const MODES: {
     previewSrc: '/mode-previews/matrix.mov',
     intro:
       'Browse the full taxonomy by stage, mix techniques across columns, and compare your selections against observed paths.',
+  },
+  {
+    id: 'globe',
+    label: 'Globe',
+    path: '/',
+    previewSrc: '/mode-previews/globe.mov',
+    intro:
+      'Explore the dataset as a spatial field of faces, clustered by category and complexity across the full gallery.',
   },
 ]
 
@@ -263,7 +263,12 @@ export function ViewMenuPanel({ onClose, onNavigate, menuVisible = true }: ViewM
                     onNavigate(buildModeTarget(mode.id))
                   }}
                 >
-                  <span className="view-menu-panel__mode-label">{mode.label}</span>
+                  <span className="view-menu-panel__mode-label">
+                    <span className="view-menu-panel__mode-index">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    {mode.label}
+                  </span>
                   <span className="view-menu-panel__mode-arrow">
                     <ModeArrowIcon />
                   </span>
