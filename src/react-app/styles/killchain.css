@@ -60,6 +60,8 @@
   --corner-menu-preview-pad-y: 23px;
   --corner-menu-preview-frame-height: 315.457px;
   --corner-menu-preview-frame-radius: 18px;
+  --corner-menu-preview-frame-ratio: 16 / 9;
+  --corner-menu-preview-intro-height: 5.75rem;
   --corner-menu-preview-surface: #ffffff;
   --corner-menu-preview-bg: #ffffff;
   --corner-menu-surface: rgba(255, 255, 255, 0.85);
