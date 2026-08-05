@@ -475,42 +475,7 @@
   }
 }
 
-@media (max-height: 820px) {
-  .utility-menu[data-state='opening'] .utility-menu__shell,
-  .utility-menu[data-state='open'] .utility-menu__shell {
-    width: min(var(--utility-menu-open-width, 50vw), calc(100vw - 2 * var(--page-edge-pad)));
-    height: auto;
-    min-height: 0;
-    max-height: calc(100dvh - 2 * var(--page-edge-pad));
-  }
-
-  .utility-menu[data-state='opening'] .utility-menu__body,
-  .utility-menu[data-state='open'] .utility-menu__body {
-    flex: 1 1 auto;
-    height: auto;
-    min-height: 0;
-    max-height: none;
-    overflow-y: auto;
-  }
-
-  .utility-menu[data-state='opening'] .utility-menu__body .view-menu-panel,
-  .utility-menu[data-state='open'] .utility-menu__body .view-menu-panel {
-    height: auto;
-    min-height: 0;
-    padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 20px);
-  }
-
-  .utility-menu[data-layout='full']:is([data-state='opening'], [data-state='open']) .utility-menu__rail {
-    left: var(--corner-menu-pad-start, 35px);
-    right: var(--corner-menu-pad-end, 26px);
-  }
-
-  .utility-menu[data-layout='full']:is([data-state='opening'], [data-state='open']) .utility-menu__toggle {
-    left: var(--corner-menu-pad-start, 35px);
-  }
-}
-
-@container utility-menu-shell (max-width: 900px), (max-height: 820px) {
+@container utility-menu-shell (max-width: 900px) {
   .utility-menu__shell {
     height: auto;
     min-height: 0;
@@ -528,15 +493,18 @@
   .utility-menu__body .view-menu-panel {
     height: auto;
     min-height: 0;
-    padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 20px);
+    padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 32px);
+    padding-left: calc(var(--corner-menu-pad-start, 35px) + 28px + 20px);
   }
 
-  .utility-menu[data-layout='full'] .utility-menu__rail {
+  .utility-menu[data-layout='full'] .utility-menu__rail,
+  .utility-menu[data-layout='menu-only'] .utility-menu__rail {
     left: var(--corner-menu-pad-start, 35px);
     right: var(--corner-menu-pad-end, 26px);
   }
 
-  .utility-menu[data-layout='full'] .utility-menu__toggle {
+  .utility-menu[data-layout='full'] .utility-menu__toggle,
+  .utility-menu[data-layout='menu-only'] .utility-menu__toggle {
     left: var(--corner-menu-pad-start, 35px);
   }
 }
