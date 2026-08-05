@@ -107,10 +107,11 @@
 
 .utility-menu[data-state='opening'] .utility-menu__shell,
 .utility-menu[data-state='open'] .utility-menu__shell {
-  width: var(--utility-menu-open-width, 50vw);
-  max-width: calc(100vw - 2 * var(--page-edge-pad));
-  height: var(--utility-menu-open-height, 50vh);
-  max-height: var(--utility-menu-open-height, 50vh);
+  width: var(--utility-menu-open-width, max-content);
+  min-width: var(--utility-menu-open-min-width, 432px);
+  max-width: var(--utility-menu-open-max-width, calc(100vw - 2 * var(--page-edge-pad)));
+  height: auto;
+  max-height: var(--utility-menu-open-max-height, 80vh);
   border-radius: var(--corner-menu-radius, 29px);
   display: flex;
   flex-direction: column;
@@ -201,9 +202,12 @@
 
 .utility-menu[data-state='opening'] .utility-menu__body,
 .utility-menu[data-state='open'] .utility-menu__body {
-  flex: 1;
-  height: 100%;
+  flex: 1 1 auto;
+  height: auto;
   min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   opacity: 1;
   transition:
     flex var(--utility-menu-duration) var(--utility-menu-ease),
@@ -215,7 +219,9 @@
 .utility-menu[data-state='opening'] .utility-menu__body .view-menu-panel,
 .utility-menu[data-state='open'] .utility-menu__body .view-menu-panel {
   box-sizing: border-box;
-  height: 100%;
+  width: max-content;
+  min-width: 100%;
+  height: auto;
   padding: var(--corner-menu-pad-y, 26px) var(--corner-menu-pad-end, 26px)
     var(--corner-menu-pad-y, 26px) var(--corner-menu-pad-start, 35px);
   opacity: 1;
