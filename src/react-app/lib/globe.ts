@@ -871,6 +871,28 @@ export function billboardTowardCamera(
   object.lookAt(camera.position)
 }
 
+export const COMPREHENSIVE_VIEWPORT_MARGIN = 0.02
+
+const _hemGlobeCenter = new THREE.Vector3()
+const _hemObjDir = new THREE.Vector3()
+const _hemCamDir = new THREE.Vector3()
+
+export function isGlobeObjectCameraFacing(
+  object: CSS3DObject,
+  globe: THREE.Group,
+  camera: THREE.Camera,
+  threshold = 0.05,
+): boolean {
+  _hemGlobeCenter.setFromMatrixPosition(globe.matrixWorld)
+  _hemObjDir.setFromMatrixPosition(object.matrixWorld).sub(_hemGlobeCenter)
+  if (_hemObjDir.lengthSq() < 1e-6) return false
+  _hemObjDir.normalize()
+  _hemCamDir.copy(camera.position).sub(_hemGlobeCenter)
+  if (_hemCamDir.lengthSq() < 1e-6) return false
+  _hemCamDir.normalize()
+  return _hemObjDir.dot(_hemCamDir) > threshold
+}
+
 export function updateObjectVisibility(
   object: CSS3DObject,
   camera: THREE.Camera,

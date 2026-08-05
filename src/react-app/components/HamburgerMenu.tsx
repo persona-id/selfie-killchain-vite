@@ -79,6 +79,8 @@ export function HamburgerMenu({
     setLinkCluster,
     cameraControls,
     setCameraControls,
+    comprehensiveMode,
+    setComprehensiveMode,
     filteredItems,
   } = useGallery()
   const { state, toggle, close, showPanel, triggerLocked } = useSettingsMenuState()
@@ -187,6 +189,21 @@ export function HamburgerMenu({
                 </div>
               </>
             ) : null}
+
+            <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
+              View
+            </p>
+            <button
+              type="button"
+              onClick={() => setComprehensiveMode(!comprehensiveMode)}
+              className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                comprehensiveMode
+                  ? 'hamburger-menu__list-btn--active'
+                  : 'hamburger-menu__list-btn--inactive'
+              }`}
+            >
+              Comprehensive mode
+            </button>
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
               Images

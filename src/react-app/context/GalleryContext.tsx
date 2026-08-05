@@ -36,6 +36,7 @@ const STORAGE_KEY = 'persona-fas-gallery'
 type StoredState = {
   activeCategories: Category[]
   activeComplexity: Complexity | null
+  comprehensiveMode: boolean
   backgroundColor: string
   globeArrangement: GlobeArrangement
   globeAnimation: GlobeAnimation
@@ -70,6 +71,8 @@ type GalleryContextValue = {
   selectAllCategories: () => void
   activeComplexity: Complexity | null
   setActiveComplexity: (complexity: Complexity | null) => void
+  comprehensiveMode: boolean
+  setComprehensiveMode: (enabled: boolean) => void
   filteredItems: GalleryItem[]
   categoryCounts: Record<Category, number>
   selectedItem: GalleryItem | null
@@ -105,6 +108,7 @@ function loadStoredState(): StoredState {
       return {
         activeCategories: [...CATEGORIES],
         activeComplexity: null,
+        comprehensiveMode: false,
         backgroundColor: KILLCHAIN_PAGE_BG,
         globeArrangement: 'even',
         globeAnimation: 'drift',
@@ -121,6 +125,7 @@ function loadStoredState(): StoredState {
         ? parsed.activeCategories
         : [...CATEGORIES],
       activeComplexity: parsed.activeComplexity ?? null,
+      comprehensiveMode: parsed.comprehensiveMode ?? false,
       backgroundColor: normalizeHex(
         parsed.backgroundColor?.toLowerCase() === '#eeeeee'
           ? KILLCHAIN_PAGE_BG
@@ -175,6 +180,7 @@ function loadStoredState(): StoredState {
     return {
       activeCategories: [...CATEGORIES],
       activeComplexity: null,
+      comprehensiveMode: false,
       backgroundColor: KILLCHAIN_PAGE_BG,
       globeArrangement: 'even',
       globeAnimation: 'drift',
@@ -196,6 +202,9 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   )
   const [activeComplexity, setActiveComplexityState] = useState<Complexity | null>(
     stored.activeComplexity,
+  )
+  const [comprehensiveMode, setComprehensiveModeState] = useState(
+    stored.comprehensiveMode,
   )
   const [backgroundColor, setBackgroundColorState] = useState(
     normalizeHex(stored.backgroundColor),
@@ -237,6 +246,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       JSON.stringify({
         activeCategories: [...activeCategories],
         activeComplexity,
+        comprehensiveMode,
         backgroundColor,
         globeArrangement,
         globeAnimation,
@@ -251,6 +261,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   }, [
     activeCategories,
     activeComplexity,
+    comprehensiveMode,
     backgroundColor,
     globeArrangement,
     globeAnimation,
@@ -300,6 +311,10 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
 
   const setActiveComplexity = useCallback((complexity: Complexity | null) => {
     setActiveComplexityState(complexity)
+  }, [])
+
+  const setComprehensiveMode = useCallback((enabled: boolean) => {
+    setComprehensiveModeState(enabled)
   }, [])
 
   const setBackgroundColor = useCallback((color: string) => {
@@ -422,6 +437,8 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     selectAllCategories,
     activeComplexity,
     setActiveComplexity,
+    comprehensiveMode,
+    setComprehensiveMode,
     filteredItems,
     categoryCounts,
     selectedItem,
