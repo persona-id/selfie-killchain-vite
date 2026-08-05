@@ -170,22 +170,24 @@ export function ComplexityCornerMenu({
           ) : null}
         </AnimatePresence>
 
-        <button
-          type="button"
-          className={`complexity-corner__trigger glass-surface${
-            triggerLocked ? ' complexity-corner__trigger--open' : ''
-          }`}
-          aria-label={showPanel ? 'Close filter menu' : 'Filter'}
-          aria-expanded={state === 'open' || state === 'opening'}
-          onClick={toggle}
-        >
-          <span className="complexity-corner__trigger-label">
-            <span className="complexity-corner__trigger-label-text">Filter</span>
-          </span>
-          <span className="complexity-corner__icon-slot" aria-hidden>
-            <CornerMenuIcon icon="search" className="corner-menu__trigger-icon" />
-          </span>
-        </button>
+        <div className="complexity-corner__trigger-anchor">
+          <button
+            type="button"
+            className={`complexity-corner__trigger glass-surface${
+              triggerLocked ? ' complexity-corner__trigger--open' : ''
+            }`}
+            aria-label={showPanel ? 'Close filter menu' : 'Filter'}
+            aria-expanded={state === 'open' || state === 'opening'}
+            onClick={toggle}
+          >
+            <span className="complexity-corner__trigger-label">
+              <span className="complexity-corner__trigger-label-text">Filter</span>
+            </span>
+            <span className="complexity-corner__icon-slot" aria-hidden>
+              <CornerMenuIcon icon="search" className="corner-menu__trigger-icon" />
+            </span>
+          </button>
+        </div>
       </div>
     </motion.div>
   )

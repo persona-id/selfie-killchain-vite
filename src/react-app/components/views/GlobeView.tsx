@@ -18,8 +18,8 @@ import {
   billboardTowardCamera,
   computeAnimationZoomOffset,
   computeClusterLayout,
-  computeComplexityFocusRotation,
   computeComprehensiveCameraZ,
+  computeFilterFocusRotation,
   computeGlobeOverviewCameraZ,
   createGlobeRenderers,
   createPhotoElement,
@@ -35,9 +35,6 @@ import {
   shortestAngleDelta,
   viewAxisAngularDistance,
   updateObjectVisibility,
-  applyComplexityPositionPull,
-  COMPLEXITY_FOCUS_PULL_AWAY,
-  COMPLEXITY_FOCUS_PULL_TOWARD,
 } from '../../lib/globe'
 import {
   attachGlobeInteraction,
@@ -472,7 +469,7 @@ export function GlobeView({
       const targetZ = computeComprehensiveCameraZ(layoutFieldRadiusRef.current)
       state.targetCameraDistance = targetZ
       comprehensiveZoomTargetRef.current = targetZ
-      startComplexityFocusAnimation()
+      startFilterFocusAnimation()
       return
     }
 
@@ -558,10 +555,12 @@ export function GlobeView({
     wasIntroLockedRef.current = introLocked
   }, [introLocked])
 
-  const startComplexityFocusAnimation = () => {
+  const startFilterFocusAnimation = () => {
     const complexity = activeComplexityRef.current
+    const highlighted = highlightedCategoriesRef.current
+    const categoryFilterActive = highlighted.size < CATEGORIES.length
     const state = interactionStateRef.current
-    if (!complexity || !state || objectsRef.current.length === 0) {
+    if ((!complexity && !categoryFilterActive) || !state || objectsRef.current.length === 0) {
       complexityFocusAnimRef.current = null
       return
     }
@@ -572,11 +571,13 @@ export function GlobeView({
       if (fieldCenter) clusterFieldCenters.set(clusterId, fieldCenter)
     })
 
-    const target = computeComplexityFocusRotation(
-      objectsRef.current,
+    const target = computeFilterFocusRotation(objectsRef.current, {
       complexity,
-      clusterFieldCenters.size > 0 ? clusterFieldCenters : undefined,
-    )
+      highlightedCategories: highlighted,
+      preferBackHemisphere: comprehensiveModeRef.current,
+      clusterFieldCenters:
+        clusterFieldCenters.size > 0 ? clusterFieldCenters : undefined,
+    })
     if (!target) {
       complexityFocusAnimRef.current = null
       return
@@ -592,12 +593,17 @@ export function GlobeView({
   }
 
   useEffect(() => {
-    if (!comprehensiveModeRef.current) {
-      startComplexityFocusAnimation()
-      return
+    startFilterFocusAnimation()
+    if (comprehensiveMode) {
+      applyComprehensiveCameraTarget(activeComplexity)
     }
-    applyComprehensiveCameraTarget(activeComplexity)
-  }, [activeComplexity, displayItems, globeArrangement])
+  }, [
+    activeComplexity,
+    highlightedCategories,
+    displayItems,
+    globeArrangement,
+    comprehensiveMode,
+  ])
 
   const setHoverLabel = (item: GalleryItem | null) => {
     const el = hoverLabelRef.current
@@ -1023,7 +1029,7 @@ export function GlobeView({
       )
       .map((entry) => entry.obj)
 
-    startComplexityFocusAnimation()
+    startFilterFocusAnimation()
 
     const overviewBoundingRadius =
       isClusters && layout
@@ -1351,9 +1357,11 @@ export function GlobeView({
       if (!interactionState.dragActive) {
         const friction = Math.pow(preset.friction, timeScale)
         const focusAnim = complexityFocusAnimRef.current
+        const categoryFilterActive =
+          highlightedCategoriesRef.current.size < CATEGORIES.length
         const inComplexityFocus =
           focusAnim &&
-          activeComplexityRef.current &&
+          (activeComplexityRef.current || categoryFilterActive) &&
           !clusterFocusRef.current &&
           !linkClusterFocusRef.current
 
@@ -1634,9 +1642,11 @@ export function GlobeView({
       const clusterFocused =
         (isClusters && clusterFocusRef.current) ||
         linkClusterFocusRef.current
+      const categoryFilterActive =
+        highlightedCategoriesRef.current.size < CATEGORIES.length
       const inComplexityFocus = Boolean(
         complexityFocusAnimRef.current &&
-          activeComplexityRef.current &&
+          (activeComplexityRef.current || categoryFilterActive) &&
           !clusterFocusRef.current &&
           !linkClusterFocusRef.current,
       )
@@ -1782,21 +1792,6 @@ export function GlobeView({
         if (!el) continue
 
         const item = obj.userData.item as GalleryItem
-
-        const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
-        if (sphereLocal && comprehensiveActive) {
-          const pullAmount =
-            item.complexity === activeComplexity
-              ? COMPLEXITY_FOCUS_PULL_TOWARD * complexityBlend
-              : -COMPLEXITY_FOCUS_PULL_AWAY * complexityBlend
-          applyComplexityPositionPull(
-            obj,
-            globe,
-            camera,
-            sphereLocal,
-            pullAmount,
-          )
-        }
 
         if (!updateObjectVisibility(obj, camera, el, visibilityZ)) continue
 

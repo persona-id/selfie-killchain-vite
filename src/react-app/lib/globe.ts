@@ -7,7 +7,9 @@ import type {
   GlobeAspectRatio,
   GlobeDisplaySettings,
   Complexity,
+  Category,
 } from '../types/gallery'
+import { CATEGORIES } from '../types/gallery'
 import { computeClusterLayout } from './clusterLayout'
 import { resolveGlobeImageSrc } from './taxonomy'
 
@@ -306,6 +308,7 @@ function scoreGlobeRotationForDirections(
   excluded: THREE.Vector3[],
   rotationX: number,
   rotationY: number,
+  preferBackHemisphere = false,
 ): number {
   _globeFaceGlobe.rotation.x = rotationX
   _globeFaceGlobe.rotation.y = rotationY
@@ -318,7 +321,9 @@ function scoreGlobeRotationForDirections(
 
   for (let i = 0; i < selected.length; i++) {
     _globeFaceDir.copy(selected[i]).applyMatrix4(_globeFaceGlobe.matrixWorld)
-    selectedFront += Math.max(0, _globeFaceDir.z)
+    selectedFront += preferBackHemisphere
+      ? Math.max(0, -_globeFaceDir.z)
+      : Math.max(0, _globeFaceDir.z)
     meanX += _globeFaceDir.x
     meanY += _globeFaceDir.y
     meanZ += _globeFaceDir.z
@@ -327,7 +332,9 @@ function scoreGlobeRotationForDirections(
   let excludedFront = 0
   for (let i = 0; i < excluded.length; i++) {
     _globeFaceDir.copy(excluded[i]).applyMatrix4(_globeFaceGlobe.matrixWorld)
-    excludedFront += Math.max(0, _globeFaceDir.z)
+    excludedFront += preferBackHemisphere
+      ? Math.max(0, -_globeFaceDir.z)
+      : Math.max(0, _globeFaceDir.z)
   }
 
   if (selected.length === 0) return -Infinity
@@ -337,9 +344,11 @@ function scoreGlobeRotationForDirections(
   meanY *= inv
   meanZ *= inv
 
+  const depthBias = preferBackHemisphere ? -meanZ : meanZ
+
   return (
     selectedFront * 2 +
-    meanZ * selected.length * 0.45 -
+    depthBias * selected.length * 0.45 -
     Math.hypot(meanX, meanY) * 0.25 -
     excludedFront * 1.35
   )
@@ -348,6 +357,7 @@ function scoreGlobeRotationForDirections(
 function searchGlobeRotationForDirections(
   selected: THREE.Vector3[],
   excluded: THREE.Vector3[] = [],
+  preferBackHemisphere = false,
 ): { x: number; y: number } {
   const unitSelected = selected.map((position) => position.clone().normalize())
   const unitExcluded = excluded.map((position) => position.clone().normalize())
@@ -371,6 +381,7 @@ function searchGlobeRotationForDirections(
           unitExcluded,
           rx,
           ry,
+          preferBackHemisphere,
         )
         if (score > bestScore) {
           bestScore = score
@@ -404,16 +415,30 @@ export function globeRotationToFacePoint(point: THREE.Vector3): {
 export function globeRotationToFaceDirections(
   selected: THREE.Vector3[],
   excluded: THREE.Vector3[] = [],
+  preferBackHemisphere = false,
 ): { x: number; y: number } | null {
   if (selected.length === 0) return null
-  return searchGlobeRotationForDirections(selected, excluded)
+  return searchGlobeRotationForDirections(selected, excluded, preferBackHemisphere)
 }
 
-export function computeComplexityFocusRotation(
+export function computeFilterFocusRotation(
   objects: CSS3DObject[],
-  complexity: Complexity,
-  clusterFieldCenters?: Map<string, THREE.Vector3>,
+  options: {
+    complexity: Complexity | null
+    highlightedCategories: Set<Category>
+    preferBackHemisphere?: boolean
+    clusterFieldCenters?: Map<string, THREE.Vector3>
+  },
 ): { x: number; y: number } | null {
+  const {
+    complexity,
+    highlightedCategories,
+    preferBackHemisphere = false,
+    clusterFieldCenters,
+  } = options
+  const categoryFilterActive = highlightedCategories.size < CATEGORIES.length
+  if (!complexity && !categoryFilterActive) return null
+
   const selected: THREE.Vector3[] = []
   const excluded: THREE.Vector3[] = []
 
@@ -425,14 +450,32 @@ export function computeComplexityFocusRotation(
     const position = collectGlobeObjectPosition(obj, clusterFieldCenters)
     if (!position) continue
 
-    if (item.complexity === complexity) {
+    const matchesComplexity = !complexity || item.complexity === complexity
+    const matchesCategory =
+      !categoryFilterActive || highlightedCategories.has(item.category)
+
+    if (matchesComplexity && matchesCategory) {
       selected.push(position)
     } else {
       excluded.push(position)
     }
   }
 
-  return globeRotationToFaceDirections(selected, excluded)
+  return globeRotationToFaceDirections(selected, excluded, preferBackHemisphere)
+}
+
+export function computeComplexityFocusRotation(
+  objects: CSS3DObject[],
+  complexity: Complexity,
+  clusterFieldCenters?: Map<string, THREE.Vector3>,
+  preferBackHemisphere = false,
+): { x: number; y: number } | null {
+  return computeFilterFocusRotation(objects, {
+    complexity,
+    highlightedCategories: new Set(CATEGORIES),
+    preferBackHemisphere,
+    clusterFieldCenters,
+  })
 }
 
 /** Camera Z so a sphere of `boundingRadius` fills `screenFraction` of viewport height. */
