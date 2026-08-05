@@ -53,7 +53,7 @@
   --corner-menu-modes-height: 510px;
   --corner-menu-mode-gap: 18px;
   --corner-menu-mode-font: 52.9px;
-  --corner-menu-mode-line: 60.95px;
+  --corner-menu-mode-line: 1.12;
   --corner-menu-mode-icon: 32.1px;
   --corner-menu-preview-radius: 22px;
   --corner-menu-preview-pad-x: 24px;
@@ -118,13 +118,47 @@
   }
 }
 
-@media (max-height: 760px) {
+@media (max-height: 900px) {
   .killchain-app {
+    --corner-menu-mode-font: clamp(2rem, 4.6vh, 52.9px);
+    --corner-menu-mode-gap: clamp(8px, 1.4vh, 18px);
     --corner-menu-preview-frame-height: min(
       calc(var(--corner-menu-preview-inner-width) * 9 / 16),
-      28vh
+      26vh
     );
-    --corner-menu-preview-intro-height: min(11rem, 14vh);
+    --corner-menu-preview-intro-height: min(11rem, 13vh);
+    --corner-menu-preview-shell-height: calc(
+      var(--corner-menu-preview-pad-y) * 2 + var(--corner-menu-preview-intro-height) +
+        var(--corner-menu-preview-content-gap) + var(--corner-menu-preview-frame-height)
+    );
+  }
+}
+
+@media (max-height: 760px) {
+  .killchain-app {
+    --corner-menu-mode-font: clamp(1.75rem, 4vh, 40px);
+    --corner-menu-mode-gap: clamp(6px, 1.1vh, 14px);
+    --corner-menu-preview-frame-height: min(
+      calc(var(--corner-menu-preview-inner-width) * 9 / 16),
+      22vh
+    );
+    --corner-menu-preview-intro-height: min(9rem, 11vh);
+    --corner-menu-preview-shell-height: calc(
+      var(--corner-menu-preview-pad-y) * 2 + var(--corner-menu-preview-intro-height) +
+        var(--corner-menu-preview-content-gap) + var(--corner-menu-preview-frame-height)
+    );
+  }
+}
+
+@media (max-height: 640px) {
+  .killchain-app {
+    --corner-menu-mode-font: clamp(1.5rem, 3.6vh, 34px);
+    --corner-menu-mode-gap: clamp(4px, 0.9vh, 10px);
+    --corner-menu-preview-frame-height: min(
+      calc(var(--corner-menu-preview-inner-width) * 9 / 16),
+      18vh
+    );
+    --corner-menu-preview-intro-height: min(7.5rem, 9vh);
     --corner-menu-preview-shell-height: calc(
       var(--corner-menu-preview-pad-y) * 2 + var(--corner-menu-preview-intro-height) +
         var(--corner-menu-preview-content-gap) + var(--corner-menu-preview-frame-height)
