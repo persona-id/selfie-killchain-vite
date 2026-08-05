@@ -623,7 +623,8 @@
     min-height: 0;
     width: 100%;
     justify-content: flex-start;
-    padding-top: 4px;
+    padding-top: 8px;
+    margin-top: 4px;
   }
 
   .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__footer,
@@ -631,9 +632,9 @@
     flex: 1 1 auto;
     min-width: 0;
     height: auto;
-    min-height: 0;
+    min-height: clamp(320px, 44dvh, 620px);
     width: 100%;
-    overflow: visible;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
@@ -642,7 +643,7 @@
   .view-menu-panel__content-shell {
     flex: 1 1 auto;
     height: auto;
-    min-height: clamp(280px, 38dvh, 520px);
+    min-height: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -651,14 +652,23 @@
 
   .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__content,
   .view-menu-panel__content {
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+  }
+
+  .view-menu-panel__preview-header {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-shell,
   .view-menu-panel__preview-shell {
-    flex: 1 1 auto;
-    margin-top: auto;
+    flex: 1 1 0;
+    margin-top: 0;
     justify-content: flex-end;
     align-items: stretch;
     min-height: 0;
@@ -668,9 +678,11 @@
   .utility-menu:is([data-state='opening'], [data-state='open']) .view-menu-panel__preview-frame,
   .view-menu-panel__preview-frame {
     width: 100%;
-    aspect-ratio: 16 / 9;
-    height: auto;
-    flex: 0 0 auto;
+    height: 100%;
+    max-height: 100%;
+    aspect-ratio: unset;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .view-menu-panel__modes,

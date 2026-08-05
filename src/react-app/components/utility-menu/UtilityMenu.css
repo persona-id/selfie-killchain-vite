@@ -9,6 +9,8 @@
   align-items: flex-end;
   width: max-content;
   max-width: calc(100vw - 2 * var(--page-edge-pad));
+  container-type: inline-size;
+  container-name: utility-menu;
   view-transition-name: none;
   --utility-menu-ease: var(--utility-shell-ease, cubic-bezier(0.33, 1, 0.68, 1));
   --utility-menu-duration: var(--utility-shell-duration, 0.75s);
@@ -475,11 +477,19 @@
   }
 }
 
-@container utility-menu-shell (max-width: 900px) {
+@container utility-menu (min-width: 901px) {
+  .utility-menu__shell {
+    height: var(--utility-menu-open-height, min(50dvh, calc(100dvh - 2 * var(--page-edge-pad))));
+    min-height: var(--utility-menu-open-min-height, min(480px, min(50dvh, calc(100dvh - 2 * var(--page-edge-pad)))));
+    max-height: var(--utility-menu-open-height, min(50dvh, calc(100dvh - 2 * var(--page-edge-pad))));
+  }
+}
+
+@container utility-menu (max-width: 900px) {
   .utility-menu__shell {
     height: auto;
-    min-height: min(540px, calc(100dvh - 2 * var(--page-edge-pad)));
-    max-height: calc(100dvh - 2 * var(--page-edge-pad));
+    min-height: var(--utility-menu-open-min-height-stacked, min(540px, calc(100dvh - 2 * var(--page-edge-pad))));
+    max-height: var(--utility-menu-open-height-stacked, min(85dvh, calc(100dvh - 2 * var(--page-edge-pad))));
   }
 
   .utility-menu__body {
@@ -493,7 +503,7 @@
   .utility-menu__body .view-menu-panel {
     height: auto;
     min-height: 0;
-    padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 40px);
+    padding-top: calc(var(--corner-menu-pad-y, 26px) + 28px + 64px);
     padding-left: calc(var(--corner-menu-pad-start, 35px) + 28px + 20px);
   }
 
