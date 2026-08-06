@@ -124,18 +124,6 @@ export const DEFAULT_CONSTELLATION: ConstellationSettings = {
   lineOpacity: 0.55,
 }
 
-export type ChainLineConnect = 'bridges' | 'hub-spokes' | 'member-mesh' | 'all'
-
-export const CHAIN_LINE_CONNECT_OPTIONS: {
-  id: ChainLineConnect
-  label: string
-}[] = [
-  { id: 'bridges', label: 'Hub bridges' },
-  { id: 'hub-spokes', label: 'Hub to images' },
-  { id: 'member-mesh', label: 'Image mesh' },
-  { id: 'all', label: 'All' },
-]
-
 export type SeverityOrbAnimation = 'pulse' | 'breathe' | 'glow' | 'static'
 
 export const SEVERITY_ORB_ANIMATION_OPTIONS: {
@@ -160,15 +148,7 @@ export const FRAUD_AXIS_LABEL_OPTIONS: {
 ]
 
 export type CategoryViewSettings = {
-  showConnectionLines: boolean
-  showLinesWhenFocused: boolean
   unfocusedClusterOpacity: number
-  lineOpacity: number
-  lineColor: string
-  lineThickness: number
-  bridgeLineThickness: number
-  chainLineConnect: ChainLineConnect
-  memberLinesPerHub: number
   clusterShape: ClusterElementLayout
   clusterSpacing: number
   groupSpread: number
@@ -182,18 +162,11 @@ export type CategoryViewSettings = {
   fraudAxisLabelStyle: FraudAxisLabelStyle
   clusterFocusPresentation: boolean
   clusterFocusOrbitSphere: boolean
+  clusterFocusPlaqueAnimate: boolean
 }
 
 export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
-  showConnectionLines: true,
-  showLinesWhenFocused: true,
   unfocusedClusterOpacity: 0.2,
-  lineOpacity: 0.55,
-  lineColor: '#b8b8b8',
-  lineThickness: 0.65,
-  bridgeLineThickness: 0.9,
-  chainLineConnect: 'all',
-  memberLinesPerHub: 0,
   clusterShape: 'globe',
   clusterSpacing: 1,
   groupSpread: 1,
@@ -207,6 +180,7 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   fraudAxisLabelStyle: 'short',
   clusterFocusPresentation: true,
   clusterFocusOrbitSphere: true,
+  clusterFocusPlaqueAnimate: true,
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'

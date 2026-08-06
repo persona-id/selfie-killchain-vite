@@ -50,6 +50,7 @@ import {
 } from '../../lib/fraudAxisLabels'
 import {
   createClusterFocusPlaque,
+  playClusterFocusPlaqueEntrance,
 } from '../../lib/clusterFocusPlaque'
 import {
   focusOrbitDepthOpacity,
@@ -70,9 +71,7 @@ import {
   clusterItems,
   clusterMemberIds,
   drawClusterThreads,
-  drawLayoutClusterThreads,
   findClusterAtScreenPoint,
-  layoutThreadOptionsFromCategoryView,
   setClusterHighlight,
   type ClusterHoverTarget,
   type ImageCluster,
@@ -218,7 +217,6 @@ export function GlobeView({
   const objectByIdRef = useRef<Map<string, CSS3DObject>>(new Map())
   const clustersRef = useRef<ImageCluster | null>(null)
   const layoutClustersRef = useRef<ImageCluster[]>([])
-  const layoutBridgesRef = useRef<{ fromId: string; toId: string }[]>([])
   const layoutFieldRadiusRef = useRef(GLOBE_RADIUS)
   const layoutClusterGlobesRef = useRef<ClusterGlobe[]>([])
   const itemClusterIdRef = useRef<Map<string, string>>(new Map())
@@ -323,6 +321,10 @@ export function GlobeView({
     group.add(plaque)
     clusterFocusPlaqueRef.current = plaque
     clusterFocusPlaqueClusterIdRef.current = clusterId
+    playClusterFocusPlaqueEntrance(
+      plaque,
+      categoryViewRef.current.clusterFocusPlaqueAnimate && !reduceMotion,
+    )
   }
 
   const applyOrbitFocusPositions = (
@@ -1120,7 +1122,6 @@ export function GlobeView({
       : null
 
     layoutClustersRef.current = layout?.clusters ?? []
-    layoutBridgesRef.current = layout?.bridges ?? []
     layoutFieldRadiusRef.current = layout?.fieldRadius ?? GLOBE_RADIUS
     layoutClusterGlobesRef.current = layout?.clusterGlobes ?? []
     itemClusterIdRef.current = layout?.itemClusterId ?? new Map()
@@ -2534,28 +2535,7 @@ export function GlobeView({
       cssRenderer.render(scene, camera)
 
       const { clientWidth, clientHeight } = container
-      const categoryView = categoryViewRef.current
-      const showClusterLines =
-        categoryView.showConnectionLines &&
-        layoutClustersRef.current.length > 0 &&
-        (categoryView.showLinesWhenFocused || !clusterFocusRef.current)
-      if (isClusters && showClusterLines) {
-        const bridgeCenters = new Map<string, THREE.Vector3>()
-        layoutClusterGlobesRef.current.forEach((globe) => {
-          bridgeCenters.set(globe.cluster.anchorId, globe.center)
-        })
-        drawLayoutClusterThreads(
-          threadCtx,
-          layoutClustersRef.current,
-          objectById,
-          camera,
-          clientWidth,
-          clientHeight,
-          layoutBridgesRef.current,
-          layoutThreadOptionsFromCategoryView(categoryView),
-          bridgeCenters,
-        )
-      } else if (
+      if (
         linkClusterRef.current.enabled &&
         linkClusterFocusRef.current &&
         clustersRef.current
@@ -2600,7 +2580,6 @@ export function GlobeView({
       objectByIdRef.current.clear()
       clustersRef.current = null
       layoutClustersRef.current = []
-      layoutBridgesRef.current = []
       layoutClusterGlobesRef.current = []
       itemClusterIdRef.current.clear()
       clusterGroupsRef.current.clear()
@@ -2630,20 +2609,12 @@ export function GlobeView({
     globeArrangement,
     categoryView.clusterSpacing,
     categoryView.clusterShape,
-    categoryView.showConnectionLines,
-    categoryView.showLinesWhenFocused,
     categoryView.unfocusedClusterOpacity,
     categoryView.showSeverityOrb,
     categoryView.severityOrbAnimation,
     categoryView.fraudAxisEnabled,
     categoryView.fraudAxisSpread,
     categoryView.fraudAxisLabelStyle,
-    categoryView.lineColor,
-    categoryView.lineOpacity,
-    categoryView.lineThickness,
-    categoryView.bridgeLineThickness,
-    categoryView.chainLineConnect,
-    categoryView.memberLinesPerHub,
     categoryView.groupSpread,
     categoryView.clusterAnimation,
     categoryView.imageFlutter,

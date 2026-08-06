@@ -223,36 +223,10 @@ function loadStoredState(): StoredState {
           0.5,
           2.5,
         ),
-        lineOpacity: clamp(
-          parsed.categoryView?.lineOpacity ?? DEFAULT_CATEGORY_VIEW.lineOpacity,
-          0.05,
-          1,
-        ),
-        lineColor: normalizeHex(
-          parsed.categoryView?.lineColor ?? DEFAULT_CATEGORY_VIEW.lineColor,
-        ),
         groupSpread: clamp(
           parsed.categoryView?.groupSpread ?? DEFAULT_CATEGORY_VIEW.groupSpread,
           0.5,
           2.5,
-        ),
-        lineThickness: clamp(
-          parsed.categoryView?.lineThickness ?? DEFAULT_CATEGORY_VIEW.lineThickness,
-          0.2,
-          3,
-        ),
-        bridgeLineThickness: clamp(
-          parsed.categoryView?.bridgeLineThickness ??
-            DEFAULT_CATEGORY_VIEW.bridgeLineThickness,
-          0.2,
-          3,
-        ),
-        chainLineConnect:
-          parsed.categoryView?.chainLineConnect ?? DEFAULT_CATEGORY_VIEW.chainLineConnect,
-        memberLinesPerHub: clamp(
-          parsed.categoryView?.memberLinesPerHub ?? DEFAULT_CATEGORY_VIEW.memberLinesPerHub,
-          0,
-          48,
         ),
         motionSpeed: clamp(
           parsed.categoryView?.motionSpeed ?? DEFAULT_CATEGORY_VIEW.motionSpeed,
@@ -269,9 +243,6 @@ function loadStoredState(): StoredState {
         clusterAnimation: isGlobeAnimation(parsed.categoryView?.clusterAnimation)
           ? parsed.categoryView.clusterAnimation
           : DEFAULT_CATEGORY_VIEW.clusterAnimation,
-        showLinesWhenFocused:
-          parsed.categoryView?.showLinesWhenFocused ??
-          DEFAULT_CATEGORY_VIEW.showLinesWhenFocused,
         unfocusedClusterOpacity: clamp(
           parsed.categoryView?.unfocusedClusterOpacity ??
             DEFAULT_CATEGORY_VIEW.unfocusedClusterOpacity,
@@ -554,28 +525,10 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       ...settings,
       clusterSpacing: clamp(settings.clusterSpacing ?? prev.clusterSpacing, 0.5, 2.5),
       groupSpread: clamp(settings.groupSpread ?? prev.groupSpread, 0.5, 2.5),
-      lineOpacity: clamp(settings.lineOpacity ?? prev.lineOpacity, 0.05, 1),
-      lineColor: settings.lineColor
-        ? normalizeHex(settings.lineColor)
-        : prev.lineColor,
-      lineThickness: clamp(settings.lineThickness ?? prev.lineThickness, 0.2, 3),
-      bridgeLineThickness: clamp(
-        settings.bridgeLineThickness ?? prev.bridgeLineThickness,
-        0.2,
-        3,
-      ),
-      chainLineConnect: settings.chainLineConnect ?? prev.chainLineConnect,
-      memberLinesPerHub: clamp(
-        settings.memberLinesPerHub ?? prev.memberLinesPerHub,
-        0,
-        48,
-      ),
       motionSpeed: clamp(settings.motionSpeed ?? prev.motionSpeed, 0, 2),
       imageFlutter: clamp(settings.imageFlutter ?? prev.imageFlutter, 0, 1),
       clusterShape: settings.clusterShape ?? prev.clusterShape,
       clusterAnimation: settings.clusterAnimation ?? prev.clusterAnimation,
-      showLinesWhenFocused:
-        settings.showLinesWhenFocused ?? prev.showLinesWhenFocused,
       unfocusedClusterOpacity: clamp(
         settings.unfocusedClusterOpacity ?? prev.unfocusedClusterOpacity,
         0.05,

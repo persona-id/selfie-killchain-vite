@@ -3,11 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGallery } from '../context/GalleryContext'
 import {
   CATEGORIES,
-  CHAIN_LINE_CONNECT_OPTIONS,
   SEVERITY_ORB_ANIMATION_OPTIONS,
   FRAUD_AXIS_LABEL_OPTIONS,
   type Category,
-  type ChainLineConnect,
   type GlobeAnimation,
   type SeverityOrbAnimation,
   type FraudAxisLabelStyle,
@@ -192,42 +190,6 @@ export function HamburgerMenu({
                   }
                 />
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCategoryView({
-                      showConnectionLines: !categoryView.showConnectionLines,
-                    })
-                  }
-                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                    categoryView.showConnectionLines
-                      ? 'hamburger-menu__list-btn--active'
-                      : 'hamburger-menu__list-btn--inactive'
-                  }`}
-                >
-                  {categoryView.showConnectionLines
-                    ? 'On — connection lines'
-                    : 'Off — hide connection lines'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCategoryView({
-                      showLinesWhenFocused: !categoryView.showLinesWhenFocused,
-                    })
-                  }
-                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                    categoryView.showLinesWhenFocused
-                      ? 'hamburger-menu__list-btn--active'
-                      : 'hamburger-menu__list-btn--inactive'
-                  }`}
-                >
-                  {categoryView.showLinesWhenFocused
-                    ? 'On — lines when zoomed in'
-                    : 'Off — hide lines when zoomed in'}
-                </button>
-
                 <SliderControl
                   label="Group spread"
                   min={0.5}
@@ -236,78 +198,6 @@ export function HamburgerMenu({
                   value={categoryView.groupSpread}
                   format={(v) => `${Math.round(v * 100)}%`}
                   onChange={(groupSpread) => setCategoryView({ groupSpread })}
-                />
-
-                <SliderControl
-                  label="Line opacity"
-                  min={0.05}
-                  max={1}
-                  step={0.05}
-                  value={categoryView.lineOpacity}
-                  format={(v) => `${Math.round(v * 100)}%`}
-                  onChange={(lineOpacity) => setCategoryView({ lineOpacity })}
-                />
-
-                <label className="hamburger-menu__color-row">
-                  <span className="hamburger-menu__color-value">Line color</span>
-                  <input
-                    type="color"
-                    className="hamburger-menu__color-input"
-                    value={categoryView.lineColor}
-                    onChange={(event) =>
-                      setCategoryView({ lineColor: event.target.value })
-                    }
-                  />
-                </label>
-
-                <SliderControl
-                  label="Line thickness"
-                  min={0.2}
-                  max={3}
-                  step={0.05}
-                  value={categoryView.lineThickness}
-                  format={(v) => `${v.toFixed(2)}px`}
-                  onChange={(lineThickness) => setCategoryView({ lineThickness })}
-                />
-
-                <SliderControl
-                  label="Bridge thickness"
-                  min={0.2}
-                  max={3}
-                  step={0.05}
-                  value={categoryView.bridgeLineThickness}
-                  format={(v) => `${v.toFixed(2)}px`}
-                  onChange={(bridgeLineThickness) =>
-                    setCategoryView({ bridgeLineThickness })
-                  }
-                />
-
-                <p className="hamburger-menu__subsection-label">Lines connect</p>
-                <div className="hamburger-menu__pill-row">
-                  {CHAIN_LINE_CONNECT_OPTIONS.map((option) => (
-                    <PillButton
-                      key={option.id}
-                      label={option.label}
-                      active={categoryView.chainLineConnect === option.id}
-                      onClick={() =>
-                        setCategoryView({
-                          chainLineConnect: option.id as ChainLineConnect,
-                        })
-                      }
-                    />
-                  ))}
-                </div>
-
-                <SliderControl
-                  label="Spokes per hub"
-                  min={0}
-                  max={24}
-                  step={1}
-                  value={categoryView.memberLinesPerHub}
-                  format={(v) => (v === 0 ? 'All' : `${Math.round(v)}`)}
-                  onChange={(memberLinesPerHub) =>
-                    setCategoryView({ memberLinesPerHub })
-                  }
                 />
 
                 <button
@@ -329,23 +219,44 @@ export function HamburgerMenu({
                 </button>
 
                 {categoryView.clusterFocusPresentation ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCategoryView({
-                        clusterFocusOrbitSphere: !categoryView.clusterFocusOrbitSphere,
-                      })
-                    }
-                    className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                      categoryView.clusterFocusOrbitSphere
-                        ? 'hamburger-menu__list-btn--active'
-                        : 'hamburger-menu__list-btn--inactive'
-                    }`}
-                  >
-                    {categoryView.clusterFocusOrbitSphere
-                      ? 'On — orbit sphere layout'
-                      : 'Off — original cluster layout'}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCategoryView({
+                          clusterFocusOrbitSphere: !categoryView.clusterFocusOrbitSphere,
+                        })
+                      }
+                      className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                        categoryView.clusterFocusOrbitSphere
+                          ? 'hamburger-menu__list-btn--active'
+                          : 'hamburger-menu__list-btn--inactive'
+                      }`}
+                    >
+                      {categoryView.clusterFocusOrbitSphere
+                        ? 'On — orbit sphere layout'
+                        : 'Off — original cluster layout'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCategoryView({
+                          clusterFocusPlaqueAnimate:
+                            !categoryView.clusterFocusPlaqueAnimate,
+                        })
+                      }
+                      className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                        categoryView.clusterFocusPlaqueAnimate
+                          ? 'hamburger-menu__list-btn--active'
+                          : 'hamburger-menu__list-btn--inactive'
+                      }`}
+                    >
+                      {categoryView.clusterFocusPlaqueAnimate
+                        ? 'On — plaque blur entrance'
+                        : 'Off — plaque blur entrance'}
+                    </button>
+                  </>
                 ) : null}
 
                 <button

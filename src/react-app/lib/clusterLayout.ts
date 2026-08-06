@@ -623,8 +623,6 @@ export function constellationSettingsForCategoryView(
     elementLayout: categoryView.clusterShape,
     elementSeparation: categoryView.clusterSpacing,
     clusterSpread: categoryView.groupSpread,
-    lineColor: categoryView.lineColor,
-    lineOpacity: categoryView.lineOpacity,
     elementAnimation: categoryView.clusterAnimation,
   }
 }

@@ -29,6 +29,29 @@ export function createClusterFocusPlaque(label: string, count: number): CSS3DObj
   return plaque
 }
 
+export function playClusterFocusPlaqueEntrance(
+  plaque: CSS3DObject,
+  animate = true,
+): void {
+  const el = plaque.element as HTMLDivElement
+  el.classList.remove('cluster-focus-plaque--exit')
+
+  if (!animate) {
+    el.classList.remove('cluster-focus-plaque--entering')
+    el.classList.add('cluster-focus-plaque--visible')
+    return
+  }
+
+  el.classList.remove('cluster-focus-plaque--visible')
+  el.classList.add('cluster-focus-plaque--entering')
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      el.classList.add('cluster-focus-plaque--visible')
+    })
+  })
+}
+
 export function updateClusterFocusPlaque(
   plaque: CSS3DObject,
   label: string,
