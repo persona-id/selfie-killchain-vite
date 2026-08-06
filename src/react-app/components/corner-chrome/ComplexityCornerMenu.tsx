@@ -2,8 +2,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useGallery } from '../../context/GalleryContext'
-import { categoryLabel } from '../../lib/taxonomy'
-import { CATEGORIES, type Category, type Complexity } from '../../types/gallery'
+import { filterGroupLabel } from '../../lib/taxonomy'
+import { type Complexity } from '../../types/gallery'
 import { SETTINGS_MENU_ENTRANCE } from '../../constants/shellMotion'
 import {
   UTILITY_MENU_CASCADE_STAGGER_MS,
@@ -24,7 +24,7 @@ type FilterMenuState = 'idle' | 'opening' | 'open' | 'closing'
 
 type FilterRow =
   | { kind: 'complexity'; value: Complexity }
-  | { kind: 'category'; value: Category }
+  | { kind: 'group'; value: string }
 
 function useFilterMenuState() {
   const [state, setState] = useState<FilterMenuState>('idle')
@@ -69,8 +69,9 @@ export function ComplexityCornerMenu({
   const {
     activeComplexity,
     setActiveComplexity,
-    highlightedCategory,
-    selectHighlightCategory,
+    highlightedFilter,
+    selectHighlightFilter,
+    filterGroups,
   } = useGallery()
   const { state, toggle, showPanel, triggerLocked } = useFilterMenuState()
   const visible = entranceReady && !hidden
@@ -78,9 +79,9 @@ export function ComplexityCornerMenu({
   const filterRows = useMemo<FilterRow[]>(
     () => [
       ...COMPLEXITY_ORDER.map((value) => ({ kind: 'complexity' as const, value })),
-      ...CATEGORIES.map((value) => ({ kind: 'category' as const, value })),
+      ...filterGroups.map((value) => ({ kind: 'group' as const, value })),
     ],
-    [],
+    [filterGroups],
   )
 
   const handleComplexitySelect = (complexity: Complexity) => {
@@ -92,13 +93,13 @@ export function ComplexityCornerMenu({
     const isActive =
       row.kind === 'complexity'
         ? row.value === activeComplexity
-        : highlightedCategory === row.value
+        : highlightedFilter === row.value
     const label =
-      row.kind === 'complexity' ? row.value : categoryLabel(row.value)
+      row.kind === 'complexity' ? row.value : filterGroupLabel(row.value)
     const onClick =
       row.kind === 'complexity'
         ? () => handleComplexitySelect(row.value)
-        : () => selectHighlightCategory(row.value)
+        : () => selectHighlightFilter(row.value)
 
     return (
       <motion.button
@@ -158,9 +159,9 @@ export function ComplexityCornerMenu({
               <div className="complexity-corner__section">
                 <p className="complexity-corner__section-label">Categories</p>
                 <div className="complexity-corner__items">
-                  {CATEGORIES.map((category, index) =>
+                  {filterGroups.map((group, index) =>
                     renderFilterButton(
-                      { kind: 'category', value: category },
+                      { kind: 'group', value: group },
                       COMPLEXITY_ORDER.length + index,
                     ),
                   )}

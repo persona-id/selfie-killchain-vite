@@ -46,6 +46,7 @@ import {
   type CameraPipelineStatus,
 } from '../../lib/cameraGesturePipeline'
 import { findSimilarItems } from '../../lib/similarity'
+import { itemMatchesFilter } from '../../lib/taxonomy'
 import {
   CLUSTER_OUTSIDE_OPACITY,
   COMPLEXITY_DIM_OPACITY,
@@ -134,7 +135,7 @@ export function GlobeView({
     selectedItem,
     activeComplexity,
     comprehensiveMode,
-    highlightedCategory,
+    highlightedFilter,
   } = useGallery()
   const containerRef = useRef<HTMLDivElement>(null)
   const threadCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -204,7 +205,7 @@ export function GlobeView({
   const activeComplexityRef = useRef(activeComplexity)
   const complexityBlendRef = useRef(0)
   const categoryBlendRef = useRef(0)
-  const highlightedCategoryRef = useRef(highlightedCategory)
+  const highlightedFilterRef = useRef(highlightedFilter)
   const complexityFocusAnimRef = useRef<{
     startX: number
     startY: number
@@ -455,7 +456,7 @@ export function GlobeView({
   displayItemsRef.current = displayItems
   activeComplexityRef.current = activeComplexity
   comprehensiveModeRef.current = comprehensiveMode
-  highlightedCategoryRef.current = highlightedCategory
+  highlightedFilterRef.current = highlightedFilter
 
   const applyComprehensiveCameraTarget = (complexity: typeof activeComplexity) => {
     const state = interactionStateRef.current
@@ -556,10 +557,10 @@ export function GlobeView({
 
   const startFilterFocusAnimation = () => {
     const complexity = activeComplexityRef.current
-    const highlighted = highlightedCategoryRef.current
-    const categoryFilterActive = highlighted !== null
+    const highlighted = highlightedFilterRef.current
+    const filterActive = highlighted !== null
     const state = interactionStateRef.current
-    if ((!complexity && !categoryFilterActive) || !state || objectsRef.current.length === 0) {
+    if ((!complexity && !filterActive) || !state || objectsRef.current.length === 0) {
       complexityFocusAnimRef.current = null
       return
     }
@@ -572,7 +573,7 @@ export function GlobeView({
 
     const target = computeFilterFocusRotation(objectsRef.current, {
       complexity,
-      highlightedCategory: highlighted,
+      highlightedFilter: highlighted,
       preferBackHemisphere: comprehensiveModeRef.current,
       clusterFieldCenters:
         clusterFieldCenters.size > 0 ? clusterFieldCenters : undefined,
@@ -598,7 +599,7 @@ export function GlobeView({
     }
   }, [
     activeComplexity,
-    highlightedCategory,
+    highlightedFilter,
     displayItems,
     globeArrangement,
     comprehensiveMode,
@@ -1357,7 +1358,7 @@ export function GlobeView({
         const friction = Math.pow(preset.friction, timeScale)
         const focusAnim = complexityFocusAnimRef.current
         const categoryFilterActive =
-          highlightedCategoryRef.current !== null
+          highlightedFilterRef.current !== null
         const inComplexityFocus =
           focusAnim &&
           (activeComplexityRef.current || categoryFilterActive) &&
@@ -1475,7 +1476,7 @@ export function GlobeView({
         (1 - Math.pow(COMPLEXITY_BLEND_RATE, timeScale))
 
       const categoryHighlightActive =
-        highlightedCategoryRef.current !== null
+        highlightedFilterRef.current !== null
       const categoryBlendTarget = categoryHighlightActive ? 1 : 0
       categoryBlendRef.current +=
         (categoryBlendTarget - categoryBlendRef.current) *
@@ -1642,7 +1643,7 @@ export function GlobeView({
         (isClusters && clusterFocusRef.current) ||
         linkClusterFocusRef.current
       const categoryFilterActive =
-        highlightedCategoryRef.current !== null
+        highlightedFilterRef.current !== null
       const inComplexityFocus = Boolean(
         complexityFocusAnimRef.current &&
           (activeComplexityRef.current || categoryFilterActive) &&
@@ -1738,7 +1739,7 @@ export function GlobeView({
       const complexityBlend = complexityBlendRef.current
       const categoryBlend = categoryBlendRef.current
       const activeComplexity = activeComplexityRef.current
-      const highlightedCategory = highlightedCategoryRef.current
+      const highlightedFilter = highlightedFilterRef.current
       const comprehensiveActive =
         comprehensiveModeRef.current &&
         Boolean(activeComplexity) &&
@@ -2006,16 +2007,16 @@ export function GlobeView({
           categoryHighlightActive &&
           categoryBlend > 0.01
         ) {
-          if (item.category !== highlightedCategory) {
+          if (!itemMatchesFilter(item, highlightedFilter)) {
             opacity *= 1 - categoryBlend * (1 - COMPLEXITY_DIM_OPACITY)
           }
         }
 
-        const categoryFilterActive = highlightedCategory !== null
+        const filterActive = highlightedFilter !== null
         const matchesComprehensiveSelection =
           comprehensiveActive &&
           (!activeComplexity || item.complexity === activeComplexity) &&
-          (!categoryFilterActive || item.category === highlightedCategory)
+          (!filterActive || itemMatchesFilter(item, highlightedFilter))
 
         if (matchesComprehensiveSelection) {
           opacity = 1
@@ -2061,10 +2062,10 @@ export function GlobeView({
           const categoryFilterActive = categoryHighlightActive && categoryBlend > 0.01
           const matchesComplexity =
             !complexityFilterActive || item.complexity === activeComplexity
-          const matchesCategory =
-            !categoryFilterActive || item.category === highlightedCategory
+          const matchesFilter =
+            !categoryFilterActive || itemMatchesFilter(item, highlightedFilter)
           const nextPointerEvents =
-            matchesComplexity && matchesCategory ? 'auto' : 'none'
+            matchesComplexity && matchesFilter ? 'auto' : 'none'
           if (obj.userData.globePointerEvents !== nextPointerEvents) {
             el.style.pointerEvents = nextPointerEvents
             obj.userData.globePointerEvents = nextPointerEvents

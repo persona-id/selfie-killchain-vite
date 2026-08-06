@@ -14,9 +14,15 @@
 .complexity-corner__panel {
   box-sizing: border-box;
   width: min(320px, calc(100vw - 2 * var(--page-edge-pad, 50px)));
+  max-height: min(
+    70dvh,
+    calc(100dvh - 2 * var(--page-edge-pad, 50px) - var(--corner-icon-btn-size, 87px) - 2rem)
+  );
   padding: var(--corner-lib-title-py, 26px) 23px;
-  border-radius: var(--corner-lib-info-radius, 30px);
+  border-radius: var(--corner-pill-radius, var(--killchain-chrome-condensed-radius, 43.5px));
   transform-origin: right bottom;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .complexity-corner__section + .complexity-corner__section {

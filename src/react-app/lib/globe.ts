@@ -7,14 +7,13 @@ import type {
   GlobeAspectRatio,
   GlobeDisplaySettings,
   Complexity,
-  Category,
 } from '../types/gallery'
 import { computeClusterLayout } from './clusterLayout'
-import { resolveGlobeImageSrc } from './taxonomy'
+import { itemFilterKey, resolveGlobeImageSrc } from './taxonomy'
 
 export const DEFAULT_GLOBE_ITEM_COUNT = 450
 export const MIN_GLOBE_ITEM_COUNT = 10
-export const MAX_GLOBE_ITEM_COUNT = 500
+export const MAX_GLOBE_ITEM_COUNT = 1000
 export const GLOBE_RADIUS = 420
 export const GLOBE_CAMERA_FOV = 42
 export const GLOBE_OVERVIEW_SCREEN_FRACTION = 0.6
@@ -424,19 +423,19 @@ export function computeFilterFocusRotation(
   objects: CSS3DObject[],
   options: {
     complexity: Complexity | null
-    highlightedCategory: Category | null
+    highlightedFilter: string | null
     preferBackHemisphere?: boolean
     clusterFieldCenters?: Map<string, THREE.Vector3>
   },
 ): { x: number; y: number } | null {
   const {
     complexity,
-    highlightedCategory,
+    highlightedFilter,
     preferBackHemisphere = false,
     clusterFieldCenters,
   } = options
-  const categoryFilterActive = highlightedCategory !== null
-  if (!complexity && !categoryFilterActive) return null
+  const filterActive = highlightedFilter !== null
+  if (!complexity && !filterActive) return null
 
   const selected: THREE.Vector3[] = []
   const excluded: THREE.Vector3[] = []
@@ -450,10 +449,10 @@ export function computeFilterFocusRotation(
     if (!position) continue
 
     const matchesComplexity = !complexity || item.complexity === complexity
-    const matchesCategory =
-      !categoryFilterActive || item.category === highlightedCategory
+    const matchesFilter =
+      !filterActive || itemFilterKey(item) === highlightedFilter
 
-    if (matchesComplexity && matchesCategory) {
+    if (matchesComplexity && matchesFilter) {
       selected.push(position)
     } else {
       excluded.push(position)
@@ -471,7 +470,7 @@ export function computeComplexityFocusRotation(
 ): { x: number; y: number } | null {
   return computeFilterFocusRotation(objects, {
     complexity,
-    highlightedCategory: null,
+    highlightedFilter: null,
     preferBackHemisphere,
     clusterFieldCenters,
   })

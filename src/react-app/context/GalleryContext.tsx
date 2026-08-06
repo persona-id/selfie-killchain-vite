@@ -23,6 +23,8 @@ import {
   DEFAULT_CAMERA_CONTROLS,
   DEFAULT_CONSTELLATION,
   DEFAULT_COMPREHENSIVE_MODE,
+  MAX_GLOBE_IMAGE_SIZE,
+  MIN_GLOBE_IMAGE_SIZE,
   type Complexity,
 } from '../types/gallery'
 import {
@@ -31,6 +33,7 @@ import {
   MIN_GLOBE_ITEM_COUNT,
   isGlobeAnimation,
 } from '../lib/globe'
+import { itemFilterKey, orderedFilterGroups } from '../lib/taxonomy'
 
 const STORAGE_KEY = 'persona-fas-gallery'
 
@@ -72,9 +75,11 @@ type GalleryContextValue = {
   activeCategories: Set<Category>
   toggleCategory: (category: Category) => void
   selectAllCategories: () => void
-  highlightedCategory: Category | null
-  selectHighlightCategory: (category: Category) => void
-  clearHighlightCategory: () => void
+  highlightedFilter: string | null
+  selectHighlightFilter: (filter: string) => void
+  clearHighlightFilter: () => void
+  filterGroups: string[]
+  filterGroupCounts: Record<string, number>
   activeComplexity: Complexity | null
   setActiveComplexity: (complexity: Complexity | null) => void
   filteredItems: GalleryItem[]
@@ -204,9 +209,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   const [activeCategories, setActiveCategories] = useState<Set<Category>>(
     () => new Set(stored.activeCategories),
   )
-  const [highlightedCategory, setHighlightedCategory] = useState<Category | null>(
-    null,
-  )
+  const [highlightedFilter, setHighlightedFilter] = useState<string | null>(null)
   const [activeComplexity, setActiveComplexityState] = useState<Complexity | null>(
     stored.activeComplexity,
   )
@@ -287,6 +290,20 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     return counts
   }, [items])
 
+  const filterGroups = useMemo(
+    () => orderedFilterGroups(items.map((item) => itemFilterKey(item))),
+    [items],
+  )
+
+  const filterGroupCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const item of items) {
+      const key = itemFilterKey(item)
+      counts[key] = (counts[key] ?? 0) + 1
+    }
+    return counts
+  }, [items])
+
   const filteredItems = useMemo(
     () => items.filter((item) => activeCategories.has(item.category)),
     [items, activeCategories],
@@ -316,12 +333,12 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     setActiveCategories(new Set(CATEGORIES))
   }, [])
 
-  const selectHighlightCategory = useCallback((category: Category) => {
-    setHighlightedCategory((current) => (current === category ? null : category))
+  const selectHighlightFilter = useCallback((filter: string) => {
+    setHighlightedFilter((current) => (current === filter ? null : filter))
   }, [])
 
-  const clearHighlightCategory = useCallback(() => {
-    setHighlightedCategory(null)
+  const clearHighlightFilter = useCallback(() => {
+    setHighlightedFilter(null)
   }, [])
 
   const setActiveComplexity = useCallback((complexity: Complexity | null) => {
@@ -340,7 +357,11 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
 
   const setGlobeDisplay = useCallback((settings: Partial<GlobeDisplaySettings>) => {
     setGlobeDisplayState((prev) => ({
-      imageSize: clamp(settings.imageSize ?? prev.imageSize, 0.4, 2.5),
+      imageSize: clamp(
+        settings.imageSize ?? prev.imageSize,
+        MIN_GLOBE_IMAGE_SIZE,
+        MAX_GLOBE_IMAGE_SIZE,
+      ),
       aspectRatio: settings.aspectRatio ?? prev.aspectRatio,
       imageShape: settings.imageShape ?? prev.imageShape,
       cornerRadius: clamp(settings.cornerRadius ?? prev.cornerRadius, 0, 24),
@@ -452,9 +473,11 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     activeCategories,
     toggleCategory,
     selectAllCategories,
-    highlightedCategory,
-    selectHighlightCategory,
-    clearHighlightCategory,
+    highlightedFilter,
+    selectHighlightFilter,
+    clearHighlightFilter,
+    filterGroups,
+    filterGroupCounts,
     activeComplexity,
     setActiveComplexity,
     filteredItems,

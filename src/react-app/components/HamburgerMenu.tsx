@@ -4,6 +4,10 @@ import { useGallery } from '../context/GalleryContext'
 import { CATEGORIES, type Category } from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
 import { MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT, ARRANGEMENT_OPTIONS } from '../lib/globe'
+import {
+  MAX_GLOBE_IMAGE_SIZE,
+  MIN_GLOBE_IMAGE_SIZE,
+} from '../types/gallery'
 import { SETTINGS_MENU_ENTRANCE } from '../constants/shellMotion'
 import {
   UTILITY_MENU_CLOSE_MS,
@@ -221,8 +225,8 @@ export function HamburgerMenu({
             />
             <SliderControl
               label="Size"
-              min={0.4}
-              max={2.5}
+              min={MIN_GLOBE_IMAGE_SIZE}
+              max={MAX_GLOBE_IMAGE_SIZE}
               step={0.05}
               value={globeDisplay.imageSize}
               format={(v) => `${Math.round(v * 100)}%`}

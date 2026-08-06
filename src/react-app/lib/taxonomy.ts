@@ -1,4 +1,4 @@
-import type { Category, Complexity } from '../types/gallery'
+import type { Category, Complexity, GalleryItem } from '../types/gallery'
 
 const HF_BASE =
   'https://huggingface.co/datasets/saatvikbilla1/persona-fas-preview/resolve/main'
@@ -125,6 +125,47 @@ export function tagsForSynthetic(
 
 export function categoryLabel(category: Category): string {
   return category.replace(/_/g, ' ')
+}
+
+export const FILTER_GROUP_ORDER = [
+  'dolls_and_mannequins',
+  'masks',
+  'ai_generated',
+  'id_portraits',
+  'kyc_video',
+  'physical_photo',
+  'screen_replays',
+  'face_swap',
+  'partial_modification',
+  'full_face_synthesis',
+] as const
+
+export type FilterGroup = (typeof FILTER_GROUP_ORDER)[number]
+
+export function itemFilterKey(
+  item: Pick<GalleryItem, 'category' | 'subcategory'>,
+): string {
+  return item.subcategory ?? item.category
+}
+
+export function filterGroupLabel(key: string): string {
+  return key.replace(/_/g, ' ')
+}
+
+export function orderedFilterGroups(keys: Iterable<string>): string[] {
+  const present = new Set(keys)
+  const ordered = FILTER_GROUP_ORDER.filter((key) => present.has(key))
+  const extras = [...present]
+    .filter((key) => !FILTER_GROUP_ORDER.includes(key as FilterGroup))
+    .sort()
+  return [...ordered, ...extras]
+}
+
+export function itemMatchesFilter(
+  item: Pick<GalleryItem, 'category' | 'subcategory'>,
+  filter: string,
+): boolean {
+  return itemFilterKey(item) === filter
 }
 
 export function formatTag(tag: string): string {

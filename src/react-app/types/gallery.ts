@@ -40,6 +40,9 @@ export const ASPECT_RATIO_OPTIONS: { id: GlobeAspectRatio; label: string }[] = [
   { id: 'wide', label: '16:9' },
 ]
 
+export const MIN_GLOBE_IMAGE_SIZE = 0.15
+export const MAX_GLOBE_IMAGE_SIZE = 2.5
+
 export const DEFAULT_GLOBE_DISPLAY: GlobeDisplaySettings = {
   imageSize: 0.5,
   aspectRatio: 'square',
