@@ -362,14 +362,14 @@ export function HamburgerMenu({
                   }`}
                 >
                   {categoryView.fraudAxisEnabled
-                    ? 'On — digital top / physical bottom'
+                    ? 'On — digital clusters top / physical bottom'
                     : 'Off — fraud axis layout'}
                 </button>
 
                 {categoryView.fraudAxisEnabled ? (
                   <>
                     <SliderControl
-                      label="Fraud axis spread"
+                      label="Cluster axis spread"
                       min={0.5}
                       max={2}
                       step={0.05}

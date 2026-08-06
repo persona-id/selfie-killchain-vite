@@ -44,7 +44,10 @@ import {
   startCameraGesturePipeline,
   type CameraPipelineStatus,
 } from '../../lib/cameraGesturePipeline'
-import { attachFraudAxisLabels } from '../../lib/fraudAxisLabels'
+import {
+  createFraudAxisLabel,
+  fraudAxisLabelText,
+} from '../../lib/fraudAxisLabels'
 import {
   createSeverityOrb,
   dominantClusterComplexity,
@@ -223,6 +226,7 @@ export function GlobeView({
   const clusterFocusedAtRef = useRef(0)
   const focusZoomArmedRef = useRef(false)
   const clusterGroupsRef = useRef<Map<string, THREE.Group>>(new Map())
+  const fraudAxisLabelsRef = useRef<CSS3DObject[]>([])
   const constellationRef = useRef(constellation)
   const closeModalRef = useRef(closeModal)
   const selectedItemRef = useRef(selectedItem)
@@ -1090,21 +1094,40 @@ export function GlobeView({
             clusterGlobe.center.x * 0.0031 + clusterGlobe.center.z * 0.0019
           group.add(orb)
         }
-        if (
-          categoryViewRef.current.fraudAxisEnabled &&
-          categoryViewRef.current.fraudAxisLabelStyle !== 'none'
-        ) {
-          attachFraudAxisLabels(
-            group,
-            clusterGlobe.radius,
-            categoryViewRef.current.fraudAxisLabelStyle,
-          )
-        }
         globe.add(group)
         clusterGroups.set(clusterGlobe.id, group)
       })
     }
     clusterGroupsRef.current = clusterGroups
+
+    fraudAxisLabelsRef.current.forEach((label) => {
+      globe.remove(label)
+      label.element.remove()
+    })
+    fraudAxisLabelsRef.current = []
+    if (
+      isClusters &&
+      layout &&
+      categoryViewRef.current.fraudAxisEnabled &&
+      categoryViewRef.current.fraudAxisLabelStyle !== 'none'
+    ) {
+      const labelStyle = categoryViewRef.current.fraudAxisLabelStyle
+      const axisExtent = layout.fieldRadius * 0.92
+      const digitalText = fraudAxisLabelText('digital', labelStyle)
+      const physicalText = fraudAxisLabelText('physical', labelStyle)
+      if (digitalText) {
+        const top = createFraudAxisLabel(digitalText)
+        top.position.set(0, axisExtent, 0)
+        globe.add(top)
+        fraudAxisLabelsRef.current.push(top)
+      }
+      if (physicalText) {
+        const bottom = createFraudAxisLabel(physicalText)
+        bottom.position.set(0, -axisExtent, 0)
+        globe.add(bottom)
+        fraudAxisLabelsRef.current.push(bottom)
+      }
+    }
 
     const loadRankByIndex = new Map<number, number>()
     const centralityOrder = displayItems
@@ -1786,12 +1809,29 @@ export function GlobeView({
         })
 
         if (focusId) {
+          const motion = categoryViewRef.current
+          const clusterAnimActive =
+            motion.clusterAnimation !== 'static' || motion.imageFlutter > 0
           for (let i = 0; i < objects.length; i++) {
             const obj = objects[i]
             if (obj.userData.clusterId !== focusId) continue
             const focusLocal = obj.userData.focusLocal as THREE.Vector3 | undefined
             if (!focusLocal) continue
-            obj.position.copy(focusLocal)
+            if (clusterAnimActive) {
+              const item = obj.userData.item as GalleryItem | undefined
+              const animated = animateClusterImageLocal(
+                focusLocal,
+                item?.id ?? String(i),
+                now,
+                motion.clusterAnimation,
+                motion.imageFlutter,
+                (obj.userData.hubIndex as number | undefined) ?? 0,
+                motion.motionSpeed,
+              )
+              obj.position.copy(animated)
+            } else {
+              obj.position.copy(focusLocal)
+            }
           }
         } else {
           const motion = categoryViewRef.current
@@ -1840,16 +1880,14 @@ export function GlobeView({
           })
         }
 
-        if (motion.fraudAxisEnabled && motion.fraudAxisLabelStyle !== 'none') {
-          clusterGroupsRef.current.forEach((group, clusterId) => {
-            const labelsVisible = !focusId || focusId === clusterId
-            group.children.forEach((child) => {
-              if (!child.userData.isFraudAxisLabel) return
-              const label = child as CSS3DObject
-              label.element.style.display = labelsVisible ? '' : 'none'
-              if (!labelsVisible) return
-              billboardTowardCamera(label, camera)
-            })
+        if (motion.fraudAxisEnabled && motion.fraudAxisLabelStyle !== 'none' && !focusId) {
+          fraudAxisLabelsRef.current.forEach((label) => {
+            label.element.style.display = ''
+            billboardTowardCamera(label, camera)
+          })
+        } else {
+          fraudAxisLabelsRef.current.forEach((label) => {
+            label.element.style.display = 'none'
           })
         }
       }
@@ -2224,9 +2262,14 @@ export function GlobeView({
           continue
         }
 
+        const inFocusedCluster =
+          Boolean(constellationFocusId && focusedGlobeIds?.has(item.id)) ||
+          Boolean(linkClusterFocused && linkedIds?.has(item.id))
+
         if (
           (cameraMoving || interactionState.dragActive) &&
-          introExitBlend < 0.01
+          introExitBlend < 0.01 &&
+          !inFocusedCluster
         ) {
           continue
         }
@@ -2277,9 +2320,9 @@ export function GlobeView({
 
         if (el.style.zIndex !== zIndex) el.style.zIndex = zIndex
 
-        if (
-          depthFade > 0
-        ) {
+        if (inFocusedCluster) {
+          opacity = 1
+        } else if (depthFade > 0) {
           worldPos.setFromMatrixPosition(obj.matrixWorld)
           const dist = worldPos.distanceTo(camera.position)
           const fieldRadius = layoutFieldRadiusRef.current
@@ -2457,6 +2500,11 @@ export function GlobeView({
       layoutClusterGlobesRef.current = []
       itemClusterIdRef.current.clear()
       clusterGroupsRef.current.clear()
+      fraudAxisLabelsRef.current.forEach((label) => {
+        globe.remove(label)
+        label.element.remove()
+      })
+      fraudAxisLabelsRef.current = []
       clusterHoverTargetsRef.current = []
       clusterFocusRef.current = null
       linkClusterFocusRef.current = false

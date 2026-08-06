@@ -187,19 +187,18 @@ function perfectSpherePositions(count: number, radius: number): THREE.Vector3[] 
   return points
 }
 
-function applyFraudAxisBias(
-  members: GalleryItem[],
-  positions: THREE.Vector3[],
-  radius: number,
+function applyFraudAxisToClusterCenters(
+  groups: GalleryItem[][],
+  centers: THREE.Vector3[],
   spread: number,
 ): void {
-  members.forEach((item, index) => {
-    const position = positions[index]
-    if (!position) return
-    const medium = fraudMediumForItem(item)
-    const bias = medium === 'digital' ? 1 : -1
-    position.y += bias * radius * 0.82 * spread
-  })
+  const bandOffset = BASE_CLUSTER_SPREAD * spread * 0.72
+
+  for (let i = 0; i < groups.length; i++) {
+    const medium = fraudMediumForItem(groups[i][0])
+    centers[i].y *= 0.4
+    centers[i].y += medium === 'digital' ? bandOffset : -bandOffset
+  }
 }
 
 function miniRingPositions(count: number, radius: number): THREE.Vector3[] {
@@ -533,6 +532,9 @@ export function computeClusterLayout(
 
   const groups = groupItems(items)
   const centers = clusterFieldCenters(settings.fieldLayout, groups.length, spread)
+  if (categoryView?.fraudAxisEnabled) {
+    applyFraudAxisToClusterCenters(groups, centers, categoryView.fraudAxisSpread)
+  }
   const positions = new Array<THREE.Vector3>(items.length)
   const itemIndex = new Map(items.map((item, index) => [item.id, index]))
   const clusters: ImageCluster[] = []
@@ -555,21 +557,6 @@ export function computeClusterLayout(
       members.length,
       focusMiniRadius,
     )
-
-    if (categoryView?.fraudAxisEnabled) {
-      applyFraudAxisBias(
-        members,
-        fieldMini,
-        fieldMiniRadius,
-        categoryView.fraudAxisSpread,
-      )
-      applyFraudAxisBias(
-        members,
-        focusMini,
-        focusMiniRadius,
-        categoryView.fraudAxisSpread,
-      )
-    }
 
     const clusterId = `layout-${anchor.id}`
     const label =
