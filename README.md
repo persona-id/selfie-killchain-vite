@@ -1,13 +1,16 @@
 # Persona FAS Gallery (selfie killchain)
 
-An internal Persona app: a React + Vite SPA served by a Hono Cloudflare Worker, cataloguing
+An internal Persona app: a React + Vite SPA served by Cloudflare Workers, cataloguing
 face-anti-spoofing (FAS) attack techniques across the selfie killchain.
 
 - [**React**](https://react.dev/) — UI
 - [**Vite**](https://vite.dev/) — build tooling and dev server
-- [**Hono**](https://hono.dev/) — Worker-side routing under `/api/*`
 - [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) — hosting, with the SPA served
-  from `dist/client` as static assets
+  from `dist` as static assets
+
+There is no server-side code: the deployment is assets-only, and the gallery data ships as a static
+`public/gallery-index.json`. Client-side routes are handled by the `single-page-application`
+not-found fallback.
 
 ## Deploy names
 
@@ -24,9 +27,8 @@ names follow Persona's convention of `persona-<app>-staging` / `persona-<app>-pr
 `wrangler deploy` with no environment selected lands on a prefixed Worker.
 
 Note that `@cloudflare/vite-plugin` resolves the target environment at **build** time from
-`CLOUDFLARE_ENV` and writes the fully-resolved Worker name into
-`dist/persona_selfie_killchain/wrangler.json`, which `wrangler deploy` then reads via
-`.wrangler/deploy/config.json`. Passing `--env` to `wrangler deploy` after the fact does not change
+`CLOUDFLARE_ENV` and writes the fully-resolved Worker name into `dist/wrangler.json`, which
+`wrangler deploy` then reads via `.wrangler/deploy/config.json`. Passing `--env` to `wrangler deploy` after the fact does not change
 which Worker you ship to — the `deploy:*` scripts below therefore bundle the matching build.
 
 ## Development
