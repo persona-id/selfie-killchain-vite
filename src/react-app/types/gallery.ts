@@ -123,17 +123,6 @@ export const DEFAULT_CONSTELLATION: ConstellationSettings = {
   lineOpacity: 0.55,
 }
 
-export type GlobeCategoryMode = 'globe' | 'chain'
-
-export const CATEGORY_MODE_OPTIONS: {
-  id: GlobeCategoryMode
-  label: string
-  hint: string
-}[] = [
-  { id: 'globe', label: 'Globe', hint: 'Classic sphere layout' },
-  { id: 'chain', label: 'Sphere chain', hint: 'Linear interconnected spheres' },
-]
-
 export type ChainLineConnect = 'bridges' | 'hub-spokes' | 'member-mesh' | 'all'
 
 export const CHAIN_LINE_CONNECT_OPTIONS: {
@@ -146,10 +135,21 @@ export const CHAIN_LINE_CONNECT_OPTIONS: {
   { id: 'all', label: 'All' },
 ]
 
+export type SeverityOrbAnimation = 'pulse' | 'breathe' | 'glow' | 'static'
+
+export const SEVERITY_ORB_ANIMATION_OPTIONS: {
+  id: SeverityOrbAnimation
+  label: string
+}[] = [
+  { id: 'pulse', label: 'Pulse' },
+  { id: 'breathe', label: 'Breathe' },
+  { id: 'glow', label: 'Glow' },
+  { id: 'static', label: 'Static' },
+]
+
 export type CategoryViewSettings = {
   showConnectionLines: boolean
-  showCategoryLabels: boolean
-  chainSpacing: number
+  showLinesWhenFocused: boolean
   lineOpacity: number
   lineColor: string
   lineThickness: number
@@ -162,14 +162,13 @@ export type CategoryViewSettings = {
   clusterAnimation: GlobeAnimation
   imageFlutter: number
   motionSpeed: number
+  showSeverityOrb: boolean
+  severityOrbAnimation: SeverityOrbAnimation
 }
-
-export const DEFAULT_CATEGORY_MODE: GlobeCategoryMode = 'globe'
 
 export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   showConnectionLines: true,
-  showCategoryLabels: true,
-  chainSpacing: 1,
+  showLinesWhenFocused: true,
   lineOpacity: 0.55,
   lineColor: '#b8b8b8',
   lineThickness: 0.65,
@@ -182,6 +181,8 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   clusterAnimation: 'sway',
   imageFlutter: 0.35,
   motionSpeed: 1,
+  showSeverityOrb: false,
+  severityOrbAnimation: 'pulse',
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'

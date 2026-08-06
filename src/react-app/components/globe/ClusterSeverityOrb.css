@@ -1,0 +1,39 @@
+.cluster-severity-orb {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  mix-blend-mode: screen;
+}
+
+.cluster-severity-orb--low {
+  background: radial-gradient(
+    circle at 38% 32%,
+    rgba(210, 255, 220, 0.95) 0%,
+    rgba(72, 196, 108, 0.72) 42%,
+    rgba(28, 120, 62, 0.18) 100%
+  );
+  box-shadow: 0 0 28px rgba(72, 196, 108, 0.45);
+}
+
+.cluster-severity-orb--moderate {
+  background: radial-gradient(
+    circle at 38% 32%,
+    rgba(255, 248, 198, 0.95) 0%,
+    rgba(232, 196, 72, 0.75) 42%,
+    rgba(160, 120, 18, 0.2) 100%
+  );
+  box-shadow: 0 0 28px rgba(232, 196, 72, 0.45);
+}
+
+.cluster-severity-orb--high {
+  background: radial-gradient(
+    circle at 38% 32%,
+    rgba(255, 214, 208, 0.95) 0%,
+    rgba(232, 92, 72, 0.78) 42%,
+    rgba(140, 28, 18, 0.22) 100%
+  );
+  box-shadow: 0 0 30px rgba(232, 92, 72, 0.5);
+}

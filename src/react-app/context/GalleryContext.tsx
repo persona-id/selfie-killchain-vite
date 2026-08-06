@@ -22,11 +22,10 @@ import {
   DEFAULT_LINK_CLUSTER,
   DEFAULT_CAMERA_CONTROLS,
   DEFAULT_CONSTELLATION,
-  DEFAULT_CATEGORY_MODE,
   DEFAULT_CATEGORY_VIEW,
   DEFAULT_GLOBE_ARRANGEMENT,
-  type GlobeCategoryMode,
   type CategoryViewSettings,
+  type SeverityOrbAnimation,
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
   MAX_DEPTH_FADE,
@@ -58,7 +57,6 @@ type StoredState = {
   linkCluster: LinkClusterSettings
   cameraControls: CameraControlSettings
   constellation: ConstellationSettings
-  categoryMode: GlobeCategoryMode
   categoryView: CategoryViewSettings
 }
 
@@ -81,8 +79,6 @@ type GalleryContextValue = {
   setCameraControls: (settings: Partial<CameraControlSettings>) => void
   setConstellation: (settings: Partial<ConstellationSettings>) => void
   setGlobeAnimation: (animation: GlobeAnimation) => void
-  categoryMode: GlobeCategoryMode
-  setCategoryMode: (mode: GlobeCategoryMode) => void
   categoryView: CategoryViewSettings
   setCategoryView: (settings: Partial<CategoryViewSettings>) => void
   activeCategories: Set<Category>
@@ -123,12 +119,8 @@ function normalizeHex(color: string): string {
   return KILLCHAIN_PAGE_BG
 }
 
-function isCategoryMode(value: unknown): value is GlobeCategoryMode {
-  return value === 'globe' || value === 'chain'
-}
-
-function normalizeCategoryMode(value: unknown): GlobeCategoryMode {
-  return isCategoryMode(value) ? value : 'globe'
+function isSeverityOrbAnimation(value: unknown): value is SeverityOrbAnimation {
+  return value === 'pulse' || value === 'breathe' || value === 'glow' || value === 'static'
 }
 
 function loadStoredState(): StoredState {
@@ -146,7 +138,6 @@ function loadStoredState(): StoredState {
         linkCluster: { ...DEFAULT_LINK_CLUSTER },
         cameraControls: { ...DEFAULT_CAMERA_CONTROLS },
         constellation: { ...DEFAULT_CONSTELLATION },
-        categoryMode: DEFAULT_CATEGORY_MODE,
         categoryView: { ...DEFAULT_CATEGORY_VIEW },
       }
     }
@@ -219,18 +210,9 @@ function loadStoredState(): StoredState {
         fieldLayout:
           parsed.constellation?.fieldLayout ?? DEFAULT_CONSTELLATION.fieldLayout,
       },
-      categoryMode: normalizeCategoryMode(parsed.categoryMode),
       categoryView: {
         ...DEFAULT_CATEGORY_VIEW,
         ...parsed.categoryView,
-        chainSpacing: clamp(
-          parsed.categoryView?.chainSpacing ??
-            (parsed.categoryView as { clusterSpread?: number } | undefined)
-              ?.clusterSpread ??
-            DEFAULT_CATEGORY_VIEW.chainSpacing,
-          0.5,
-          2.5,
-        ),
         clusterSpacing: clamp(
           parsed.categoryView?.clusterSpacing ?? DEFAULT_CATEGORY_VIEW.clusterSpacing,
           0.5,
@@ -282,6 +264,16 @@ function loadStoredState(): StoredState {
         clusterAnimation: isGlobeAnimation(parsed.categoryView?.clusterAnimation)
           ? parsed.categoryView.clusterAnimation
           : DEFAULT_CATEGORY_VIEW.clusterAnimation,
+        showLinesWhenFocused:
+          parsed.categoryView?.showLinesWhenFocused ??
+          DEFAULT_CATEGORY_VIEW.showLinesWhenFocused,
+        showSeverityOrb:
+          parsed.categoryView?.showSeverityOrb ?? DEFAULT_CATEGORY_VIEW.showSeverityOrb,
+        severityOrbAnimation: isSeverityOrbAnimation(
+          parsed.categoryView?.severityOrbAnimation,
+        )
+          ? parsed.categoryView.severityOrbAnimation
+          : DEFAULT_CATEGORY_VIEW.severityOrbAnimation,
       },
     }
   } catch {
@@ -296,7 +288,6 @@ function loadStoredState(): StoredState {
       linkCluster: { ...DEFAULT_LINK_CLUSTER },
       cameraControls: { ...DEFAULT_CAMERA_CONTROLS },
       constellation: { ...DEFAULT_CONSTELLATION },
-      categoryMode: DEFAULT_CATEGORY_MODE,
       categoryView: { ...DEFAULT_CATEGORY_VIEW },
     }
   }
@@ -337,9 +328,6 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   const [constellation, setConstellationState] = useState<ConstellationSettings>(
     stored.constellation,
   )
-  const [categoryMode, setCategoryModeState] = useState<GlobeCategoryMode>(
-    stored.categoryMode,
-  )
   const [categoryView, setCategoryViewState] = useState<CategoryViewSettings>(
     stored.categoryView,
   )
@@ -367,7 +355,6 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
         linkCluster,
         cameraControls,
         constellation,
-        categoryMode,
         categoryView,
       }),
     )
@@ -383,7 +370,6 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     linkCluster,
     cameraControls,
     constellation,
-    categoryMode,
     categoryView,
   ])
 
@@ -539,15 +525,10 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  const setCategoryMode = useCallback((mode: GlobeCategoryMode) => {
-    setCategoryModeState(mode)
-  }, [])
-
   const setCategoryView = useCallback((settings: Partial<CategoryViewSettings>) => {
     setCategoryViewState((prev) => ({
       ...prev,
       ...settings,
-      chainSpacing: clamp(settings.chainSpacing ?? prev.chainSpacing, 0.5, 2.5),
       clusterSpacing: clamp(settings.clusterSpacing ?? prev.clusterSpacing, 0.5, 2.5),
       groupSpread: clamp(settings.groupSpread ?? prev.groupSpread, 0.5, 2.5),
       lineOpacity: clamp(settings.lineOpacity ?? prev.lineOpacity, 0.05, 1),
@@ -570,6 +551,10 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       imageFlutter: clamp(settings.imageFlutter ?? prev.imageFlutter, 0, 1),
       clusterShape: settings.clusterShape ?? prev.clusterShape,
       clusterAnimation: settings.clusterAnimation ?? prev.clusterAnimation,
+      showLinesWhenFocused:
+        settings.showLinesWhenFocused ?? prev.showLinesWhenFocused,
+      showSeverityOrb: settings.showSeverityOrb ?? prev.showSeverityOrb,
+      severityOrbAnimation: settings.severityOrbAnimation ?? prev.severityOrbAnimation,
     }))
   }, [])
 
@@ -617,8 +602,6 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     setCameraControls,
     constellation,
     setConstellation,
-    categoryMode,
-    setCategoryMode,
     categoryView,
     setCategoryView,
     activeCategories,

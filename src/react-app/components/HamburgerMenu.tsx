@@ -1,7 +1,15 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGallery } from '../context/GalleryContext'
-import { CATEGORIES, CATEGORY_MODE_OPTIONS, CHAIN_LINE_CONNECT_OPTIONS, type Category, type ChainLineConnect, type GlobeAnimation } from '../types/gallery'
+import {
+  CATEGORIES,
+  CHAIN_LINE_CONNECT_OPTIONS,
+  SEVERITY_ORB_ANIMATION_OPTIONS,
+  type Category,
+  type ChainLineConnect,
+  type GlobeAnimation,
+  type SeverityOrbAnimation,
+} from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
 import { ANIMATION_OPTIONS, ARRANGEMENT_OPTIONS, MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT } from '../lib/globe'
 import { CLUSTER_ELEMENT_LAYOUT_OPTIONS } from '../lib/clusterLayout'
@@ -90,8 +98,6 @@ export function HamburgerMenu({
     setLinkCluster,
     cameraControls,
     setCameraControls,
-    categoryMode,
-    setCategoryMode,
     categoryView,
     setCategoryView,
     globeAnimation,
@@ -175,23 +181,19 @@ export function HamburgerMenu({
           >
             <SettingsLibInfo />
 
-            <p className="hamburger-menu__section-label">Category view</p>
+            <p className="hamburger-menu__section-label">Groups</p>
             <div className="hamburger-menu__pill-row">
-              {CATEGORY_MODE_OPTIONS.map((option) => (
-                <PillButton
-                  key={option.id}
-                  label={option.label}
-                  active={categoryMode === option.id}
-                  onClick={() => setCategoryMode(option.id)}
-                />
-              ))}
+              <PillButton
+                label="Groups"
+                active={isCategoryGroup}
+                onClick={() =>
+                  isCategoryGroup ? clearGroupModes() : selectCategoryGroup()
+                }
+              />
             </div>
 
-            {categoryMode === 'chain' || isCategoryGroup ? (
+            {isCategoryGroup ? (
               <>
-                <p className="hamburger-menu__subsection-label">
-                  {isCategoryGroup ? 'Category groups' : 'Sphere chain'}
-                </p>
                 <button
                   type="button"
                   onClick={() =>
@@ -210,49 +212,33 @@ export function HamburgerMenu({
                     : 'Off — hide connection lines'}
                 </button>
 
-                {categoryMode === 'chain' ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCategoryView({
-                        showCategoryLabels: !categoryView.showCategoryLabels,
-                      })
-                    }
-                    className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                      categoryView.showCategoryLabels
-                        ? 'hamburger-menu__list-btn--active'
-                        : 'hamburger-menu__list-btn--inactive'
-                    }`}
-                  >
-                    {categoryView.showCategoryLabels
-                      ? 'On — show category labels'
-                      : 'Off — hide category labels'}
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryView({
+                      showLinesWhenFocused: !categoryView.showLinesWhenFocused,
+                    })
+                  }
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.showLinesWhenFocused
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.showLinesWhenFocused
+                    ? 'On — lines when zoomed in'
+                    : 'Off — hide lines when zoomed in'}
+                </button>
 
-                {categoryMode === 'chain' ? (
-                  <SliderControl
-                    label="Chain spacing"
-                    min={0.5}
-                    max={2.5}
-                    step={0.05}
-                    value={categoryView.chainSpacing}
-                    format={(v) => `${Math.round(v * 100)}%`}
-                    onChange={(chainSpacing) => setCategoryView({ chainSpacing })}
-                  />
-                ) : null}
-
-                {isCategoryGroup ? (
-                  <SliderControl
-                    label="Group spread"
-                    min={0.5}
-                    max={2.5}
-                    step={0.05}
-                    value={categoryView.groupSpread}
-                    format={(v) => `${Math.round(v * 100)}%`}
-                    onChange={(groupSpread) => setCategoryView({ groupSpread })}
-                  />
-                ) : null}
+                <SliderControl
+                  label="Group spread"
+                  min={0.5}
+                  max={2.5}
+                  step={0.05}
+                  value={categoryView.groupSpread}
+                  format={(v) => `${Math.round(v * 100)}%`}
+                  onChange={(groupSpread) => setCategoryView({ groupSpread })}
+                />
 
                 <SliderControl
                   label="Line opacity"
@@ -325,13 +311,51 @@ export function HamburgerMenu({
                     setCategoryView({ memberLinesPerHub })
                   }
                 />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryView({
+                      showSeverityOrb: !categoryView.showSeverityOrb,
+                    })
+                  }
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.showSeverityOrb
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.showSeverityOrb
+                    ? 'On — fraud severity orb'
+                    : 'Off — hide severity orb'}
+                </button>
+
+                {categoryView.showSeverityOrb ? (
+                  <>
+                    <p className="hamburger-menu__subsection-label">Orb animation</p>
+                    <div className="hamburger-menu__pill-row">
+                      {SEVERITY_ORB_ANIMATION_OPTIONS.map((option) => (
+                        <PillButton
+                          key={option.id}
+                          label={option.label}
+                          active={categoryView.severityOrbAnimation === option.id}
+                          onClick={() =>
+                            setCategoryView({
+                              severityOrbAnimation: option.id as SeverityOrbAnimation,
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : null}
               </>
             ) : null}
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
               Motion
             </p>
-            {categoryMode === 'globe' ? (
+            {!isCategoryGroup ? (
               <>
                 <p className="hamburger-menu__subsection-label">Globe animation</p>
                 <div className="hamburger-menu__pill-row">
@@ -408,14 +432,9 @@ export function HamburgerMenu({
             />
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
-              Group by
+              Link clusters
             </p>
             <div className="hamburger-menu__pill-row">
-              <PillButton
-                label="Category"
-                active={isCategoryGroup}
-                onClick={() => (isCategoryGroup ? clearGroupModes() : selectCategoryGroup())}
-              />
               <PillButton
                 label="Cluster"
                 active={isClusterGroup}

@@ -33,7 +33,7 @@ type InteractionConfig = {
   maxCameraZ?: number
   getZoomLimits?: () => { min: number; max: number }
   wheelZoomDirection?: 1 | -1
-  onBackgroundPointerDown?: () => void
+  onBackgroundPointerDown?: (clientX: number, clientY: number) => void
   onDragChange?: (active: boolean) => void
 }
 
@@ -83,7 +83,7 @@ export function attachGlobeInteraction(
     if ((e.target as HTMLElement).closest('.globe-photo')) return
 
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    config.onBackgroundPointerDown?.()
+    config.onBackgroundPointerDown?.(e.clientX, e.clientY)
 
     if (pointers.size === 1) {
       singleDragPointerId = e.pointerId
