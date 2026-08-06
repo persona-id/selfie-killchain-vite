@@ -168,6 +168,30 @@ export function itemMatchesFilter(
   return itemFilterKey(item) === filter
 }
 
+export type FraudMedium = 'digital' | 'physical'
+
+const DIGITAL_REPLICA_SUBCATEGORIES = new Set([
+  'kyc_video',
+  'screen_replays',
+  'ai_generated',
+])
+
+export function fraudMediumForItem(
+  item: Pick<GalleryItem, 'category' | 'subcategory'>,
+): FraudMedium {
+  if (item.category === 'synthetic') return 'digital'
+  if (item.category === 'dolls_and_mannequins' || item.category === 'masks') {
+    return 'physical'
+  }
+  if (item.category === 'replicas') {
+    if (item.subcategory && DIGITAL_REPLICA_SUBCATEGORIES.has(item.subcategory)) {
+      return 'digital'
+    }
+    return 'physical'
+  }
+  return 'physical'
+}
+
 export function formatTag(tag: string): string {
   return tag
 }

@@ -7,6 +7,7 @@ import {
   type ConstellationSettings,
   type GalleryItem,
 } from '../types/gallery'
+import { fraudMediumForItem } from './taxonomy'
 import type { ImageCluster } from './threads'
 
 export const CLUSTER_FIELD_RADIUS = 1450
@@ -103,6 +104,7 @@ export const CLUSTER_ELEMENT_LAYOUT_OPTIONS: {
   hint: string
 }[] = [
   { id: 'globe', label: 'Globe', hint: 'Fibonacci sphere' },
+  { id: 'sphere', label: 'Sphere', hint: 'Even lat-long grid' },
   { id: 'ring', label: 'Ring', hint: 'Flat circle' },
   { id: 'disc', label: 'Disc', hint: 'Filled spiral' },
   { id: 'helix', label: 'Helix', hint: 'Spiral column' },
@@ -160,6 +162,60 @@ export function miniGlobePositions(
   return fibonacciDirections(count).map((dir) =>
     dir.clone().multiplyScalar(radius),
   )
+}
+
+function perfectSpherePositions(count: number, radius: number): THREE.Vector3[] {
+  if (count === 0) return []
+  if (count === 1) return [new THREE.Vector3(0, radius, 0)]
+
+  const points: THREE.Vector3[] = []
+  const bands = Math.max(2, Math.round(Math.sqrt(count)))
+  let placed = 0
+
+  for (let band = 0; band < bands && placed < count; band++) {
+    const v = bands === 1 ? 0.5 : band / (bands - 1)
+    const phi = v * Math.PI
+    const y = Math.cos(phi)
+    const ringRadius = Math.sin(phi)
+    const ringCount =
+      band === 0 || band === bands - 1
+        ? 1
+        : Math.max(1, Math.round((count - 2) / Math.max(1, bands - 2)))
+
+    for (let i = 0; i < ringCount && placed < count; i++) {
+      const theta = ringCount === 1 ? 0 : (i / ringCount) * Math.PI * 2
+      points.push(
+        new THREE.Vector3(
+          Math.cos(theta) * ringRadius * radius,
+          y * radius,
+          Math.sin(theta) * ringRadius * radius,
+        ),
+      )
+      placed += 1
+    }
+  }
+
+  while (points.length < count) {
+    const dir = fibonacciDirections(points.length + 1).at(-1)!
+    points.push(dir.clone().multiplyScalar(radius))
+  }
+
+  return points.slice(0, count)
+}
+
+function applyFraudAxisBias(
+  members: GalleryItem[],
+  positions: THREE.Vector3[],
+  radius: number,
+  spread: number,
+): void {
+  members.forEach((item, index) => {
+    const position = positions[index]
+    if (!position) return
+    const medium = fraudMediumForItem(item)
+    const bias = medium === 'digital' ? 1 : -1
+    position.y += bias * radius * 0.82 * spread
+  })
 }
 
 function miniRingPositions(count: number, radius: number): THREE.Vector3[] {
@@ -273,6 +329,8 @@ export function clusterElementPositions(
       return miniBurstPositions(count, radius)
     case 'orbit':
       return miniOrbitPositions(count, radius)
+    case 'sphere':
+      return perfectSpherePositions(count, radius)
     case 'globe':
     default:
       return miniGlobePositions(count, radius)
@@ -468,6 +526,10 @@ function computeBridges(
 export function computeClusterLayout(
   items: GalleryItem[],
   settings: ConstellationSettings = DEFAULT_CONSTELLATION,
+  categoryView?: Pick<
+    CategoryViewSettings,
+    'fraudAxisEnabled' | 'fraudAxisSpread'
+  >,
 ): ClusterLayout {
   const spread = settings.clusterSpread
   const separation = settings.elementSeparation
@@ -509,6 +571,22 @@ export function computeClusterLayout(
       members.length,
       focusMiniRadius,
     )
+
+    if (categoryView?.fraudAxisEnabled) {
+      applyFraudAxisBias(
+        members,
+        fieldMini,
+        fieldMiniRadius,
+        categoryView.fraudAxisSpread,
+      )
+      applyFraudAxisBias(
+        members,
+        focusMini,
+        focusMiniRadius,
+        categoryView.fraudAxisSpread,
+      )
+    }
+
     const clusterId = `layout-${anchor.id}`
     const label =
       anchor.subcategory?.replace(/_/g, ' ') ??

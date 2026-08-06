@@ -5,10 +5,12 @@ import {
   CATEGORIES,
   CHAIN_LINE_CONNECT_OPTIONS,
   SEVERITY_ORB_ANIMATION_OPTIONS,
+  FRAUD_AXIS_LABEL_OPTIONS,
   type Category,
   type ChainLineConnect,
   type GlobeAnimation,
   type SeverityOrbAnimation,
+  type FraudAxisLabelStyle,
 } from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
 import { ANIMATION_OPTIONS, ARRANGEMENT_OPTIONS, MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT } from '../lib/globe'
@@ -130,11 +132,6 @@ export function HamburgerMenu({
   const isClusterGroup = linkCluster.enabled
   const standardArrangements = ARRANGEMENT_OPTIONS.filter((option) => option.id !== 'clusters')
 
-  const selectCategoryGroup = () => {
-    setLinkCluster({ enabled: false })
-    setGlobeArrangement('clusters')
-  }
-
   const selectClusterGroup = () => {
     if (globeArrangement === 'clusters') {
       setGlobeArrangement('even')
@@ -181,19 +178,20 @@ export function HamburgerMenu({
           >
             <SettingsLibInfo />
 
-            <p className="hamburger-menu__section-label">Groups</p>
-            <div className="hamburger-menu__pill-row">
-              <PillButton
-                label="Groups"
-                active={isCategoryGroup}
-                onClick={() =>
-                  isCategoryGroup ? clearGroupModes() : selectCategoryGroup()
-                }
-              />
-            </div>
-
             {isCategoryGroup ? (
               <>
+                <SliderControl
+                  label="Background cluster opacity"
+                  min={0.05}
+                  max={1}
+                  step={0.05}
+                  value={categoryView.unfocusedClusterOpacity}
+                  format={(v) => `${Math.round(v * 100)}%`}
+                  onChange={(unfocusedClusterOpacity) =>
+                    setCategoryView({ unfocusedClusterOpacity })
+                  }
+                />
+
                 <button
                   type="button"
                   onClick={() =>
@@ -342,6 +340,56 @@ export function HamburgerMenu({
                           onClick={() =>
                             setCategoryView({
                               severityOrbAnimation: option.id as SeverityOrbAnimation,
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryView({
+                      fraudAxisEnabled: !categoryView.fraudAxisEnabled,
+                    })
+                  }
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.fraudAxisEnabled
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.fraudAxisEnabled
+                    ? 'On — digital top / physical bottom'
+                    : 'Off — fraud axis layout'}
+                </button>
+
+                {categoryView.fraudAxisEnabled ? (
+                  <>
+                    <SliderControl
+                      label="Fraud axis spread"
+                      min={0.5}
+                      max={2}
+                      step={0.05}
+                      value={categoryView.fraudAxisSpread}
+                      format={(v) => `${Math.round(v * 100)}%`}
+                      onChange={(fraudAxisSpread) =>
+                        setCategoryView({ fraudAxisSpread })
+                      }
+                    />
+
+                    <p className="hamburger-menu__subsection-label">Axis labels</p>
+                    <div className="hamburger-menu__pill-row">
+                      {FRAUD_AXIS_LABEL_OPTIONS.map((option) => (
+                        <PillButton
+                          key={option.id}
+                          label={option.label}
+                          active={categoryView.fraudAxisLabelStyle === option.id}
+                          onClick={() =>
+                            setCategoryView({
+                              fraudAxisLabelStyle: option.id as FraudAxisLabelStyle,
                             })
                           }
                         />

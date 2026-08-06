@@ -91,6 +91,7 @@ export const DEFAULT_CAMERA_CONTROLS: CameraControlSettings = {
 
 export type ClusterElementLayout =
   | 'globe'
+  | 'sphere'
   | 'ring'
   | 'disc'
   | 'helix'
@@ -147,9 +148,21 @@ export const SEVERITY_ORB_ANIMATION_OPTIONS: {
   { id: 'static', label: 'Static' },
 ]
 
+export type FraudAxisLabelStyle = 'none' | 'short' | 'full'
+
+export const FRAUD_AXIS_LABEL_OPTIONS: {
+  id: FraudAxisLabelStyle
+  label: string
+}[] = [
+  { id: 'none', label: 'None' },
+  { id: 'short', label: 'Digital / Physical' },
+  { id: 'full', label: 'Full labels' },
+]
+
 export type CategoryViewSettings = {
   showConnectionLines: boolean
   showLinesWhenFocused: boolean
+  unfocusedClusterOpacity: number
   lineOpacity: number
   lineColor: string
   lineThickness: number
@@ -164,11 +177,15 @@ export type CategoryViewSettings = {
   motionSpeed: number
   showSeverityOrb: boolean
   severityOrbAnimation: SeverityOrbAnimation
+  fraudAxisEnabled: boolean
+  fraudAxisSpread: number
+  fraudAxisLabelStyle: FraudAxisLabelStyle
 }
 
 export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   showConnectionLines: true,
   showLinesWhenFocused: true,
+  unfocusedClusterOpacity: 0.2,
   lineOpacity: 0.55,
   lineColor: '#b8b8b8',
   lineThickness: 0.65,
@@ -183,6 +200,9 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   motionSpeed: 1,
   showSeverityOrb: false,
   severityOrbAnimation: 'pulse',
+  fraudAxisEnabled: false,
+  fraudAxisSpread: 1,
+  fraudAxisLabelStyle: 'short',
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'

@@ -25,6 +25,7 @@ import {
   DEFAULT_CATEGORY_VIEW,
   DEFAULT_GLOBE_ARRANGEMENT,
   type CategoryViewSettings,
+  type FraudAxisLabelStyle,
   type SeverityOrbAnimation,
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
@@ -121,6 +122,10 @@ function normalizeHex(color: string): string {
 
 function isSeverityOrbAnimation(value: unknown): value is SeverityOrbAnimation {
   return value === 'pulse' || value === 'breathe' || value === 'glow' || value === 'static'
+}
+
+function isFraudAxisLabelStyle(value: unknown): value is FraudAxisLabelStyle {
+  return value === 'none' || value === 'short' || value === 'full'
 }
 
 function loadStoredState(): StoredState {
@@ -267,6 +272,12 @@ function loadStoredState(): StoredState {
         showLinesWhenFocused:
           parsed.categoryView?.showLinesWhenFocused ??
           DEFAULT_CATEGORY_VIEW.showLinesWhenFocused,
+        unfocusedClusterOpacity: clamp(
+          parsed.categoryView?.unfocusedClusterOpacity ??
+            DEFAULT_CATEGORY_VIEW.unfocusedClusterOpacity,
+          0.05,
+          1,
+        ),
         showSeverityOrb:
           parsed.categoryView?.showSeverityOrb ?? DEFAULT_CATEGORY_VIEW.showSeverityOrb,
         severityOrbAnimation: isSeverityOrbAnimation(
@@ -274,6 +285,18 @@ function loadStoredState(): StoredState {
         )
           ? parsed.categoryView.severityOrbAnimation
           : DEFAULT_CATEGORY_VIEW.severityOrbAnimation,
+        fraudAxisEnabled:
+          parsed.categoryView?.fraudAxisEnabled ?? DEFAULT_CATEGORY_VIEW.fraudAxisEnabled,
+        fraudAxisSpread: clamp(
+          parsed.categoryView?.fraudAxisSpread ?? DEFAULT_CATEGORY_VIEW.fraudAxisSpread,
+          0.5,
+          2,
+        ),
+        fraudAxisLabelStyle: isFraudAxisLabelStyle(
+          parsed.categoryView?.fraudAxisLabelStyle,
+        )
+          ? parsed.categoryView.fraudAxisLabelStyle
+          : DEFAULT_CATEGORY_VIEW.fraudAxisLabelStyle,
       },
     }
   } catch {
@@ -553,8 +576,16 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       clusterAnimation: settings.clusterAnimation ?? prev.clusterAnimation,
       showLinesWhenFocused:
         settings.showLinesWhenFocused ?? prev.showLinesWhenFocused,
+      unfocusedClusterOpacity: clamp(
+        settings.unfocusedClusterOpacity ?? prev.unfocusedClusterOpacity,
+        0.05,
+        1,
+      ),
       showSeverityOrb: settings.showSeverityOrb ?? prev.showSeverityOrb,
       severityOrbAnimation: settings.severityOrbAnimation ?? prev.severityOrbAnimation,
+      fraudAxisEnabled: settings.fraudAxisEnabled ?? prev.fraudAxisEnabled,
+      fraudAxisSpread: clamp(settings.fraudAxisSpread ?? prev.fraudAxisSpread, 0.5, 2),
+      fraudAxisLabelStyle: settings.fraudAxisLabelStyle ?? prev.fraudAxisLabelStyle,
     }))
   }, [])
 

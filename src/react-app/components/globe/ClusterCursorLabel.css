@@ -3,20 +3,8 @@
   top: 0;
   left: 0;
   z-index: 400;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
   pointer-events: none;
   user-select: none;
-}
-
-.cluster-cursor-label__dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  flex-shrink: 0;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .cluster-cursor-label__text {

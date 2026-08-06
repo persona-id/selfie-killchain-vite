@@ -44,12 +44,13 @@ import {
   startCameraGesturePipeline,
   type CameraPipelineStatus,
 } from '../../lib/cameraGesturePipeline'
-import { findSimilarItems } from '../../lib/similarity'
+import { attachFraudAxisLabels } from '../../lib/fraudAxisLabels'
 import {
   createSeverityOrb,
   dominantClusterComplexity,
   updateSeverityOrb,
 } from '../../lib/clusterSeverityOrb'
+import { findSimilarItems } from '../../lib/similarity'
 import { animateClusterImageLocal, imageFlutterOffset } from '../../lib/globeMotion'
 import { itemMatchesFilter } from '../../lib/taxonomy'
 import {
@@ -984,6 +985,7 @@ export function GlobeView({
             categoryViewRef.current,
             constellationRef.current,
           ),
+          categoryViewRef.current,
         )
       : null
 
@@ -1039,6 +1041,16 @@ export function GlobeView({
           orb.userData.orbPhase =
             clusterGlobe.center.x * 0.0031 + clusterGlobe.center.z * 0.0019
           group.add(orb)
+        }
+        if (
+          categoryViewRef.current.fraudAxisEnabled &&
+          categoryViewRef.current.fraudAxisLabelStyle !== 'none'
+        ) {
+          attachFraudAxisLabels(
+            group,
+            clusterGlobe.radius,
+            categoryViewRef.current.fraudAxisLabelStyle,
+          )
         }
         globe.add(group)
         clusterGroups.set(clusterGlobe.id, group)
@@ -1771,6 +1783,19 @@ export function GlobeView({
             })
           })
         }
+
+        if (motion.fraudAxisEnabled && motion.fraudAxisLabelStyle !== 'none') {
+          clusterGroupsRef.current.forEach((group, clusterId) => {
+            const labelsVisible = !focusId || focusId === clusterId
+            group.children.forEach((child) => {
+              if (!child.userData.isFraudAxisLabel) return
+              const label = child as CSS3DObject
+              label.element.style.display = labelsVisible ? '' : 'none'
+              if (!labelsVisible) return
+              billboardTowardCamera(label, camera)
+            })
+          })
+        }
       }
 
       if (
@@ -2164,7 +2189,7 @@ export function GlobeView({
           }
         } else if (constellationFocusId && focusedGlobeIds) {
           const inFocus = focusedGlobeIds.has(item.id)
-          opacity = inFocus ? 1 : 0.08
+          opacity = inFocus ? 1 : categoryViewRef.current.unfocusedClusterOpacity
           zIndex = inFocus
             ? String(180 + Math.round(focusBlendRef.current * 40))
             : '1'
@@ -2397,8 +2422,12 @@ export function GlobeView({
     categoryView.clusterShape,
     categoryView.showConnectionLines,
     categoryView.showLinesWhenFocused,
+    categoryView.unfocusedClusterOpacity,
     categoryView.showSeverityOrb,
     categoryView.severityOrbAnimation,
+    categoryView.fraudAxisEnabled,
+    categoryView.fraudAxisSpread,
+    categoryView.fraudAxisLabelStyle,
     categoryView.lineColor,
     categoryView.lineOpacity,
     categoryView.lineThickness,

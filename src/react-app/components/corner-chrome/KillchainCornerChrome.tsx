@@ -4,6 +4,7 @@ import type {
   TopBarChromeState,
 } from '../../context/KillchainChromeContext'
 import { HamburgerMenu } from '../HamburgerMenu'
+import { GroupsModeToggle } from './GroupsModeToggle'
 import UtilityMenu from '../utility-menu/UtilityMenu'
 import { ComplexityCornerMenu } from './ComplexityCornerMenu'
 import { KillchainTopMenuHeader } from './KillchainTopMenuHeader'
@@ -72,11 +73,17 @@ export function KillchainCornerChrome({
 
       {showSettings ? (
         <div className="killchain-corner-chrome__corner killchain-corner-chrome__corner--bl">
-          <HamburgerMenu
-            embedded
-            entranceKey={chromeEntranceKey}
-            hidden={settingsHidden}
-          />
+          <div className="killchain-corner-chrome__settings-row">
+            <HamburgerMenu
+              embedded
+              entranceKey={chromeEntranceKey}
+              hidden={settingsHidden}
+            />
+            <GroupsModeToggle
+              entranceKey={chromeEntranceKey}
+              hidden={settingsHidden}
+            />
+          </div>
         </div>
       ) : null}
 
