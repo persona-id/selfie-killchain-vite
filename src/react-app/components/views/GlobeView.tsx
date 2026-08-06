@@ -47,6 +47,7 @@ import {
 } from '../../lib/cameraGesturePipeline'
 import { findSimilarItems } from '../../lib/similarity'
 import {
+  CHAIN_SPHERE_RADIUS,
   computeCategoryModeLayout,
   isCategoryModeActive,
 } from '../../lib/categoryModes'
@@ -1767,15 +1768,38 @@ export function GlobeView({
       }
 
       if (isCategoryLayout) {
+        const motion = categoryViewRef.current
+        const elementPreset = ANIMATION_PRESETS[motion.clusterAnimation]
+        const hubAnimActive = motion.clusterAnimation !== 'static'
+        const chainFlutterScale = CHAIN_SPHERE_RADIUS / 28
+
         globe.position.set(0, 0, 0)
         clusterGroupsRef.current.forEach((group) => {
           const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+          const phase = (group.userData.floatPhase as number) ?? 0
           group.position.copy(fieldCenter)
-          group.rotation.set(0, 0, 0)
           group.scale.setScalar(1)
+
+          if (hubAnimActive) {
+            if (elementPreset.wobble) {
+              const amp = elementPreset.wobbleAmplitude ?? 0.15
+              const speed = elementPreset.wobbleSpeed ?? 0.0008
+              group.rotation.x =
+                Math.sin(time * speed + phase) * amp * 0.28
+              group.rotation.y =
+                time * elementPreset.autoRotateY * 18 +
+                Math.cos(time * speed * 0.7 + phase) * amp * 0.22
+            } else {
+              group.rotation.x =
+                Math.sin(time * 0.00055 + phase) * elementPreset.autoRotateX * 55
+              group.rotation.y = time * elementPreset.autoRotateY * 18
+              group.rotation.z = 0
+            }
+          } else {
+            group.rotation.set(0, 0, 0)
+          }
         })
 
-        const motion = categoryViewRef.current
         for (let i = 0; i < objects.length; i++) {
           const obj = objects[i]
           const item = obj.userData.item as GalleryItem | undefined
@@ -1787,7 +1811,12 @@ export function GlobeView({
               motion.imageFlutter,
               motion.clusterAnimation,
             )
-            obj.position.copy(baseLocal).add(offset)
+            const flutterScale = obj.userData.clusterId ? chainFlutterScale : 1
+            obj.position.set(
+              baseLocal.x + offset.x * flutterScale,
+              baseLocal.y + offset.y * flutterScale,
+              baseLocal.z + offset.z * flutterScale,
+            )
           } else if (baseLocal) {
             obj.position.copy(baseLocal)
           }

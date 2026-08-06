@@ -38,7 +38,7 @@ const HUB_COLORS = [
 ]
 
 const CHAIN_SPHERE_SPACING = 720
-const CHAIN_SPHERE_RADIUS = 92
+export const CHAIN_SPHERE_RADIUS = 92
 
 function hubColor(index: number): string {
   return HUB_COLORS[index % HUB_COLORS.length]

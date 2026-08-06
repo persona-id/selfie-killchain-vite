@@ -297,7 +297,7 @@ export function HamburgerMenu({
               </>
             ) : (
               <p className="hamburger-menu__subsection-label">
-                Globe animation — static in sphere chain (drag to rotate)
+                Image motion animates sphere clusters · drag to rotate view
               </p>
             )}
 
