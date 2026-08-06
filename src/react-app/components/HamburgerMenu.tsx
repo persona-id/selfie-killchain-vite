@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGallery } from '../context/GalleryContext'
-import { CATEGORIES, CATEGORY_MODE_OPTIONS, type Category, type GlobeAnimation } from '../types/gallery'
+import { CATEGORIES, CATEGORY_MODE_OPTIONS, CHAIN_LINE_CONNECT_OPTIONS, type Category, type ChainLineConnect, type GlobeAnimation } from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
 import { ANIMATION_OPTIONS, ARRANGEMENT_OPTIONS, MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT } from '../lib/globe'
 import { CLUSTER_ELEMENT_LAYOUT_OPTIONS } from '../lib/clusterLayout'
@@ -275,6 +275,56 @@ export function HamburgerMenu({
                     }
                   />
                 </label>
+
+                <SliderControl
+                  label="Line thickness"
+                  min={0.2}
+                  max={3}
+                  step={0.05}
+                  value={categoryView.lineThickness}
+                  format={(v) => `${v.toFixed(2)}px`}
+                  onChange={(lineThickness) => setCategoryView({ lineThickness })}
+                />
+
+                <SliderControl
+                  label="Bridge thickness"
+                  min={0.2}
+                  max={3}
+                  step={0.05}
+                  value={categoryView.bridgeLineThickness}
+                  format={(v) => `${v.toFixed(2)}px`}
+                  onChange={(bridgeLineThickness) =>
+                    setCategoryView({ bridgeLineThickness })
+                  }
+                />
+
+                <p className="hamburger-menu__subsection-label">Lines connect</p>
+                <div className="hamburger-menu__pill-row">
+                  {CHAIN_LINE_CONNECT_OPTIONS.map((option) => (
+                    <PillButton
+                      key={option.id}
+                      label={option.label}
+                      active={categoryView.chainLineConnect === option.id}
+                      onClick={() =>
+                        setCategoryView({
+                          chainLineConnect: option.id as ChainLineConnect,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+
+                <SliderControl
+                  label="Spokes per hub"
+                  min={0}
+                  max={24}
+                  step={1}
+                  value={categoryView.memberLinesPerHub}
+                  format={(v) => (v === 0 ? 'All' : `${Math.round(v)}`)}
+                  onChange={(memberLinesPerHub) =>
+                    setCategoryView({ memberLinesPerHub })
+                  }
+                />
               </>
             ) : null}
 
@@ -345,6 +395,16 @@ export function HamburgerMenu({
               value={categoryView.imageFlutter}
               format={(v) => (v === 0 ? 'Off' : `${Math.round(v * 100)}%`)}
               onChange={(imageFlutter) => setCategoryView({ imageFlutter })}
+            />
+
+            <SliderControl
+              label="Motion speed"
+              min={0}
+              max={2}
+              step={0.05}
+              value={categoryView.motionSpeed}
+              format={(v) => (v === 0 ? 'Off' : `${Math.round(v * 100)}%`)}
+              onChange={(motionSpeed) => setCategoryView({ motionSpeed })}
             />
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">

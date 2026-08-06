@@ -187,6 +187,33 @@ export function computeCategoryModeLayout(
   return buildLayoutFromHubs(items, hubCenters, settings, bridges)
 }
 
+export type ChainCameraBounds = {
+  initialZ: number
+  minZ: number
+  maxZ: number
+}
+
+export function computeChainCameraBounds(
+  hubs: CategoryHub[],
+  settings: CategoryViewSettings,
+): ChainCameraBounds {
+  if (hubs.length === 0) {
+    return { initialZ: 900, minZ: 120, maxZ: 7200 }
+  }
+
+  const zs = hubs.map((hub) => hub.center.z)
+  const firstZ = Math.min(...zs)
+  const lastZ = Math.max(...zs)
+  const span = Math.max(lastZ - firstZ, CHAIN_SPHERE_SPACING * settings.chainSpacing)
+  const standoff = CHAIN_SPHERE_RADIUS * 3.4 * Math.sqrt(settings.chainSpacing)
+
+  return {
+    initialZ: firstZ + standoff,
+    minZ: firstZ + CHAIN_SPHERE_RADIUS * 0.65,
+    maxZ: lastZ + Math.max(span * 0.6, standoff * 2.8),
+  }
+}
+
 export function isCategoryModeActive(mode: GlobeCategoryMode): boolean {
   return mode === 'chain'
 }

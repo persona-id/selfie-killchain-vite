@@ -8,7 +8,11 @@ import type {
   GlobeDisplaySettings,
   Complexity,
 } from '../types/gallery'
-import { computeClusterLayout } from './clusterLayout'
+import {
+  CLUSTER_FOCUS_SCREEN_FRACTION,
+  computeClusterFocusCameraZForObjects,
+  computeClusterLayout,
+} from './clusterLayout'
 import { itemFilterKey, resolveGlobeImageSrc } from './taxonomy'
 
 export const DEFAULT_GLOBE_ITEM_COUNT = 1000
@@ -803,12 +807,14 @@ export function createPhotoElement(
     loadDelayMs?: number
     holdLoad?: boolean
     introBlur?: boolean
+    suppressHoverLabel?: boolean
   } = {},
 ): { object: CSS3DObject; element: HTMLDivElement } {
   const eager = options.eager ?? false
   const loadDelayMs = options.loadDelayMs ?? 0
   const holdLoad = options.holdLoad ?? false
   const introBlur = options.introBlur ?? false
+  const suppressHoverLabel = options.suppressHoverLabel ?? false
   const element = document.createElement('div')
   element.className = 'globe-photo'
   element.dataset.itemId = item.id
@@ -910,12 +916,12 @@ export function createPhotoElement(
     element.dataset.hovered = 'true'
     element.style.opacity = '1'
     element.style.zIndex = '100'
-    onHover(item)
+    if (!suppressHoverLabel) onHover(item)
   })
   element.addEventListener('mouseleave', () => {
     delete element.dataset.hovered
     element.style.zIndex = '1'
-    onHover(null)
+    if (!suppressHoverLabel) onHover(null)
   })
 
   object.userData.item = item
@@ -1106,6 +1112,56 @@ export function fitClusterCameraToViewport(
   }
 
   cssRenderer.render(scene, camera)
+  return z
+}
+
+export function fitClusterViewportFill(
+  objects: CSS3DObject[],
+  camera: THREE.PerspectiveCamera,
+  scene: THREE.Scene,
+  cssRenderer: CSS3DRenderer,
+  displaySettings: GlobeDisplaySettings,
+  screenFraction = CLUSTER_FOCUS_SCREEN_FRACTION,
+  container?: HTMLElement | null,
+): number {
+  if (objects.length === 0) return camera.position.z
+
+  const aspect =
+    container && container.clientHeight > 0
+      ? container.clientWidth / container.clientHeight
+      : camera.aspect
+  const { width, height } = imageDimensions(displaySettings)
+  let z = computeClusterFocusCameraZForObjects(
+    objects,
+    width,
+    height,
+    aspect,
+    screenFraction,
+  )
+
+  const margin = Math.max(0.04, (1 - screenFraction) / 2)
+  camera.position.z = z
+
+  for (let step = 0; step < 28; step++) {
+    cssRenderer.render(scene, camera)
+    if (!clusterFitsInViewport(objects, margin, container)) {
+      z *= 1.05
+      camera.position.z = z
+      continue
+    }
+
+    const tighter = z * 0.965
+    camera.position.z = tighter
+    cssRenderer.render(scene, camera)
+    if (clusterFitsInViewport(objects, margin, container)) {
+      z = tighter
+    } else {
+      camera.position.z = z
+      break
+    }
+  }
+
+  camera.position.z = z
   return z
 }
 

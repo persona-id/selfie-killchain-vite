@@ -134,17 +134,34 @@ export const CATEGORY_MODE_OPTIONS: {
   { id: 'chain', label: 'Sphere chain', hint: 'Linear interconnected spheres' },
 ]
 
+export type ChainLineConnect = 'bridges' | 'hub-spokes' | 'member-mesh' | 'all'
+
+export const CHAIN_LINE_CONNECT_OPTIONS: {
+  id: ChainLineConnect
+  label: string
+}[] = [
+  { id: 'bridges', label: 'Hub bridges' },
+  { id: 'hub-spokes', label: 'Hub to images' },
+  { id: 'member-mesh', label: 'Image mesh' },
+  { id: 'all', label: 'All' },
+]
+
 export type CategoryViewSettings = {
   showConnectionLines: boolean
   showCategoryLabels: boolean
   chainSpacing: number
   lineOpacity: number
   lineColor: string
+  lineThickness: number
+  bridgeLineThickness: number
+  chainLineConnect: ChainLineConnect
+  memberLinesPerHub: number
   clusterShape: ClusterElementLayout
   clusterSpacing: number
   groupSpread: number
   clusterAnimation: GlobeAnimation
   imageFlutter: number
+  motionSpeed: number
 }
 
 export const DEFAULT_CATEGORY_MODE: GlobeCategoryMode = 'globe'
@@ -155,11 +172,16 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   chainSpacing: 1,
   lineOpacity: 0.55,
   lineColor: '#b8b8b8',
+  lineThickness: 0.65,
+  bridgeLineThickness: 0.9,
+  chainLineConnect: 'all',
+  memberLinesPerHub: 0,
   clusterShape: 'globe',
   clusterSpacing: 1,
   groupSpread: 1,
   clusterAnimation: 'sway',
   imageFlutter: 0.35,
+  motionSpeed: 1,
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'

@@ -15,8 +15,8 @@ export const CLUSTER_OVERVIEW_CAMERA_Z = 2500
 export const CLUSTER_MIN_CAMERA_Z = 1400
 export const CLUSTER_MAX_CAMERA_Z = 5800
 export const CLUSTER_FOCUS_CAMERA_Z = 460
-export const CLUSTER_FOCUS_SCREEN_FRACTION = 0.92
-export const CLUSTER_FOCUS_SAFETY = 1.18
+export const CLUSTER_FOCUS_SCREEN_FRACTION = 0.85
+export const CLUSTER_FOCUS_SAFETY = 1.02
 export const CLUSTER_FOCUS_SCALE = 1
 export const CLUSTER_MIN_FOCUS_Z = 300
 export const CLUSTER_MAX_FOCUS_Z = 12000
@@ -472,7 +472,7 @@ export function computeClusterLayout(
   const spread = settings.clusterSpread
   const separation = settings.elementSeparation
   const fieldMiniRadius = MINI_GLOBE_RADIUS * 0.72 * separation
-  const focusMiniRadius = MINI_GLOBE_RADIUS * 1.45 * separation
+  const focusMiniRadius = MINI_GLOBE_RADIUS * 1.32 * separation
 
   if (items.length === 0) {
     return {

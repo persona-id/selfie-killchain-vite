@@ -249,6 +249,29 @@ function loadStoredState(): StoredState {
           0.5,
           2.5,
         ),
+        lineThickness: clamp(
+          parsed.categoryView?.lineThickness ?? DEFAULT_CATEGORY_VIEW.lineThickness,
+          0.2,
+          3,
+        ),
+        bridgeLineThickness: clamp(
+          parsed.categoryView?.bridgeLineThickness ??
+            DEFAULT_CATEGORY_VIEW.bridgeLineThickness,
+          0.2,
+          3,
+        ),
+        chainLineConnect:
+          parsed.categoryView?.chainLineConnect ?? DEFAULT_CATEGORY_VIEW.chainLineConnect,
+        memberLinesPerHub: clamp(
+          parsed.categoryView?.memberLinesPerHub ?? DEFAULT_CATEGORY_VIEW.memberLinesPerHub,
+          0,
+          48,
+        ),
+        motionSpeed: clamp(
+          parsed.categoryView?.motionSpeed ?? DEFAULT_CATEGORY_VIEW.motionSpeed,
+          0,
+          2,
+        ),
         imageFlutter: clamp(
           parsed.categoryView?.imageFlutter ?? DEFAULT_CATEGORY_VIEW.imageFlutter,
           0,
@@ -531,6 +554,19 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       lineColor: settings.lineColor
         ? normalizeHex(settings.lineColor)
         : prev.lineColor,
+      lineThickness: clamp(settings.lineThickness ?? prev.lineThickness, 0.2, 3),
+      bridgeLineThickness: clamp(
+        settings.bridgeLineThickness ?? prev.bridgeLineThickness,
+        0.2,
+        3,
+      ),
+      chainLineConnect: settings.chainLineConnect ?? prev.chainLineConnect,
+      memberLinesPerHub: clamp(
+        settings.memberLinesPerHub ?? prev.memberLinesPerHub,
+        0,
+        48,
+      ),
+      motionSpeed: clamp(settings.motionSpeed ?? prev.motionSpeed, 0, 2),
       imageFlutter: clamp(settings.imageFlutter ?? prev.imageFlutter, 0, 1),
       clusterShape: settings.clusterShape ?? prev.clusterShape,
       clusterAnimation: settings.clusterAnimation ?? prev.clusterAnimation,

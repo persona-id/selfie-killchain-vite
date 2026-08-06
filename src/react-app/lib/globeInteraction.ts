@@ -32,6 +32,7 @@ type InteractionConfig = {
   minCameraZ?: number
   maxCameraZ?: number
   getZoomLimits?: () => { min: number; max: number }
+  wheelZoomDirection?: 1 | -1
   onBackgroundPointerDown?: () => void
   onDragChange?: (active: boolean) => void
 }
@@ -152,6 +153,7 @@ export function attachGlobeInteraction(
   const minCameraZ = config.minCameraZ ?? MIN_CAMERA_Z
   const maxCameraZ = config.maxCameraZ ?? MAX_CAMERA_Z
   const getZoomLimits = () => config.getZoomLimits?.() ?? { min: minCameraZ, max: maxCameraZ }
+  const wheelZoomDirection = config.wheelZoomDirection ?? 1
 
   const onWheel = (e: WheelEvent) => {
     e.preventDefault()
@@ -159,8 +161,9 @@ export function attachGlobeInteraction(
     const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY
     state.targetCameraDistance = Math.max(
       min,
-      Math.min(max, state.targetCameraDistance + delta * 0.65),
+      Math.min(max, state.targetCameraDistance + delta * 0.65 * wheelZoomDirection),
     )
+    state.cameraDistance = state.targetCameraDistance
   }
 
   element.addEventListener('wheel', onWheel, { passive: false })
