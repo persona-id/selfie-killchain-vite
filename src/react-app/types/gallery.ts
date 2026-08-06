@@ -98,7 +98,14 @@ export type ClusterElementLayout =
   | 'burst'
   | 'orbit'
 
-export type ClusterFieldLayout = 'scattered' | 'shell' | 'belt' | 'helix'
+export type ClusterFieldLayout =
+  | 'scattered'
+  | 'globe'
+  | 'shell'
+  | 'grid'
+  | 'wall'
+  | 'belt'
+  | 'helix'
 
 export type ConstellationSettings = {
   clusterSpread: number
@@ -150,6 +157,7 @@ export const FRAUD_AXIS_LABEL_OPTIONS: {
 export type CategoryViewSettings = {
   unfocusedClusterOpacity: number
   clusterShape: ClusterElementLayout
+  clusterFieldLayout: ClusterFieldLayout
   clusterSpacing: number
   groupSpread: number
   clusterAnimation: GlobeAnimation
@@ -163,11 +171,13 @@ export type CategoryViewSettings = {
   clusterFocusPresentation: boolean
   clusterFocusOrbitSphere: boolean
   clusterFocusPlaqueAnimate: boolean
+  clusterIntroTest: boolean
 }
 
 export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   unfocusedClusterOpacity: 0.2,
   clusterShape: 'globe',
+  clusterFieldLayout: 'scattered',
   clusterSpacing: 1,
   groupSpread: 1,
   clusterAnimation: 'sway',
@@ -181,6 +191,7 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   clusterFocusPresentation: true,
   clusterFocusOrbitSphere: true,
   clusterFocusPlaqueAnimate: true,
+  clusterIntroTest: false,
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'

@@ -40,7 +40,7 @@ export default function KillchainShellLayout() {
   const outlet = useOutlet()
   const { selectedItem, loading } = useGallery()
   const { introActive, chromeRevealReady, chromeEntranceKey } = useGlobeIntro()
-  const { left, topBar, dismissUtilityMenu } = useKillchainChrome()
+  const { left, topBar, dismissUtilityMenu, clusterFocusImmersive } = useKillchainChrome()
 
   const isGlobe = location.pathname === '/'
   const isMatrix = location.pathname === '/matrix'
@@ -59,7 +59,11 @@ export default function KillchainShellLayout() {
   const hideChromeForGlobeModal =
     isGlobe && (Boolean(selectedItem) || (loading && hasGlobeModalParams))
   const hideChromeForGlobeIntro = isGlobe && introActive && !chromeRevealReady
-  const hideChrome = hideChromeForGlobeModal || hideChromeForGlobeIntro
+  const hideChromeForClusterFocus = isGlobe && clusterFocusImmersive
+  const hideChrome =
+    hideChromeForGlobeModal ||
+    hideChromeForGlobeIntro ||
+    hideChromeForClusterFocus
 
   useLayoutEffect(() => {
     if (!hideChrome) return
@@ -104,6 +108,7 @@ export default function KillchainShellLayout() {
     isDeconstruct ? 'killchain-shell-layout__menu-portal--deconstruct-route' : '',
     hideChromeForGlobeModal ? 'killchain-shell-layout__menu-portal--globe-modal-open' : '',
     hideChromeForGlobeIntro ? 'killchain-shell-layout__menu-portal--globe-intro' : '',
+    hideChromeForClusterFocus ? 'killchain-shell-layout__menu-portal--cluster-focus' : '',
   ]
     .filter(Boolean)
     .join(' ')

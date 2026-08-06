@@ -118,8 +118,10 @@ export const CLUSTER_FIELD_LAYOUT_OPTIONS: {
   hint: string
 }[] = [
   { id: 'scattered', label: 'Nebula', hint: 'Loose cloud' },
-  { id: 'shell', label: 'Shell', hint: 'Outer sphere' },
-  { id: 'belt', label: 'Belt', hint: 'Equatorial ring' },
+  { id: 'globe', label: 'Globe', hint: 'Big sphere' },
+  { id: 'grid', label: 'Square', hint: 'Flat grid' },
+  { id: 'wall', label: 'Wall', hint: 'Flat screen grid' },
+  { id: 'belt', label: 'Ring', hint: 'Equatorial ring' },
   { id: 'helix', label: 'Helix', hint: 'Cosmic spiral' },
 ]
 
@@ -364,14 +366,63 @@ function helixFieldCenters(count: number, spread: number): THREE.Vector3[] {
   return points
 }
 
+function gridClusterCenters(count: number, spread: number): THREE.Vector3[] {
+  if (count === 0) return []
+  const cols = Math.ceil(Math.sqrt(count))
+  const rows = Math.ceil(count / cols)
+  const spacing = BASE_MIN_CLUSTER_SEP * spread * 0.92
+  const points: THREE.Vector3[] = []
+
+  for (let i = 0; i < count; i++) {
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    points.push(
+      new THREE.Vector3(
+        (col - (cols - 1) / 2) * spacing,
+        0,
+        (row - (rows - 1) / 2) * spacing,
+      ),
+    )
+  }
+
+  return points
+}
+
+function wallClusterCenters(count: number, spread: number): THREE.Vector3[] {
+  if (count === 0) return []
+  const cols = Math.ceil(Math.sqrt(count))
+  const rows = Math.ceil(count / cols)
+  const spacing = BASE_MIN_CLUSTER_SEP * spread * 0.88
+  const points: THREE.Vector3[] = []
+
+  for (let i = 0; i < count; i++) {
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    points.push(
+      new THREE.Vector3(
+        (col - (cols - 1) / 2) * spacing,
+        (row - (rows - 1) / 2) * spacing,
+        0,
+      ),
+    )
+  }
+
+  return points
+}
+
 function clusterFieldCenters(
   layout: ClusterFieldLayout,
   count: number,
   spread: number,
 ): THREE.Vector3[] {
   switch (layout) {
+    case 'globe':
     case 'shell':
       return shellClusterCenters(count, spread)
+    case 'grid':
+      return gridClusterCenters(count, spread)
+    case 'wall':
+      return wallClusterCenters(count, spread)
     case 'belt':
       return beltClusterCenters(count, spread)
     case 'helix':
@@ -621,6 +672,7 @@ export function constellationSettingsForCategoryView(
   return {
     ...base,
     elementLayout: categoryView.clusterShape,
+    fieldLayout: categoryView.clusterFieldLayout,
     elementSeparation: categoryView.clusterSpacing,
     clusterSpread: categoryView.groupSpread,
     elementAnimation: categoryView.clusterAnimation,

@@ -16,8 +16,10 @@ type GlobeIntroContextValue = {
   chromeRevealReady: boolean
   chromeEntranceKey: string
   completeIntro: () => void
+  dismissIntro: () => void
   revealIntroChrome: () => void
   skipIntro: () => void
+  restartIntro: () => void
 }
 
 const GlobeIntroContext = createContext<GlobeIntroContextValue | null>(null)
@@ -43,6 +45,17 @@ export function GlobeIntroProvider({ children }: { children: ReactNode }) {
     setIntroActive(false)
   }, [])
 
+  const dismissIntro = useCallback(() => {
+    setChromeRevealReady(true)
+    setIntroActive(false)
+  }, [])
+
+  const restartIntro = useCallback(() => {
+    setChromeRevealReady(false)
+    setIntroActive(true)
+    setChromeEntranceKey(`intro-restart-${Date.now()}`)
+  }, [])
+
   useEffect(() => {
     if (reduceMotion && introActive) {
       finishIntro()
@@ -55,10 +68,12 @@ export function GlobeIntroProvider({ children }: { children: ReactNode }) {
       chromeRevealReady,
       chromeEntranceKey,
       completeIntro: finishIntro,
+      dismissIntro,
       revealIntroChrome,
       skipIntro: finishIntro,
+      restartIntro,
     }),
-    [chromeEntranceKey, chromeRevealReady, finishIntro, introActive, revealIntroChrome],
+    [chromeEntranceKey, chromeRevealReady, dismissIntro, finishIntro, introActive, revealIntroChrome, restartIntro],
   )
 
   return (

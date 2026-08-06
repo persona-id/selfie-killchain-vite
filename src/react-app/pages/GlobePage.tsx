@@ -21,8 +21,19 @@ export default function GlobePage() {
     activeComplexity,
     setActiveComplexity,
     setGlobeArrangement,
+    globeArrangement,
+    categoryView,
   } = useGallery()
-  const { introActive, chromeRevealReady, completeIntro, revealIntroChrome, skipIntro, chromeEntranceKey } = useGlobeIntro()
+  const {
+    introActive,
+    chromeRevealReady,
+    completeIntro,
+    dismissIntro,
+    revealIntroChrome,
+    skipIntro,
+    restartIntro,
+    chromeEntranceKey,
+  } = useGlobeIntro()
   const { setLeftChrome, setTopBarChrome } = useKillchainChrome()
   const openedFromSearchRef = useRef<string | null>(null)
   const introProgressRef = useRef(0)
@@ -37,8 +48,21 @@ export default function GlobePage() {
 
   useLayoutEffect(() => {
     setActiveComplexity(null)
-    setGlobeArrangement(DEFAULT_GLOBE_ARRANGEMENT)
-  }, [setActiveComplexity, setGlobeArrangement])
+  }, [setActiveComplexity])
+
+  useLayoutEffect(() => {
+    if (categoryView.clusterIntroTest) {
+      setGlobeArrangement('clusters')
+    } else {
+      setGlobeArrangement(DEFAULT_GLOBE_ARRANGEMENT)
+    }
+  }, [categoryView.clusterIntroTest, setGlobeArrangement])
+
+  useEffect(() => {
+    if (categoryView.clusterIntroTest && globeArrangement === 'clusters') {
+      restartIntro()
+    }
+  }, [categoryView.clusterIntroTest, globeArrangement, restartIntro])
 
   useLayoutEffect(() => {
     if (introActive) return
@@ -144,8 +168,12 @@ export default function GlobePage() {
             introProgressRef.current = progress
           }}
           onGlobeReady={revealIntroChrome}
-          onComplete={completeIntro}
-          onSkip={skipIntro}
+          onComplete={
+            categoryView.clusterIntroTest ? dismissIntro : completeIntro
+          }
+          onSkip={
+            categoryView.clusterIntroTest ? dismissIntro : skipIntro
+          }
         />
       ) : null}
     </div>

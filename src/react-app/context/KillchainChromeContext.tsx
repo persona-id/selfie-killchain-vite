@@ -48,9 +48,11 @@ type KillchainChromeContextValue = {
   left: LeftChromeState
   topBar: TopBarChromeState
   matrixSelections: Selections | null
+  clusterFocusImmersive: boolean
   setLeftChrome: (patch: Partial<LeftChromeState>) => void
   setTopBarChrome: (patch: Partial<TopBarChromeState>) => void
   setMatrixSelections: (selections: Selections | null) => void
+  setClusterFocusImmersive: (active: boolean) => void
   resetChrome: () => void
   registerUtilityMenuDismiss: (dismiss: () => void) => () => void
   dismissUtilityMenu: () => void
@@ -76,6 +78,7 @@ export function KillchainChromeProvider({ children }: { children: ReactNode }) {
   const [left, setLeft] = useState<LeftChromeState>(DEFAULT_LEFT)
   const [topBar, setTopBar] = useState<TopBarChromeState>(DEFAULT_TOP)
   const [matrixSelections, setMatrixSelections] = useState<Selections | null>(null)
+  const [clusterFocusImmersive, setClusterFocusImmersiveState] = useState(false)
   const utilityMenuDismissRef = useRef<(() => void) | null>(null)
 
   const registerUtilityMenuDismiss = useCallback((dismiss: () => void) => {
@@ -99,10 +102,15 @@ export function KillchainChromeProvider({ children }: { children: ReactNode }) {
     setTopBar((prev) => ({ ...prev, ...patch }))
   }, [])
 
+  const setClusterFocusImmersive = useCallback((active: boolean) => {
+    setClusterFocusImmersiveState(active)
+  }, [])
+
   const resetChrome = useCallback(() => {
     setLeft(DEFAULT_LEFT)
     setTopBar(DEFAULT_TOP)
     setMatrixSelections(null)
+    setClusterFocusImmersiveState(false)
   }, [])
 
   const value = useMemo(
@@ -110,9 +118,11 @@ export function KillchainChromeProvider({ children }: { children: ReactNode }) {
       left,
       topBar,
       matrixSelections,
+      clusterFocusImmersive,
       setLeftChrome,
       setTopBarChrome,
       setMatrixSelections,
+      setClusterFocusImmersive,
       resetChrome,
       registerUtilityMenuDismiss,
       dismissUtilityMenu,
@@ -121,8 +131,11 @@ export function KillchainChromeProvider({ children }: { children: ReactNode }) {
       left,
       topBar,
       matrixSelections,
+      clusterFocusImmersive,
       setLeftChrome,
       setTopBarChrome,
+      setMatrixSelections,
+      setClusterFocusImmersive,
       resetChrome,
       registerUtilityMenuDismiss,
       dismissUtilityMenu,

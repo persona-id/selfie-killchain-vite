@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import * as THREE from 'three'
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import { useGallery } from '../../context/GalleryContext'
+import { useKillchainChrome } from '../../context/KillchainChromeContext'
 import { SETTINGS_MENU_ENTRANCE } from '../../constants/shellMotion'
 import { useChromeEntranceReady } from '../../hooks/useChromeEntranceReady'
 import {
@@ -52,6 +53,15 @@ import {
   createClusterFocusPlaque,
   playClusterFocusPlaqueEntrance,
 } from '../../lib/clusterFocusPlaque'
+import {
+  clusterIntroCameraZ,
+  clusterIntroDistanceNorm,
+  clusterIntroHeroGroupBlend,
+  clusterIntroHeroPosition,
+  clusterIntroOtherReveal,
+  configureHeroClusterIntroRanks,
+  pickHeroClusterGlobe,
+} from '../../lib/clusterIntro'
 import {
   focusOrbitDepthOpacity,
   focusPresentationZIndex,
@@ -160,6 +170,7 @@ export function GlobeView({
     categoryView,
     highlightedFilter,
   } = useGallery()
+  const { setClusterFocusImmersive } = useKillchainChrome()
   const containerRef = useRef<HTMLDivElement>(null)
   const threadCanvasRef = useRef<HTMLCanvasElement>(null)
   const hoverLabelRef = useRef<HTMLParagraphElement>(null)
@@ -205,6 +216,14 @@ export function GlobeView({
     x: number
     y: number
   } | null>(null)
+
+  useEffect(() => {
+    const immersive =
+      globeArrangement === 'clusters' && isConstellationFocused
+    setClusterFocusImmersive(immersive)
+    return () => setClusterFocusImmersive(false)
+  }, [globeArrangement, isConstellationFocused, setClusterFocusImmersive])
+
   const mousePosRef = useRef({ x: 0, y: 0 })
   const clusterHoverTargetsRef = useRef<ClusterHoverTarget[]>([])
   const clusterHoverWorldPosRef = useRef(new THREE.Vector3())
@@ -235,6 +254,9 @@ export function GlobeView({
   const clusterGroupsRef = useRef<Map<string, THREE.Group>>(new Map())
   const clusterFocusPlaqueRef = useRef<CSS3DObject | null>(null)
   const clusterFocusPlaqueClusterIdRef = useRef<string | null>(null)
+  const clusterIntroActiveRef = useRef(false)
+  const heroClusterIdRef = useRef<string | null>(null)
+  const heroClusterStartZRef = useRef<number | null>(null)
   const fraudAxisLabelsRef = useRef<CSS3DObject[]>([])
   const constellationRef = useRef(constellation)
   const closeModalRef = useRef(closeModal)
@@ -1315,6 +1337,27 @@ export function GlobeView({
     objectsRef.current = objects
     objectByIdRef.current = objectById
 
+    const clusterIntroActive =
+      isClusters &&
+      Boolean(layout) &&
+      categoryViewRef.current.clusterIntroTest &&
+      introLockedRef.current
+    clusterIntroActiveRef.current = clusterIntroActive
+    heroClusterIdRef.current = null
+    heroClusterStartZRef.current = null
+
+    if (clusterIntroActive && layout) {
+      const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
+      if (heroGlobe) {
+        heroClusterIdRef.current = heroGlobe.id
+        configureHeroClusterIntroRanks(objects, heroGlobe.id)
+        const heroGroup = clusterGroups.get(heroGlobe.id)
+        heroGroup?.position.set(0, 0, 0)
+      } else {
+        clusterIntroActiveRef.current = false
+      }
+    }
+
     const ringMembers = objects.filter((obj) => obj.userData.introIsRingMember)
     const ringFrontMembers = ringMembers.filter(
       (obj) => obj.userData.introHemisphereFront,
@@ -1385,13 +1428,41 @@ export function GlobeView({
     )
     overviewCameraZRef.current = overviewCameraZ
 
+    if (
+      clusterIntroActiveRef.current &&
+      heroClusterIdRef.current &&
+      layout
+    ) {
+      const heroGroup = clusterGroups.get(heroClusterIdRef.current)
+      heroGroup?.position.set(0, 0, 0)
+      globe.updateMatrixWorld(true)
+      const heroObjects = objects.filter(
+        (obj) => obj.userData.clusterId === heroClusterIdRef.current,
+      )
+      heroClusterStartZRef.current = fitClusterViewportFill(
+        heroObjects,
+        camera,
+        scene,
+        cssRenderer,
+        displaySettingsRef.current,
+        0.85,
+        container,
+      )
+    }
+
     const interactionState = createGlobeInteractionState(overviewCameraZ)
     if (introLockedRef.current) {
       const cameraT = globeIntroCameraProgress(introProgressRef.current)
       const introZ =
-        overviewCameraZ *
-        (GLOBE_INTRO_CAMERA_START_FACTOR +
-          (1 - GLOBE_INTRO_CAMERA_START_FACTOR) * cameraT)
+        clusterIntroActiveRef.current && heroClusterStartZRef.current != null
+          ? clusterIntroCameraZ(
+              introProgressRef.current,
+              heroClusterStartZRef.current,
+              overviewCameraZ,
+            )
+          : overviewCameraZ *
+            (GLOBE_INTRO_CAMERA_START_FACTOR +
+              (1 - GLOBE_INTRO_CAMERA_START_FACTOR) * cameraT)
       interactionState.cameraDistance = introZ
       interactionState.targetCameraDistance = introZ
     }
@@ -1604,7 +1675,7 @@ export function GlobeView({
         const centerFrontQueue = centerFrontLoadQueueRef.current
         const centerBackQueue = centerBackLoadQueueRef.current
         const sceneObjects = objectsRef.current
-        const introImageTotal =
+        let introImageTotal =
           ringFrontQueue.length +
           ringBackQueue.length +
           centerFrontQueue.length +
@@ -1613,6 +1684,22 @@ export function GlobeView({
         for (const obj of sceneObjects) {
           const img = obj.userData.img as HTMLImageElement | undefined
           if (img?.src) introImagesLoaded += 1
+        }
+        if (
+          clusterIntroActiveRef.current &&
+          heroClusterIdRef.current &&
+          !introRevealActive(introProgress)
+        ) {
+          const heroId = heroClusterIdRef.current
+          introImageTotal = sceneObjects.filter(
+            (obj) => obj.userData.clusterId === heroId,
+          ).length
+          introImagesLoaded = 0
+          for (const obj of sceneObjects) {
+            if (obj.userData.clusterId !== heroId) continue
+            const img = obj.userData.img as HTMLImageElement | undefined
+            if (img?.src) introImagesLoaded += 1
+          }
         }
         const loadBehind = introLoadBehindSchedule(
           introProgress,
@@ -1654,6 +1741,23 @@ export function GlobeView({
         }
 
         if (introCenterPrefetchActive(introProgress)) {
+          if (
+            clusterIntroActiveRef.current &&
+            introRevealActive(introProgress)
+          ) {
+            for (const obj of sceneObjects) {
+              if (!obj.userData.introIsDeferredCluster) continue
+              const flushDeferredLoad = obj.userData.flushDeferredLoad as
+                | (() => void)
+                | undefined
+              if (!flushDeferredLoad || obj.userData.introDeferredLoadQueued) {
+                continue
+              }
+              obj.userData.introDeferredLoadQueued = true
+              flushDeferredLoad()
+            }
+          }
+
           const centerCaps = introCenterHemisphereLoadCaps(
             introProgress,
             centerFrontQueue.length,
@@ -1874,18 +1978,38 @@ export function GlobeView({
 
         globe.position.set(0, 0, 0)
 
-        clusterGroupsRef.current.forEach((group, clusterId) => {
-          const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-          if (focusId === clusterId) {
-            group.position.set(0, 0, 0)
-            group.rotation.set(0, 0, 0)
-            group.scale.setScalar(CLUSTER_FOCUS_SCALE)
-          } else {
-            group.position.copy(fieldCenter)
+        if (
+          clusterIntroActiveRef.current &&
+          heroClusterIdRef.current &&
+          (introLockedRef.current || introExitBlend > 0.01)
+        ) {
+          const heroBlend = introLockedRef.current
+            ? clusterIntroHeroGroupBlend(introProgress)
+            : 1
+          clusterGroupsRef.current.forEach((group, clusterId) => {
+            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+            if (clusterId === heroClusterIdRef.current) {
+              clusterIntroHeroPosition(fieldCenter, heroBlend, group.position)
+            } else {
+              group.position.copy(fieldCenter)
+            }
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(1)
-          }
-        })
+          })
+        } else {
+          clusterGroupsRef.current.forEach((group, clusterId) => {
+            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+            if (focusId === clusterId) {
+              group.position.set(0, 0, 0)
+              group.rotation.set(0, 0, 0)
+              group.scale.setScalar(CLUSTER_FOCUS_SCALE)
+            } else {
+              group.position.copy(fieldCenter)
+              group.rotation.set(0, 0, 0)
+              group.scale.setScalar(1)
+            }
+          })
+        }
 
         if (focusId) {
           const motion = categoryViewRef.current
@@ -2057,9 +2181,15 @@ export function GlobeView({
           introLockedRef.current ? introProgressRef.current : 1,
         )
         const targetIntroZ =
-          introOverviewZ *
-          (GLOBE_INTRO_CAMERA_START_FACTOR +
-            (1 - GLOBE_INTRO_CAMERA_START_FACTOR) * cameraT)
+          clusterIntroActiveRef.current && heroClusterStartZRef.current != null
+            ? clusterIntroCameraZ(
+                introLockedRef.current ? introProgressRef.current : 1,
+                heroClusterStartZRef.current,
+                introOverviewZ,
+              )
+            : introOverviewZ *
+              (GLOBE_INTRO_CAMERA_START_FACTOR +
+                (1 - GLOBE_INTRO_CAMERA_START_FACTOR) * cameraT)
         interactionState.cameraDistance = targetIntroZ
         interactionState.targetCameraDistance = targetIntroZ
         effectiveCameraZ = targetIntroZ
@@ -2196,7 +2326,35 @@ export function GlobeView({
           const imageLoaded = Boolean(img?.src && img.complete)
           let introOpacity = 0
 
-          if (isRingMember) {
+          if (obj.userData.introIsDeferredCluster) {
+            if (
+              introRevealOn &&
+              heroClusterIdRef.current &&
+              obj.userData.clusterId
+            ) {
+              const distanceNorm = clusterIntroDistanceNorm(
+                layoutClusterGlobesRef.current,
+                heroClusterIdRef.current,
+                obj.userData.clusterId as string,
+              )
+              const reveal = clusterIntroOtherReveal(
+                introVisualProgress,
+                distanceNorm,
+              )
+              if (reveal > 0.001 && img?.src) {
+                let loadStartedAt = obj.userData.introLoadStartedAt as
+                  | number
+                  | undefined
+                if (!loadStartedAt) {
+                  loadStartedAt = now
+                  obj.userData.introLoadStartedAt = loadStartedAt
+                }
+                introOpacity =
+                  reveal *
+                  introCenterTileOpacity(loadStartedAt, now, imageLoaded)
+              }
+            }
+          } else if (isRingMember) {
             const loadStartedAt = obj.userData.introLoadStartedAt as
               | number
               | undefined
@@ -2583,6 +2741,9 @@ export function GlobeView({
       layoutClusterGlobesRef.current = []
       itemClusterIdRef.current.clear()
       clusterGroupsRef.current.clear()
+      clusterIntroActiveRef.current = false
+      heroClusterIdRef.current = null
+      heroClusterStartZRef.current = null
       fraudAxisLabelsRef.current.forEach((label) => {
         globe.remove(label)
         label.element.remove()
@@ -2609,6 +2770,7 @@ export function GlobeView({
     globeArrangement,
     categoryView.clusterSpacing,
     categoryView.clusterShape,
+    categoryView.clusterFieldLayout,
     categoryView.unfocusedClusterOpacity,
     categoryView.showSeverityOrb,
     categoryView.severityOrbAnimation,
@@ -2619,10 +2781,10 @@ export function GlobeView({
     categoryView.clusterAnimation,
     categoryView.imageFlutter,
     categoryView.motionSpeed,
+    categoryView.clusterIntroTest,
     constellation.clusterSpread,
     constellation.elementSeparation,
     constellation.elementLayout,
-    constellation.fieldLayout,
   ])
 
   if (filteredItems.length === 0) {
@@ -2691,7 +2853,14 @@ export function GlobeView({
         className="pointer-events-none absolute left-1/2 w-max max-w-[min(42rem,calc(100vw-4rem))] -translate-x-1/2 translate-y-1/2 px-4 text-center"
         style={{ bottom: 'var(--killchain-bottom-chrome-midline)' }}
         initial={reduceMotion ? false : { opacity: 0 }}
-        animate={{ opacity: entranceReady && showInteractionHint ? 1 : 0 }}
+        animate={{
+          opacity:
+            entranceReady &&
+            showInteractionHint &&
+            !(globeArrangement === 'clusters' && isConstellationFocused)
+              ? 1
+              : 0,
+        }}
         transition={reduceMotion ? { duration: 0 } : SETTINGS_MENU_ENTRANCE.transition}
       >
         <p className="text-black" style={{ fontSize: 'var(--killchain-chrome-hint-font-size)' }}>

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGallery } from '../context/GalleryContext'
+import { useGlobeIntro } from '../context/GlobeIntroContext'
 import {
   CATEGORIES,
   SEVERITY_ORB_ANIMATION_OPTIONS,
@@ -9,10 +10,11 @@ import {
   type GlobeAnimation,
   type SeverityOrbAnimation,
   type FraudAxisLabelStyle,
+  type ClusterFieldLayout,
 } from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
 import { ANIMATION_OPTIONS, ARRANGEMENT_OPTIONS, MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT } from '../lib/globe'
-import { CLUSTER_ELEMENT_LAYOUT_OPTIONS } from '../lib/clusterLayout'
+import { CLUSTER_ELEMENT_LAYOUT_OPTIONS, CLUSTER_FIELD_LAYOUT_OPTIONS } from '../lib/clusterLayout'
 import {
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
@@ -104,6 +106,7 @@ export function HamburgerMenu({
     setGlobeAnimation,
     filteredItems,
   } = useGallery()
+  const { restartIntro } = useGlobeIntro()
   const { state, toggle, close, showPanel, triggerLocked } = useSettingsMenuState()
   const panelRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
@@ -199,6 +202,40 @@ export function HamburgerMenu({
                   format={(v) => `${Math.round(v * 100)}%`}
                   onChange={(groupSpread) => setCategoryView({ groupSpread })}
                 />
+
+                <p className="hamburger-menu__subsection-label">Field shape</p>
+                <div className="hamburger-menu__pill-row">
+                  {CLUSTER_FIELD_LAYOUT_OPTIONS.map((option) => (
+                    <PillButton
+                      key={option.id}
+                      label={option.label}
+                      active={categoryView.clusterFieldLayout === option.id}
+                      onClick={() =>
+                        setCategoryView({
+                          clusterFieldLayout: option.id as ClusterFieldLayout,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !categoryView.clusterIntroTest
+                    setCategoryView({ clusterIntroTest: next })
+                    if (next) restartIntro()
+                  }}
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.clusterIntroTest
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.clusterIntroTest
+                    ? 'On — cluster intro test'
+                    : 'Off — cluster intro test'}
+                </button>
 
                 <button
                   type="button"

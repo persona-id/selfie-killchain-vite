@@ -240,6 +240,12 @@ function loadStoredState(): StoredState {
         ),
         clusterShape:
           parsed.categoryView?.clusterShape ?? DEFAULT_CATEGORY_VIEW.clusterShape,
+        clusterFieldLayout:
+          parsed.categoryView?.clusterFieldLayout ??
+          (parsed.constellation?.fieldLayout === 'shell'
+            ? 'globe'
+            : parsed.constellation?.fieldLayout) ??
+          DEFAULT_CATEGORY_VIEW.clusterFieldLayout,
         clusterAnimation: isGlobeAnimation(parsed.categoryView?.clusterAnimation)
           ? parsed.categoryView.clusterAnimation
           : DEFAULT_CATEGORY_VIEW.clusterAnimation,
@@ -528,6 +534,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       motionSpeed: clamp(settings.motionSpeed ?? prev.motionSpeed, 0, 2),
       imageFlutter: clamp(settings.imageFlutter ?? prev.imageFlutter, 0, 1),
       clusterShape: settings.clusterShape ?? prev.clusterShape,
+      clusterFieldLayout: settings.clusterFieldLayout ?? prev.clusterFieldLayout,
       clusterAnimation: settings.clusterAnimation ?? prev.clusterAnimation,
       unfocusedClusterOpacity: clamp(
         settings.unfocusedClusterOpacity ?? prev.unfocusedClusterOpacity,
