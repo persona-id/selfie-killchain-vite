@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import {
   DEFAULT_CONSTELLATION,
+  type CategoryViewSettings,
   type ClusterElementLayout,
   type ClusterFieldLayout,
   type ConstellationSettings,
@@ -14,7 +15,7 @@ export const CLUSTER_OVERVIEW_CAMERA_Z = 2500
 export const CLUSTER_MIN_CAMERA_Z = 1400
 export const CLUSTER_MAX_CAMERA_Z = 5800
 export const CLUSTER_FOCUS_CAMERA_Z = 460
-export const CLUSTER_FOCUS_SCREEN_FRACTION = 0.85
+export const CLUSTER_FOCUS_SCREEN_FRACTION = 0.92
 export const CLUSTER_FOCUS_SAFETY = 1.18
 export const CLUSTER_FOCUS_SCALE = 1
 export const CLUSTER_MIN_FOCUS_Z = 300
@@ -562,4 +563,19 @@ export function findClusterGlobe(
 ): ClusterGlobe | null {
   if (!clusterId) return null
   return layout.clusterGlobes.find((globe) => globe.id === clusterId) ?? null
+}
+
+export function constellationSettingsForCategoryView(
+  categoryView: CategoryViewSettings,
+  base: ConstellationSettings = DEFAULT_CONSTELLATION,
+): ConstellationSettings {
+  return {
+    ...base,
+    elementLayout: categoryView.clusterShape,
+    elementSeparation: categoryView.clusterSpacing,
+    clusterSpread: categoryView.groupSpread,
+    lineColor: categoryView.lineColor,
+    lineOpacity: categoryView.lineOpacity,
+    elementAnimation: categoryView.clusterAnimation,
+  }
 }

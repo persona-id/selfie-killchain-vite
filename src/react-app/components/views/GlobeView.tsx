@@ -50,6 +50,7 @@ import {
   computeCategoryModeLayout,
   isCategoryModeActive,
 } from '../../lib/categoryModes'
+import { imageFlutterOffset } from '../../lib/globeMotion'
 import { itemMatchesFilter } from '../../lib/taxonomy'
 import {
   CLUSTER_OUTSIDE_OPACITY,
@@ -67,10 +68,12 @@ import {
   CLUSTER_FOCUS_CAMERA_Z,
   CLUSTER_FOCUS_SCALE,
   computeClusterFocusCameraZForObjects,
+  constellationSettingsForCategoryView,
   focusClusterRadius,
   type ClusterGlobe,
 } from '../../lib/clusterLayout'
 import { CameraGesturePreview } from '../CameraGesturePreview'
+import { ClusterCursorLabel } from '../globe/ClusterCursorLabel'
 import { useAppCursor } from '../AppCursor'
 import { isGlobeClickableTarget } from '../../lib/clickableTarget'
 import {
@@ -180,6 +183,14 @@ export function GlobeView({
   const [focusedClusterLabel, setFocusedClusterLabel] = useState<string | null>(
     null,
   )
+  const [isConstellationFocused, setIsConstellationFocused] = useState(false)
+  const [clusterHover, setClusterHover] = useState<{
+    label: string
+    count: number
+    x: number
+    y: number
+  } | null>(null)
+  const mousePosRef = useRef({ x: 0, y: 0 })
   const openModalRef = useRef(openModal)
   const openModalScopedRef = useRef(openModalScoped)
   const animationRef = useRef(globeAnimation)
@@ -296,7 +307,8 @@ export function GlobeView({
     clusterFocusRef.current = null
     clusterFocusedAtRef.current = 0
     focusZoomArmedRef.current = false
-    setFocusedClusterLabel(null)
+    setIsConstellationFocused(false)
+    setClusterHover(null)
     restoreClusterOverviewState()
     if (restoreZoom) restorePreFocusCameraZ()
   }
@@ -420,7 +432,8 @@ export function GlobeView({
     clusterFocusedAtRef.current = performance.now()
     focusBlendRef.current = 1
     focusZoomArmedRef.current = false
-    setFocusedClusterLabel(clusterGlobe.label)
+    setIsConstellationFocused(true)
+    setClusterHover(null)
 
     const group = clusterGroupsRef.current.get(clusterId)
     if (group) {
@@ -614,6 +627,38 @@ export function GlobeView({
   ])
 
   const setHoverLabel = (item: GalleryItem | null) => {
+    if (
+      globeArrangementRef.current === 'clusters' &&
+      !clusterFocusRef.current
+    ) {
+      if (!item) {
+        setClusterHover(null)
+      } else {
+        const clusterId = itemClusterIdRef.current.get(item.id)
+        const clusterGlobe = layoutClusterGlobesRef.current.find(
+          (globe) => globe.id === clusterId,
+        )
+        if (clusterGlobe) {
+          setClusterHover({
+            label: clusterGlobe.label,
+            count: clusterGlobe.itemIds.size,
+            x: mousePosRef.current.x,
+            y: mousePosRef.current.y,
+          })
+        } else {
+          setClusterHover(null)
+        }
+      }
+
+      const el = hoverLabelRef.current
+      if (el) {
+        el.textContent = ''
+        el.style.display = 'none'
+      }
+      return
+    }
+
+    setClusterHover(null)
     const el = hoverLabelRef.current
     if (!el) return
     if (!item) {
@@ -625,6 +670,19 @@ export function GlobeView({
       item.subcategory?.replace(/_/g, ' ') ?? item.category.replace(/_/g, ' ')
     el.style.display = 'block'
   }
+
+  useEffect(() => {
+    const onMove = (event: MouseEvent) => {
+      mousePosRef.current = { x: event.clientX, y: event.clientY }
+      setClusterHover((prev) =>
+        prev
+          ? { ...prev, x: event.clientX, y: event.clientY }
+          : null,
+      )
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [])
 
   const setActiveCluster = (cluster: ImageCluster | null) => {
     clustersRef.current = cluster
@@ -852,7 +910,13 @@ export function GlobeView({
     const isCategoryLayout = categoryLayout !== null
     const isClusters = globeArrangement === 'clusters' && !isCategoryLayout
     const layout = isClusters
-      ? computeClusterLayout(displayItems, constellationRef.current)
+      ? computeClusterLayout(
+          displayItems,
+          constellationSettingsForCategoryView(
+            categoryViewRef.current,
+            constellationRef.current,
+          ),
+        )
       : null
 
     if (isCategoryLayout && categoryLayout) {
@@ -1041,6 +1105,13 @@ export function GlobeView({
         globe.add(object)
       }
 
+      const storedLocal =
+        (object.userData.fieldLocal as THREE.Vector3 | undefined) ??
+        (object.userData.sphereLocal as THREE.Vector3 | undefined)
+      if (storedLocal) {
+        object.userData.baseLocal = storedLocal.clone()
+      }
+
       objects.push(object)
       objectById.set(item.id, object)
     })
@@ -1139,6 +1210,13 @@ export function GlobeView({
       interactionState.targetCameraDistance = overviewCameraZ
       camera.position.z = overviewCameraZ
     }
+    if (isCategoryLayout) {
+      interactionState.rotationX = 0
+      interactionState.rotationY = 0
+      interactionState.rotationZ = 0
+      interactionState.velocityX = 0
+      interactionState.velocityY = 0
+    }
     setGlobeReady(true)
 
     const detachInteraction = attachGlobeInteraction(
@@ -1221,7 +1299,8 @@ export function GlobeView({
       time += dt
       const timeScale = dt
 
-      const preset = ANIMATION_PRESETS[animationRef.current]
+      const chainMode = categoryModeRef.current === 'chain'
+      const preset = ANIMATION_PRESETS[chainMode ? 'static' : animationRef.current]
       const introProgress = introProgressRef.current
       const introExitElapsed =
         introExitStartedAtRef.current > 0
@@ -1588,9 +1667,6 @@ export function GlobeView({
 
       if (isClusters) {
         const focusId = clusterFocusRef.current
-        const constellationSettings = constellationRef.current
-        const elementPreset =
-          ANIMATION_PRESETS[constellationSettings.elementAnimation]
 
         if (
           focusId &&
@@ -1614,59 +1690,11 @@ export function GlobeView({
           if (focusId === clusterId) {
             group.position.set(0, 0, 0)
             group.rotation.set(0, 0, 0)
-          } else if (focusId) {
-            group.position.copy(fieldCenter)
-            const phase = (group.userData.spinPhase as number) ?? 0
-            const focusWeight = 0.35
-            const targetScale = 1
-            const nextScale =
-              group.scale.x + (targetScale - group.scale.x) * 0.14 * timeScale
-            group.scale.setScalar(nextScale)
-
-            if (elementPreset.wobble) {
-              const amp = elementPreset.wobbleAmplitude ?? 0.15
-              const speed = elementPreset.wobbleSpeed ?? 0.0008
-              group.rotation.x +=
-                Math.sin(time * speed + phase) *
-                amp *
-                0.025 *
-                timeScale *
-                focusWeight
-              group.rotation.y +=
-                (elementPreset.autoRotateY +
-                  Math.cos(time * speed * 0.7 + phase) * amp * 0.018) *
-                timeScale *
-                focusWeight
-            } else {
-              group.rotation.x +=
-                elementPreset.autoRotateX * timeScale * focusWeight
-              group.rotation.y +=
-                elementPreset.autoRotateY * timeScale * focusWeight
-            }
+            group.scale.setScalar(CLUSTER_FOCUS_SCALE)
           } else {
-            group.position.lerp(fieldCenter, 0.14 * timeScale)
-            const phase = (group.userData.spinPhase as number) ?? 0
-            const targetScale = 1
-            const nextScale =
-              group.scale.x + (targetScale - group.scale.x) * 0.14 * timeScale
-            group.scale.setScalar(nextScale)
-
-            if (elementPreset.wobble) {
-              const amp = elementPreset.wobbleAmplitude ?? 0.15
-              const speed = elementPreset.wobbleSpeed ?? 0.0008
-              group.rotation.x +=
-                Math.sin(time * speed + phase) *
-                amp *
-                0.025 *
-                timeScale
-              group.rotation.y +=
-                (elementPreset.autoRotateY +
-                  Math.cos(time * speed * 0.7 + phase) * amp * 0.018) *
-                timeScale
-            } else {
-              group.rotation.x += elementPreset.autoRotateX * timeScale
-              group.rotation.y += elementPreset.autoRotateY * timeScale
-            }
+            group.position.copy(fieldCenter)
+            group.rotation.set(0, 0, 0)
+            group.scale.setScalar(1)
           }
         })
 
@@ -1679,11 +1707,28 @@ export function GlobeView({
             obj.position.copy(focusLocal)
           }
         } else {
+          const motion = categoryViewRef.current
           for (let i = 0; i < objects.length; i++) {
             const obj = objects[i]
-            const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
-            if (!fieldLocal) continue
-            obj.position.copy(fieldLocal)
+            const baseLocal = obj.userData.baseLocal as THREE.Vector3 | undefined
+            if (!baseLocal || !obj.userData.clusterId) continue
+            if (motion.imageFlutter > 0) {
+              const item = obj.userData.item as GalleryItem | undefined
+              const offset = imageFlutterOffset(
+                item?.id ?? String(i),
+                time,
+                motion.imageFlutter,
+                motion.clusterAnimation,
+              )
+              obj.position.set(
+                baseLocal.x + offset.x,
+                baseLocal.y + offset.y,
+                baseLocal.z + offset.z,
+              )
+            } else {
+              const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
+              if (fieldLocal) obj.position.copy(fieldLocal)
+            }
           }
         }
       }
@@ -1718,6 +1763,51 @@ export function GlobeView({
           if (linked.has(item.id)) {
             obj.position.copy(focusLocal)
           }
+        }
+      }
+
+      if (isCategoryLayout) {
+        globe.position.set(0, 0, 0)
+        clusterGroupsRef.current.forEach((group) => {
+          const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+          group.position.copy(fieldCenter)
+          group.rotation.set(0, 0, 0)
+          group.scale.setScalar(1)
+        })
+
+        const motion = categoryViewRef.current
+        for (let i = 0; i < objects.length; i++) {
+          const obj = objects[i]
+          const item = obj.userData.item as GalleryItem | undefined
+          const baseLocal = obj.userData.baseLocal as THREE.Vector3 | undefined
+          if (baseLocal && motion.imageFlutter > 0) {
+            const offset = imageFlutterOffset(
+              item?.id ?? String(i),
+              time,
+              motion.imageFlutter,
+              motion.clusterAnimation,
+            )
+            obj.position.copy(baseLocal).add(offset)
+          } else if (baseLocal) {
+            obj.position.copy(baseLocal)
+          }
+          billboardTowardCamera(obj, camera)
+        }
+        globe.updateMatrixWorld(true)
+      } else if (categoryViewRef.current.imageFlutter > 0 && !isClusters) {
+        const motion = categoryViewRef.current
+        for (let i = 0; i < objects.length; i++) {
+          const obj = objects[i]
+          const item = obj.userData.item as GalleryItem | undefined
+          const baseLocal = obj.userData.baseLocal as THREE.Vector3 | undefined
+          if (!baseLocal || obj.userData.clusterId) continue
+          const offset = imageFlutterOffset(
+            item?.id ?? String(i),
+            time,
+            motion.imageFlutter,
+            motion.clusterAnimation,
+          )
+          obj.position.copy(baseLocal).add(offset)
         }
       }
 
@@ -2209,11 +2299,35 @@ export function GlobeView({
           clientWidth,
           clientHeight,
           layoutBridgesRef.current,
-          constellationRef.current.lineColor,
+          categoryView.lineColor,
           constellationRef.current.lineThickness,
-          constellationRef.current.lineColor,
+          categoryView.lineColor,
           categoryView.lineOpacity,
           categoryHubCentersRef.current,
+        )
+      } else if (
+        isClusters &&
+        !clusterFocusRef.current &&
+        categoryView.showConnectionLines &&
+        layoutClustersRef.current.length > 0
+      ) {
+        const bridgeCenters = new Map<string, THREE.Vector3>()
+        layoutClusterGlobesRef.current.forEach((globe) => {
+          bridgeCenters.set(globe.cluster.anchorId, globe.center)
+        })
+        drawLayoutClusterThreads(
+          threadCtx,
+          layoutClustersRef.current,
+          objectById,
+          camera,
+          clientWidth,
+          clientHeight,
+          layoutBridgesRef.current,
+          categoryView.lineColor,
+          constellationRef.current.lineThickness,
+          categoryView.lineColor,
+          categoryView.lineOpacity,
+          bridgeCenters,
         )
       } else if (
         linkClusterRef.current.enabled &&
@@ -2274,6 +2388,8 @@ export function GlobeView({
       preFocusCameraZRef.current = null
       focusZoomArmedRef.current = false
       setFocusedClusterLabel(null)
+      setIsConstellationFocused(false)
+      setClusterHover(null)
       setGlobeDraggingRef.current(false)
       setHoverLabel(null)
       complexityBlendRef.current = 0
@@ -2285,7 +2401,13 @@ export function GlobeView({
     globeArrangement,
     categoryMode,
     categoryView.chainSpacing,
+    categoryView.clusterSpacing,
+    categoryView.clusterShape,
     categoryView.showCategoryLabels,
+    categoryView.showConnectionLines,
+    categoryView.lineColor,
+    categoryView.lineOpacity,
+    categoryView.groupSpread,
     constellation.clusterSpread,
     constellation.elementSeparation,
     constellation.elementLayout,
@@ -2302,31 +2424,37 @@ export function GlobeView({
 
   return (
     <div className="globe-view relative h-full w-full overflow-hidden">
-      {focusedClusterLabel && (
+      {focusedClusterLabel && globeArrangement !== 'clusters' && (
         <div className="pointer-events-none absolute top-20 left-1/2 z-10 -translate-x-1/2 text-center">
           <p className="text-sm font-medium text-neutral-700 capitalize">
             {focusedClusterLabel}
           </p>
           <p className="mt-1 text-[11px] text-neutral-400">
-            {globeArrangement === 'clusters'
-              ? 'Click background to return · click image for detail'
-              : 'Click background to return · click image for detail'}
+            Click background to return · click image for detail
           </p>
           <button
             type="button"
-            onClick={() => {
-              if (globeArrangement === 'clusters') {
-                exitConstellationFocus(true)
-              } else {
-                exitLinkClusterFocus(true)
-              }
-            }}
+            onClick={() => exitLinkClusterFocus(true)}
             className="pointer-events-auto mt-3 rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-xs text-neutral-600 shadow-sm transition-colors hover:bg-neutral-50"
           >
             Exit cluster
           </button>
         </div>
       )}
+
+      <ClusterCursorLabel
+        title={clusterHover?.label ?? ''}
+        count={clusterHover?.count ?? 0}
+        x={clusterHover?.x ?? 0}
+        y={clusterHover?.y ?? 0}
+        visible={
+          Boolean(
+            clusterHover &&
+              globeArrangement === 'clusters' &&
+              !isConstellationFocused,
+          )
+        }
+      />
 
       <canvas
         ref={threadCanvasRef}
@@ -2359,7 +2487,7 @@ export function GlobeView({
           {cameraControls.enabled
             ? 'Point to move · hand closer/farther to zoom · pinch to select · pinch twice to close'
             : globeArrangement === 'clusters'
-              ? focusedClusterLabel
+              ? isConstellationFocused
                 ? 'Inside cluster · click image for detail · background to return'
                 : 'Click an image to zoom into its cluster · drag to explore'
               : linkCluster.enabled

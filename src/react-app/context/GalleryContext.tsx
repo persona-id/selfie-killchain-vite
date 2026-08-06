@@ -231,11 +231,34 @@ function loadStoredState(): StoredState {
           0.5,
           2.5,
         ),
+        clusterSpacing: clamp(
+          parsed.categoryView?.clusterSpacing ?? DEFAULT_CATEGORY_VIEW.clusterSpacing,
+          0.5,
+          2.5,
+        ),
         lineOpacity: clamp(
           parsed.categoryView?.lineOpacity ?? DEFAULT_CATEGORY_VIEW.lineOpacity,
           0.05,
           1,
         ),
+        lineColor: normalizeHex(
+          parsed.categoryView?.lineColor ?? DEFAULT_CATEGORY_VIEW.lineColor,
+        ),
+        groupSpread: clamp(
+          parsed.categoryView?.groupSpread ?? DEFAULT_CATEGORY_VIEW.groupSpread,
+          0.5,
+          2.5,
+        ),
+        imageFlutter: clamp(
+          parsed.categoryView?.imageFlutter ?? DEFAULT_CATEGORY_VIEW.imageFlutter,
+          0,
+          1,
+        ),
+        clusterShape:
+          parsed.categoryView?.clusterShape ?? DEFAULT_CATEGORY_VIEW.clusterShape,
+        clusterAnimation: isGlobeAnimation(parsed.categoryView?.clusterAnimation)
+          ? parsed.categoryView.clusterAnimation
+          : DEFAULT_CATEGORY_VIEW.clusterAnimation,
       },
     }
   } catch {
@@ -502,7 +525,15 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       ...prev,
       ...settings,
       chainSpacing: clamp(settings.chainSpacing ?? prev.chainSpacing, 0.5, 2.5),
+      clusterSpacing: clamp(settings.clusterSpacing ?? prev.clusterSpacing, 0.5, 2.5),
+      groupSpread: clamp(settings.groupSpread ?? prev.groupSpread, 0.5, 2.5),
       lineOpacity: clamp(settings.lineOpacity ?? prev.lineOpacity, 0.05, 1),
+      lineColor: settings.lineColor
+        ? normalizeHex(settings.lineColor)
+        : prev.lineColor,
+      imageFlutter: clamp(settings.imageFlutter ?? prev.imageFlutter, 0, 1),
+      clusterShape: settings.clusterShape ?? prev.clusterShape,
+      clusterAnimation: settings.clusterAnimation ?? prev.clusterAnimation,
     }))
   }, [])
 

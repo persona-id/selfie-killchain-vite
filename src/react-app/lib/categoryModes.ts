@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CategoryViewSettings, GalleryItem, GlobeCategoryMode } from '../types/gallery'
+import { clusterElementPositions } from './clusterLayout'
 import { filterGroupLabel, itemFilterKey, orderedFilterGroups } from './taxonomy'
 import type { ClusterBridge } from './clusterLayout'
 import type { ImageCluster } from './threads'
@@ -36,32 +37,23 @@ const HUB_COLORS = [
   '#e879f9',
 ]
 
-const CHAIN_SPHERE_SPACING = 680
+const CHAIN_SPHERE_SPACING = 720
 const CHAIN_SPHERE_RADIUS = 92
 
 function hubColor(index: number): string {
   return HUB_COLORS[index % HUB_COLORS.length]
 }
 
-function miniSphereOffsets(count: number, radius: number): THREE.Vector3[] {
-  if (count === 0) return []
-  if (count === 1) return [new THREE.Vector3()]
-
-  const phi = Math.PI * (3 - Math.sqrt(5))
-  const offsets: THREE.Vector3[] = []
-  for (let i = 0; i < count; i++) {
-    const y = 1 - (i / (count - 1)) * 2
-    const ring = Math.sqrt(Math.max(0, 1 - y * y))
-    const theta = phi * i
-    offsets.push(
-      new THREE.Vector3(
-        Math.cos(theta) * ring * radius,
-        y * radius * 0.85,
-        Math.sin(theta) * ring * radius * 0.65,
-      ),
-    )
-  }
-  return offsets
+function clusterOffsets(
+  settings: CategoryViewSettings,
+  count: number,
+): THREE.Vector3[] {
+  const radius = CHAIN_SPHERE_RADIUS * Math.sqrt(settings.chainSpacing)
+  return clusterElementPositions(
+    settings.clusterShape,
+    count,
+    radius * settings.clusterSpacing,
+  )
 }
 
 function groupItemsByFilter(items: GalleryItem[]): Map<string, GalleryItem[]> {
@@ -85,9 +77,7 @@ function chainHubCenters(
 
   keys.forEach((key, index) => {
     const z = -totalSpan / 2 + index * spacing
-    const y = Math.sin(index * 0.65) * 36
-    const x = Math.cos(index * 0.45) * 28
-    centers.set(key, new THREE.Vector3(x, y, z))
+    centers.set(key, new THREE.Vector3(0, 0, z))
   })
 
   return centers
@@ -96,7 +86,7 @@ function chainHubCenters(
 function buildLayoutFromHubs(
   items: GalleryItem[],
   hubCenters: Map<string, THREE.Vector3>,
-  clusterRadius: number,
+  settings: CategoryViewSettings,
   bridges: ClusterBridge[],
 ): CategoryModeLayout {
   const groups = groupItemsByFilter(items)
@@ -113,7 +103,7 @@ function buildLayoutFromHubs(
     if (members.length === 0) return
 
     const center = hubCenters.get(key) ?? new THREE.Vector3()
-    const offsets = miniSphereOffsets(members.length, clusterRadius)
+    const offsets = clusterOffsets(settings, members.length)
     const fieldMap = new Map<string, THREE.Vector3>()
     const memberIds = members.map((item) => item.id)
 
@@ -147,10 +137,11 @@ function buildLayoutFromHubs(
     memberIds: hub.memberIds.slice(1),
   }))
 
+  const clusterRadius =
+    CHAIN_SPHERE_RADIUS * Math.sqrt(settings.chainSpacing) * settings.clusterSpacing
   const fieldRadius = Math.max(
     520,
-    ...hubs.map((hub) => Math.abs(hub.center.z) + clusterRadius * 2.8),
-    ...hubs.map((hub) => hub.center.length() + clusterRadius * 2.2),
+    ...hubs.map((hub) => Math.abs(hub.center.z) + clusterRadius * 3.2),
   )
 
   return {
@@ -176,7 +167,6 @@ export function computeCategoryModeLayout(
   const keys = orderedFilterGroups(groups.keys())
   const spacing = CHAIN_SPHERE_SPACING * settings.chainSpacing
   const hubCenters = chainHubCenters(keys, spacing)
-  const clusterRadius = CHAIN_SPHERE_RADIUS * Math.sqrt(settings.chainSpacing)
 
   const hubs: { id: string; anchorId: string }[] = []
   keys.forEach((key) => {
@@ -194,7 +184,7 @@ export function computeCategoryModeLayout(
     })
   }
 
-  return buildLayoutFromHubs(items, hubCenters, clusterRadius, bridges)
+  return buildLayoutFromHubs(items, hubCenters, settings, bridges)
 }
 
 export function isCategoryModeActive(mode: GlobeCategoryMode): boolean {

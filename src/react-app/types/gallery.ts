@@ -139,6 +139,12 @@ export type CategoryViewSettings = {
   showCategoryLabels: boolean
   chainSpacing: number
   lineOpacity: number
+  lineColor: string
+  clusterShape: ClusterElementLayout
+  clusterSpacing: number
+  groupSpread: number
+  clusterAnimation: GlobeAnimation
+  imageFlutter: number
 }
 
 export const DEFAULT_CATEGORY_MODE: GlobeCategoryMode = 'globe'
@@ -148,6 +154,12 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   showCategoryLabels: true,
   chainSpacing: 1,
   lineOpacity: 0.55,
+  lineColor: '#b8b8b8',
+  clusterShape: 'globe',
+  clusterSpacing: 1,
+  groupSpread: 1,
+  clusterAnimation: 'sway',
+  imageFlutter: 0.35,
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'

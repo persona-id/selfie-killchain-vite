@@ -1,9 +1,10 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGallery } from '../context/GalleryContext'
-import { CATEGORIES, CATEGORY_MODE_OPTIONS, type Category } from '../types/gallery'
+import { CATEGORIES, CATEGORY_MODE_OPTIONS, type Category, type GlobeAnimation } from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
-import { MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT, ARRANGEMENT_OPTIONS } from '../lib/globe'
+import { ANIMATION_OPTIONS, ARRANGEMENT_OPTIONS, MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT } from '../lib/globe'
+import { CLUSTER_ELEMENT_LAYOUT_OPTIONS } from '../lib/clusterLayout'
 import {
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
@@ -93,6 +94,8 @@ export function HamburgerMenu({
     setCategoryMode,
     categoryView,
     setCategoryView,
+    globeAnimation,
+    setGlobeAnimation,
     filteredItems,
   } = useGallery()
   const { state, toggle, close, showPanel, triggerLocked } = useSettingsMenuState()
@@ -184,8 +187,11 @@ export function HamburgerMenu({
               ))}
             </div>
 
-            {categoryMode === 'chain' ? (
+            {categoryMode === 'chain' || isCategoryGroup ? (
               <>
+                <p className="hamburger-menu__subsection-label">
+                  {isCategoryGroup ? 'Category groups' : 'Sphere chain'}
+                </p>
                 <button
                   type="button"
                   onClick={() =>
@@ -200,37 +206,54 @@ export function HamburgerMenu({
                   }`}
                 >
                   {categoryView.showConnectionLines
-                    ? 'On — lines between spheres'
-                    : 'Off — hide sphere links'}
+                    ? 'On — connection lines'
+                    : 'Off — hide connection lines'}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCategoryView({
-                      showCategoryLabels: !categoryView.showCategoryLabels,
-                    })
-                  }
-                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                    categoryView.showCategoryLabels
-                      ? 'hamburger-menu__list-btn--active'
-                      : 'hamburger-menu__list-btn--inactive'
-                  }`}
-                >
-                  {categoryView.showCategoryLabels
-                    ? 'On — show category labels'
-                    : 'Off — hide category labels'}
-                </button>
+                {categoryMode === 'chain' ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCategoryView({
+                        showCategoryLabels: !categoryView.showCategoryLabels,
+                      })
+                    }
+                    className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                      categoryView.showCategoryLabels
+                        ? 'hamburger-menu__list-btn--active'
+                        : 'hamburger-menu__list-btn--inactive'
+                    }`}
+                  >
+                    {categoryView.showCategoryLabels
+                      ? 'On — show category labels'
+                      : 'Off — hide category labels'}
+                  </button>
+                ) : null}
 
-                <SliderControl
-                  label="Sphere spacing"
-                  min={0.5}
-                  max={2.5}
-                  step={0.05}
-                  value={categoryView.chainSpacing}
-                  format={(v) => `${Math.round(v * 100)}%`}
-                  onChange={(chainSpacing) => setCategoryView({ chainSpacing })}
-                />
+                {categoryMode === 'chain' ? (
+                  <SliderControl
+                    label="Chain spacing"
+                    min={0.5}
+                    max={2.5}
+                    step={0.05}
+                    value={categoryView.chainSpacing}
+                    format={(v) => `${Math.round(v * 100)}%`}
+                    onChange={(chainSpacing) => setCategoryView({ chainSpacing })}
+                  />
+                ) : null}
+
+                {isCategoryGroup ? (
+                  <SliderControl
+                    label="Group spread"
+                    min={0.5}
+                    max={2.5}
+                    step={0.05}
+                    value={categoryView.groupSpread}
+                    format={(v) => `${Math.round(v * 100)}%`}
+                    onChange={(groupSpread) => setCategoryView({ groupSpread })}
+                  />
+                ) : null}
+
                 <SliderControl
                   label="Line opacity"
                   min={0.05}
@@ -240,8 +263,89 @@ export function HamburgerMenu({
                   format={(v) => `${Math.round(v * 100)}%`}
                   onChange={(lineOpacity) => setCategoryView({ lineOpacity })}
                 />
+
+                <label className="hamburger-menu__color-row">
+                  <span className="hamburger-menu__color-value">Line color</span>
+                  <input
+                    type="color"
+                    className="hamburger-menu__color-input"
+                    value={categoryView.lineColor}
+                    onChange={(event) =>
+                      setCategoryView({ lineColor: event.target.value })
+                    }
+                  />
+                </label>
               </>
             ) : null}
+
+            <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
+              Motion
+            </p>
+            {categoryMode === 'globe' ? (
+              <>
+                <p className="hamburger-menu__subsection-label">Globe animation</p>
+                <div className="hamburger-menu__pill-row">
+                  {ANIMATION_OPTIONS.map((option) => (
+                    <PillButton
+                      key={option.id}
+                      label={option.label}
+                      active={globeAnimation === option.id}
+                      onClick={() => setGlobeAnimation(option.id)}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="hamburger-menu__subsection-label">
+                Globe animation — static in sphere chain (drag to rotate)
+              </p>
+            )}
+
+            <p className="hamburger-menu__subsection-label">Cluster shape</p>
+            <div className="hamburger-menu__pill-row">
+              {CLUSTER_ELEMENT_LAYOUT_OPTIONS.map((option) => (
+                <PillButton
+                  key={option.id}
+                  label={option.label}
+                  active={categoryView.clusterShape === option.id}
+                  onClick={() => setCategoryView({ clusterShape: option.id })}
+                />
+              ))}
+            </div>
+
+            <SliderControl
+              label="Cluster spacing"
+              min={0.5}
+              max={2.5}
+              step={0.05}
+              value={categoryView.clusterSpacing}
+              format={(v) => `${Math.round(v * 100)}%`}
+              onChange={(clusterSpacing) => setCategoryView({ clusterSpacing })}
+            />
+
+            <p className="hamburger-menu__subsection-label">Image motion</p>
+            <div className="hamburger-menu__pill-row">
+              {ANIMATION_OPTIONS.map((option) => (
+                <PillButton
+                  key={option.id}
+                  label={option.label}
+                  active={categoryView.clusterAnimation === option.id}
+                  onClick={() =>
+                    setCategoryView({ clusterAnimation: option.id as GlobeAnimation })
+                  }
+                />
+              ))}
+            </div>
+
+            <SliderControl
+              label="Image flutter"
+              min={0}
+              max={1}
+              step={0.05}
+              value={categoryView.imageFlutter}
+              format={(v) => (v === 0 ? 'Off' : `${Math.round(v * 100)}%`)}
+              onChange={(imageFlutter) => setCategoryView({ imageFlutter })}
+            />
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
               Group by
