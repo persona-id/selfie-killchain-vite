@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { useGallery } from '../context/GalleryContext'
 import { useKillchainChrome } from '../context/KillchainChromeContext'
 import type { ViewMode } from '../types/killchain'

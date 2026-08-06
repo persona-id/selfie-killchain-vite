@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useKillchainChrome } from '../../context/KillchainChromeContext'
 import {
   UTILITY_MENU_CASCADE_MS,
