@@ -123,7 +123,7 @@ export const DEFAULT_CONSTELLATION: ConstellationSettings = {
   lineOpacity: 0.55,
 }
 
-export type GlobeCategoryMode = 'globe' | 'mindmap' | 'network' | 'bubbles' | 'selfie'
+export type GlobeCategoryMode = 'globe' | 'chain'
 
 export const CATEGORY_MODE_OPTIONS: {
   id: GlobeCategoryMode
@@ -131,17 +131,13 @@ export const CATEGORY_MODE_OPTIONS: {
   hint: string
 }[] = [
   { id: 'globe', label: 'Globe', hint: 'Classic sphere layout' },
-  { id: 'mindmap', label: 'Mind map', hint: 'Categories linked with lines' },
-  { id: 'network', label: 'Network', hint: 'Radial category graph' },
-  { id: 'bubbles', label: 'Bubbles', hint: 'Floating category clusters' },
-  { id: 'selfie', label: 'Selfie', hint: 'Images form a face splat' },
+  { id: 'chain', label: 'Sphere chain', hint: 'Linear interconnected spheres' },
 ]
 
 export type CategoryViewSettings = {
   showConnectionLines: boolean
   showCategoryLabels: boolean
-  floatAnimation: boolean
-  clusterSpread: number
+  chainSpacing: number
   lineOpacity: number
 }
 
@@ -150,8 +146,7 @@ export const DEFAULT_CATEGORY_MODE: GlobeCategoryMode = 'globe'
 export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   showConnectionLines: true,
   showCategoryLabels: true,
-  floatAnimation: true,
-  clusterSpread: 1,
+  chainSpacing: 1,
   lineOpacity: 0.55,
 }
 

@@ -1,6 +1,3 @@
-import { useMemo } from 'react'
-
-import { useSequentialTypewriter } from '../../hooks/useSequentialTypewriter'
 import { useSiteMetadata } from '../../hooks/useSiteMetadata'
 import './KillchainTopMenuHeader.css'
 
@@ -9,26 +6,23 @@ interface KillchainTopMenuHeaderProps {
   entranceReady?: boolean
 }
 
-function TypewriterLine({
-  fullLine,
-  value,
-  showCursor,
+function MetaLine({
+  children,
+  lineIndex,
+  active,
 }: {
-  fullLine: string
-  value: string
-  showCursor: boolean
+  children: string
+  lineIndex: number
+  active: boolean
 }) {
   return (
-    <p className="killchain-top-menu-header__line-text">
-      <span className="killchain-top-menu-header__line-measure" aria-hidden>
-        {fullLine}
-      </span>
-      <span className="killchain-top-menu-header__line-typed">
-        {value}
-        {showCursor ? (
-          <span className="killchain-top-menu-header__cursor" aria-hidden />
-        ) : null}
-      </span>
+    <p
+      className={`killchain-top-menu-header__line${
+        active ? ' killchain-top-menu-header__line--active' : ''
+      }`}
+      style={{ '--line-index': lineIndex } as React.CSSProperties}
+    >
+      {children}
     </p>
   )
 }
@@ -38,17 +32,7 @@ export function KillchainTopMenuHeader({
   entranceReady = true,
 }: KillchainTopMenuHeaderProps) {
   const { version } = useSiteMetadata()
-  const lines = useMemo(
-    () => [
-      'SELFIE.LIB',
-      `VER. ${version}`,
-      'A DIGITAL TAXONOMY OF',
-      'VERIFICATION FRAUD BY PERSONA',
-    ],
-    [version],
-  )
   const active = entranceReady && !hidden
-  const { values, lineIndex, complete } = useSequentialTypewriter(lines, active)
 
   return (
     <header
@@ -67,34 +51,22 @@ export function KillchainTopMenuHeader({
         <img src="/icons/persona-mark-white.png" alt="" />
       </a>
 
-      <div
-        className="killchain-top-menu-header__meta"
-        aria-live="polite"
-        aria-hidden={!active}
-      >
+      <div className="killchain-top-menu-header__meta" aria-hidden={!active}>
         <div className="killchain-top-menu-header__meta-col">
-          <TypewriterLine
-            fullLine={lines[0]}
-            value={values[0] ?? ''}
-            showCursor={lineIndex === 0 && !complete}
-          />
-          <TypewriterLine
-            fullLine={lines[1]}
-            value={values[1] ?? ''}
-            showCursor={lineIndex === 1 && !complete}
-          />
+          <MetaLine lineIndex={0} active={active}>
+            SELFIE.LIB
+          </MetaLine>
+          <MetaLine lineIndex={1} active={active}>
+            {`VER. ${version}`}
+          </MetaLine>
         </div>
         <div className="killchain-top-menu-header__meta-col">
-          <TypewriterLine
-            fullLine={lines[2]}
-            value={values[2] ?? ''}
-            showCursor={lineIndex === 2 && !complete}
-          />
-          <TypewriterLine
-            fullLine={lines[3]}
-            value={values[3] ?? ''}
-            showCursor={lineIndex === 3 && !complete}
-          />
+          <MetaLine lineIndex={2} active={active}>
+            A DIGITAL TAXONOMY OF
+          </MetaLine>
+          <MetaLine lineIndex={3} active={active}>
+            VERIFICATION FRAUD BY PERSONA
+          </MetaLine>
         </div>
       </div>
     </header>

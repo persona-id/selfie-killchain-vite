@@ -27,7 +27,6 @@ import {
   DEFAULT_GLOBE_ARRANGEMENT,
   type GlobeCategoryMode,
   type CategoryViewSettings,
-  CATEGORY_MODE_OPTIONS,
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
   MAX_DEPTH_FADE,
@@ -125,10 +124,11 @@ function normalizeHex(color: string): string {
 }
 
 function isCategoryMode(value: unknown): value is GlobeCategoryMode {
-  return (
-    typeof value === 'string' &&
-    CATEGORY_MODE_OPTIONS.some((option) => option.id === value)
-  )
+  return value === 'globe' || value === 'chain'
+}
+
+function normalizeCategoryMode(value: unknown): GlobeCategoryMode {
+  return isCategoryMode(value) ? value : 'globe'
 }
 
 function loadStoredState(): StoredState {
@@ -219,14 +219,15 @@ function loadStoredState(): StoredState {
         fieldLayout:
           parsed.constellation?.fieldLayout ?? DEFAULT_CONSTELLATION.fieldLayout,
       },
-      categoryMode: isCategoryMode(parsed.categoryMode)
-        ? parsed.categoryMode
-        : DEFAULT_CATEGORY_MODE,
+      categoryMode: normalizeCategoryMode(parsed.categoryMode),
       categoryView: {
         ...DEFAULT_CATEGORY_VIEW,
         ...parsed.categoryView,
-        clusterSpread: clamp(
-          parsed.categoryView?.clusterSpread ?? DEFAULT_CATEGORY_VIEW.clusterSpread,
+        chainSpacing: clamp(
+          parsed.categoryView?.chainSpacing ??
+            (parsed.categoryView as { clusterSpread?: number } | undefined)
+              ?.clusterSpread ??
+            DEFAULT_CATEGORY_VIEW.chainSpacing,
           0.5,
           2.5,
         ),
@@ -500,11 +501,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     setCategoryViewState((prev) => ({
       ...prev,
       ...settings,
-      clusterSpread: clamp(
-        settings.clusterSpread ?? prev.clusterSpread,
-        0.5,
-        2.5,
-      ),
+      chainSpacing: clamp(settings.chainSpacing ?? prev.chainSpacing, 0.5, 2.5),
       lineOpacity: clamp(settings.lineOpacity ?? prev.lineOpacity, 0.05, 1),
     }))
   }, [])

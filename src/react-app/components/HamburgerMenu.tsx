@@ -184,9 +184,8 @@ export function HamburgerMenu({
               ))}
             </div>
 
-            {categoryMode !== 'globe' ? (
+            {categoryMode === 'chain' ? (
               <>
-                <p className="hamburger-menu__subsection-label">Connections</p>
                 <button
                   type="button"
                   onClick={() =>
@@ -201,8 +200,8 @@ export function HamburgerMenu({
                   }`}
                 >
                   {categoryView.showConnectionLines
-                    ? 'On — lines between categories'
-                    : 'Off — hide category lines'}
+                    ? 'On — lines between spheres'
+                    : 'Off — hide sphere links'}
                 </button>
 
                 <button
@@ -223,30 +222,14 @@ export function HamburgerMenu({
                     : 'Off — hide category labels'}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCategoryView({ floatAnimation: !categoryView.floatAnimation })
-                  }
-                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                    categoryView.floatAnimation
-                      ? 'hamburger-menu__list-btn--active'
-                      : 'hamburger-menu__list-btn--inactive'
-                  }`}
-                >
-                  {categoryView.floatAnimation
-                    ? 'On — categories drift gently'
-                    : 'Off — static category layout'}
-                </button>
-
                 <SliderControl
-                  label="Cluster spread"
+                  label="Sphere spacing"
                   min={0.5}
                   max={2.5}
                   step={0.05}
-                  value={categoryView.clusterSpread}
+                  value={categoryView.chainSpacing}
                   format={(v) => `${Math.round(v * 100)}%`}
-                  onChange={(clusterSpread) => setCategoryView({ clusterSpread })}
+                  onChange={(chainSpacing) => setCategoryView({ chainSpacing })}
                 />
                 <SliderControl
                   label="Line opacity"

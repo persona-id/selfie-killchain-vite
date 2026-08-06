@@ -494,8 +494,7 @@ export function GlobeView({
     if (preFilterCameraZRef.current == null) {
       preFilterCameraZRef.current = state.cameraDistance
     }
-    const screenFraction =
-      categoryModeRef.current === 'selfie' ? 0.82 : GLOBE_OVERVIEW_SCREEN_FRACTION
+    const screenFraction = GLOBE_OVERVIEW_SCREEN_FRACTION
     const targetZ = computeGlobeOverviewCameraZ(
       layoutFieldRadiusRef.current,
       GLOBE_CAMERA_FOV,
@@ -926,7 +925,7 @@ export function GlobeView({
         el.textContent = hub.label
         const label = new CSS3DObject(el)
         label.position.copy(hub.center)
-        label.position.y += categoryMode === 'selfie' ? 180 : 95
+        label.position.y += 95
         globe.add(label)
         hubLabels.push(label)
       })
@@ -1117,7 +1116,7 @@ export function GlobeView({
     const overviewCameraZ = computeGlobeOverviewCameraZ(
       overviewBoundingRadius,
       GLOBE_CAMERA_FOV,
-      categoryMode === 'selfie' ? 0.88 : undefined,
+      isCategoryLayout ? 0.72 : undefined,
     )
     overviewCameraZRef.current = overviewCameraZ
 
@@ -1149,6 +1148,12 @@ export function GlobeView({
         getDragSensitivity: () =>
           ANIMATION_PRESETS[animationRef.current].dragSensitivity,
         getZoomLimits: () => {
+          if (isCategoryLayout) {
+            return {
+              min: 160,
+              max: Math.max(5200, layoutFieldRadiusRef.current * 2.8),
+            }
+          }
           if (!isClusters && !isCategoryLayout) {
             if (linkClusterFocusRef.current) {
               return {
@@ -1716,18 +1721,6 @@ export function GlobeView({
         }
       }
 
-      if (isCategoryLayout && categoryViewRef.current.floatAnimation) {
-        clusterGroupsRef.current.forEach((group) => {
-          const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-          const phase = (group.userData.floatPhase as number) ?? 0
-          group.position.set(
-            fieldCenter.x + Math.sin(time * 0.0007 + phase) * 18,
-            fieldCenter.y + Math.cos(time * 0.0009 + phase * 1.3) * 12,
-            fieldCenter.z + Math.sin(time * 0.0006 + phase * 0.8) * 14,
-          )
-        })
-      }
-
       globe.rotation.x = interactionState.rotationX
       globe.rotation.y = interactionState.rotationY
       globe.rotation.z = interactionState.rotationZ
@@ -1882,13 +1875,6 @@ export function GlobeView({
         const item = obj.userData.item as GalleryItem
 
         if (!updateObjectVisibility(obj, camera, el, visibilityZ)) continue
-
-        if (isCategoryLayout && categoryModeRef.current === 'selfie') {
-          const scale = 0.72 + (i % 7) * 0.02
-          if (Math.abs(obj.scale.x - scale) > 0.01) {
-            obj.scale.setScalar(scale)
-          }
-        }
 
         if (introVisualActive) {
           const isRingMember = Boolean(obj.userData.introIsRingMember)
@@ -2298,7 +2284,7 @@ export function GlobeView({
     displayItems,
     globeArrangement,
     categoryMode,
-    categoryView.clusterSpread,
+    categoryView.chainSpacing,
     categoryView.showCategoryLabels,
     constellation.clusterSpread,
     constellation.elementSeparation,

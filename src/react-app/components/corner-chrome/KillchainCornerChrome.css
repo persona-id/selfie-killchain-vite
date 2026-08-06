@@ -3,6 +3,7 @@
   inset: var(--page-edge-pad);
   z-index: 300;
   pointer-events: none;
+  overflow: visible;
   --corner-icon-idle: #b1b1b1;
   --corner-icon-hover: #000000;
 }
