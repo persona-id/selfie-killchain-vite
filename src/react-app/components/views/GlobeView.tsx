@@ -49,6 +49,14 @@ import {
   fraudAxisLabelText,
 } from '../../lib/fraudAxisLabels'
 import {
+  createClusterFocusPlaque,
+} from '../../lib/clusterFocusPlaque'
+import {
+  focusOrbitDepthOpacity,
+  focusPresentationZIndex,
+  orbitSphereFocusPositions,
+} from '../../lib/clusterFocusPresentation'
+import {
   createSeverityOrb,
   dominantClusterComplexity,
   updateSeverityOrb,
@@ -80,6 +88,7 @@ import {
 } from '../../lib/clusterLayout'
 import { CameraGesturePreview } from '../CameraGesturePreview'
 import { ClusterCursorLabel } from '../globe/ClusterCursorLabel'
+import '../globe/ClusterFocusPlaque.css'
 import '../globe/ClusterSeverityOrb.css'
 import { useAppCursor } from '../AppCursor'
 import { isGlobeClickableTarget } from '../../lib/clickableTarget'
@@ -226,6 +235,8 @@ export function GlobeView({
   const clusterFocusedAtRef = useRef(0)
   const focusZoomArmedRef = useRef(false)
   const clusterGroupsRef = useRef<Map<string, THREE.Group>>(new Map())
+  const clusterFocusPlaqueRef = useRef<CSS3DObject | null>(null)
+  const clusterFocusPlaqueClusterIdRef = useRef<string | null>(null)
   const fraudAxisLabelsRef = useRef<CSS3DObject[]>([])
   const constellationRef = useRef(constellation)
   const closeModalRef = useRef(closeModal)
@@ -288,8 +299,50 @@ export function GlobeView({
     }
   }
 
+  const removeClusterFocusPlaque = () => {
+    const plaque = clusterFocusPlaqueRef.current
+    const clusterId = clusterFocusPlaqueClusterIdRef.current
+    if (!plaque) return
+    if (clusterId) {
+      clusterGroupsRef.current.get(clusterId)?.remove(plaque)
+    }
+    plaque.element.remove()
+    clusterFocusPlaqueRef.current = null
+    clusterFocusPlaqueClusterIdRef.current = null
+  }
+
+  const attachClusterFocusPlaque = (
+    clusterId: string,
+    label: string,
+    count: number,
+  ) => {
+    removeClusterFocusPlaque()
+    const group = clusterGroupsRef.current.get(clusterId)
+    if (!group) return
+    const plaque = createClusterFocusPlaque(label, count)
+    group.add(plaque)
+    clusterFocusPlaqueRef.current = plaque
+    clusterFocusPlaqueClusterIdRef.current = clusterId
+  }
+
+  const applyOrbitFocusPositions = (
+    clusterGlobe: ClusterGlobe,
+    spacing: number,
+  ) => {
+    const itemIds = [...clusterGlobe.itemIds].sort()
+    const positions = orbitSphereFocusPositions(itemIds.length, spacing)
+    itemIds.forEach((itemId, index) => {
+      const obj = objectByIdRef.current.get(itemId)
+      const position = positions[index]
+      if (!obj || !position) return
+      obj.userData.focusLocal = position.clone()
+      obj.position.copy(position)
+    })
+  }
+
   const restoreClusterOverviewState = () => {
     focusBlendRef.current = 0
+    removeClusterFocusPlaque()
 
     clusterGroupsRef.current.forEach((group) => {
       const fieldCenter = group.userData.fieldCenter as THREE.Vector3
@@ -494,16 +547,40 @@ export function GlobeView({
       group.scale.setScalar(CLUSTER_FOCUS_SCALE)
     }
 
-    const clusterObjects: CSS3DObject[] = []
+    const presentation = categoryViewRef.current.clusterFocusPresentation
+
     clusterGlobe.itemIds.forEach((itemId) => {
       const obj = objectByIdRef.current.get(itemId)
       const focusLocal = clusterGlobe.focusPositions.get(itemId)
       if (obj && focusLocal) {
         obj.userData.focusLocal = focusLocal.clone()
         obj.position.copy(focusLocal)
+      }
+    })
+
+    if (presentation && categoryViewRef.current.clusterFocusOrbitSphere) {
+      applyOrbitFocusPositions(
+        clusterGlobe,
+        categoryViewRef.current.clusterSpacing,
+      )
+    }
+
+    const clusterObjects: CSS3DObject[] = []
+    clusterGlobe.itemIds.forEach((itemId) => {
+      const obj = objectByIdRef.current.get(itemId)
+      const focusLocal = obj?.userData.focusLocal as THREE.Vector3 | undefined
+      if (obj && focusLocal) {
         clusterObjects.push(obj)
       }
     })
+
+    if (presentation) {
+      attachClusterFocusPlaque(
+        clusterId,
+        clusterGlobe.label,
+        clusterGlobe.itemIds.size,
+      )
+    }
 
     resetGlobeRotationForFocus()
     applyClusterViewportFit(clusterObjects)
@@ -1012,6 +1089,7 @@ export function GlobeView({
     if (!threadCtx) return
 
     clustersRef.current = null
+    removeClusterFocusPlaque()
     clusterFocusRef.current = null
     linkClusterFocusRef.current = false
     preFocusCameraZRef.current = null
@@ -1861,9 +1939,21 @@ export function GlobeView({
         }
 
         const motion = categoryViewRef.current
+        const focusPresentationActive =
+          Boolean(focusId) && motion.clusterFocusPresentation
+        const focusPlaque = clusterFocusPlaqueRef.current
+        if (focusPresentationActive && focusPlaque) {
+          billboardTowardCamera(focusPlaque, camera)
+          focusPlaque.element.style.zIndex = String(
+            focusPresentationZIndex(focusPlaque, camera),
+          )
+        }
+
         if (motion.showSeverityOrb) {
           clusterGroupsRef.current.forEach((group, clusterId) => {
-            const orbVisible = !focusId || focusId === clusterId
+            const orbVisible =
+              (!focusId || focusId === clusterId) &&
+              !(focusPresentationActive && focusId === clusterId)
             group.children.forEach((child) => {
               if (!child.userData.isSeverityOrb) return
               const orb = child as CSS3DObject
@@ -2321,7 +2411,21 @@ export function GlobeView({
         if (el.style.zIndex !== zIndex) el.style.zIndex = zIndex
 
         if (inFocusedCluster) {
-          opacity = 1
+          const focusPresentation =
+            categoryViewRef.current.clusterFocusPresentation
+          const focusOrbit = categoryViewRef.current.clusterFocusOrbitSphere
+          if (focusPresentation) {
+            if (focusOrbit) {
+              worldPos.setFromMatrixPosition(obj.matrixWorld)
+              opacity = focusOrbitDepthOpacity(worldPos, camera)
+            } else {
+              opacity = 1
+            }
+            zIndex = String(focusPresentationZIndex(obj, camera))
+            if (el.style.zIndex !== zIndex) el.style.zIndex = zIndex
+          } else {
+            opacity = 1
+          }
         } else if (depthFade > 0) {
           worldPos.setFromMatrixPosition(obj.matrixWorld)
           const dist = worldPos.distanceTo(camera.position)
@@ -2506,6 +2610,7 @@ export function GlobeView({
       })
       fraudAxisLabelsRef.current = []
       clusterHoverTargetsRef.current = []
+      removeClusterFocusPlaque()
       clusterFocusRef.current = null
       linkClusterFocusRef.current = false
       preFocusCameraZRef.current = null

@@ -180,6 +180,8 @@ export type CategoryViewSettings = {
   fraudAxisEnabled: boolean
   fraudAxisSpread: number
   fraudAxisLabelStyle: FraudAxisLabelStyle
+  clusterFocusPresentation: boolean
+  clusterFocusOrbitSphere: boolean
 }
 
 export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
@@ -203,6 +205,8 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   fraudAxisEnabled: false,
   fraudAxisSpread: 1,
   fraudAxisLabelStyle: 'short',
+  clusterFocusPresentation: true,
+  clusterFocusOrbitSphere: true,
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'

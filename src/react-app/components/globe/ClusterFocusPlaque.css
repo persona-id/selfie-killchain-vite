@@ -1,0 +1,44 @@
+.cluster-focus-plaque {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  box-sizing: border-box;
+  min-width: 17.5rem;
+  max-width: 22rem;
+  padding: 0.7rem 1.35rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.cluster-focus-plaque__title {
+  font-family: var(--font-mono);
+  font-size: calc(11px * var(--type-scale));
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: rgba(72, 72, 72, 0.92);
+}
+
+.cluster-focus-plaque__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.cluster-focus-plaque__count {
+  font-family: var(--font-mono);
+  font-size: calc(11px * var(--type-scale));
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: rgba(72, 72, 72, 0.92);
+}
+
+.cluster-focus-plaque__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: #4cc96b;
+  box-shadow: 0 0 0 2px rgba(76, 201, 107, 0.22);
+}

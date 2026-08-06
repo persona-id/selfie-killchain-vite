@@ -314,6 +314,44 @@ export function HamburgerMenu({
                   type="button"
                   onClick={() =>
                     setCategoryView({
+                      clusterFocusPresentation: !categoryView.clusterFocusPresentation,
+                    })
+                  }
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.clusterFocusPresentation
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.clusterFocusPresentation
+                    ? 'On — focus glass plaque'
+                    : 'Off — focus glass plaque'}
+                </button>
+
+                {categoryView.clusterFocusPresentation ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCategoryView({
+                        clusterFocusOrbitSphere: !categoryView.clusterFocusOrbitSphere,
+                      })
+                    }
+                    className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                      categoryView.clusterFocusOrbitSphere
+                        ? 'hamburger-menu__list-btn--active'
+                        : 'hamburger-menu__list-btn--inactive'
+                    }`}
+                  >
+                    {categoryView.clusterFocusOrbitSphere
+                      ? 'On — orbit sphere layout'
+                      : 'Off — original cluster layout'}
+                  </button>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryView({
                       showSeverityOrb: !categoryView.showSeverityOrb,
                     })
                   }
