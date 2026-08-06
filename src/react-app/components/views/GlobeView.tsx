@@ -213,6 +213,11 @@ export function GlobeView({
   const clusterFocusRef = useRef<string | null>(null)
   const linkClusterFocusRef = useRef(false)
   const preFocusCameraZRef = useRef<number | null>(null)
+  const preFocusRotationRef = useRef<{
+    x: number
+    y: number
+    z: number
+  } | null>(null)
   const focusBlendRef = useRef(0)
   const focusCameraTargetRef = useRef(CLUSTER_FOCUS_CAMERA_Z)
   const clusterFocusedAtRef = useRef(0)
@@ -252,18 +257,30 @@ export function GlobeView({
     const state = interactionStateRef.current
     const camera = cameraRef.current
     const savedZ = preFocusCameraZRef.current
+    const savedRotation = preFocusRotationRef.current
     if (!state || savedZ == null) return
 
     state.targetCameraDistance = savedZ
     state.cameraDistance = savedZ
     if (camera) camera.position.z = savedZ
+    if (savedRotation) {
+      state.rotationX = savedRotation.x
+      state.rotationY = savedRotation.y
+      state.rotationZ = savedRotation.z
+    }
     preFocusCameraZRef.current = null
+    preFocusRotationRef.current = null
   }
 
   const savePreFocusCameraZ = () => {
     const state = interactionStateRef.current
     if (state) {
       preFocusCameraZRef.current = state.cameraDistance
+      preFocusRotationRef.current = {
+        x: state.rotationX,
+        y: state.rotationY,
+        z: state.rotationZ,
+      }
     }
   }
 
@@ -382,6 +399,32 @@ export function GlobeView({
     applyClusterViewportFit(clusterObjects)
   }
 
+  const centerClusterObjects = (clusterObjects: CSS3DObject[]) => {
+    if (clusterObjects.length === 0) return
+
+    const centroid = new THREE.Vector3()
+    clusterObjects.forEach((obj) => centroid.add(obj.position))
+    centroid.divideScalar(clusterObjects.length)
+
+    clusterObjects.forEach((obj) => {
+      obj.position.sub(centroid)
+      const focusLocal = obj.userData.focusLocal as THREE.Vector3 | undefined
+      if (focusLocal) {
+        focusLocal.sub(centroid)
+      }
+    })
+  }
+
+  const resetGlobeRotationForFocus = () => {
+    const state = interactionStateRef.current
+    if (!state) return
+    state.rotationX = 0
+    state.rotationY = 0
+    state.rotationZ = 0
+    state.velocityX = 0
+    state.velocityY = 0
+  }
+
   const applyClusterViewportFit = (clusterObjects: CSS3DObject[]) => {
     if (clusterObjects.length === 0) return
 
@@ -391,6 +434,10 @@ export function GlobeView({
     const state = interactionStateRef.current
     const container = containerRef.current
     if (!camera || !scene || !cssRenderer || !state) return
+
+    resetGlobeRotationForFocus()
+    globeGroupRef.current?.rotation.set(0, 0, 0)
+    centerClusterObjects(clusterObjects)
 
     for (let i = 0; i < objectsRef.current.length; i++) {
       const obj = objectsRef.current[i]
@@ -454,6 +501,7 @@ export function GlobeView({
       }
     })
 
+    resetGlobeRotationForFocus()
     applyClusterViewportFit(clusterObjects)
   }
 
@@ -1699,6 +1747,14 @@ export function GlobeView({
       if (isClusters) {
         const focusId = clusterFocusRef.current
 
+        if (focusId) {
+          interactionState.rotationX = 0
+          interactionState.rotationY = 0
+          interactionState.rotationZ = 0
+          interactionState.velocityX = 0
+          interactionState.velocityY = 0
+        }
+
         if (
           focusId &&
           interactionState.cameraDistance < focusCameraTargetRef.current * 1.08
@@ -2405,6 +2461,7 @@ export function GlobeView({
       clusterFocusRef.current = null
       linkClusterFocusRef.current = false
       preFocusCameraZRef.current = null
+      preFocusRotationRef.current = null
       focusZoomArmedRef.current = false
       setFocusedClusterInfo(null)
       setIsConstellationFocused(false)

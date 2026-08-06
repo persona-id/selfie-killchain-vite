@@ -28,7 +28,7 @@ export function ClusterCursorLabel({
   return (
     <div
       className="cluster-cursor-label"
-      style={{ transform: `translate(calc(${x}px - 100% - 10px), calc(${y}px - 50%))` }}
+      style={{ transform: `translate(calc(${x}px + 10px), calc(${y}px - 50%))` }}
       aria-hidden
     >
       <div className="cluster-cursor-label__text">

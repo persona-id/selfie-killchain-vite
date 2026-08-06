@@ -104,7 +104,7 @@ export const CLUSTER_ELEMENT_LAYOUT_OPTIONS: {
   hint: string
 }[] = [
   { id: 'globe', label: 'Globe', hint: 'Fibonacci sphere' },
-  { id: 'sphere', label: 'Sphere', hint: 'Even lat-long grid' },
+  { id: 'sphere', label: 'Sphere', hint: 'Uniform sphere surface' },
   { id: 'ring', label: 'Ring', hint: 'Flat circle' },
   { id: 'disc', label: 'Disc', hint: 'Filled spiral' },
   { id: 'helix', label: 'Helix', hint: 'Spiral column' },
@@ -168,39 +168,23 @@ function perfectSpherePositions(count: number, radius: number): THREE.Vector3[] 
   if (count === 0) return []
   if (count === 1) return [new THREE.Vector3(0, radius, 0)]
 
+  const goldenRatio = (1 + Math.sqrt(5)) / 2
   const points: THREE.Vector3[] = []
-  const bands = Math.max(2, Math.round(Math.sqrt(count)))
-  let placed = 0
 
-  for (let band = 0; band < bands && placed < count; band++) {
-    const v = bands === 1 ? 0.5 : band / (bands - 1)
-    const phi = v * Math.PI
-    const y = Math.cos(phi)
-    const ringRadius = Math.sin(phi)
-    const ringCount =
-      band === 0 || band === bands - 1
-        ? 1
-        : Math.max(1, Math.round((count - 2) / Math.max(1, bands - 2)))
-
-    for (let i = 0; i < ringCount && placed < count; i++) {
-      const theta = ringCount === 1 ? 0 : (i / ringCount) * Math.PI * 2
-      points.push(
-        new THREE.Vector3(
-          Math.cos(theta) * ringRadius * radius,
-          y * radius,
-          Math.sin(theta) * ringRadius * radius,
-        ),
-      )
-      placed += 1
-    }
+  for (let i = 0; i < count; i++) {
+    const inclination = Math.acos(1 - (2 * (i + 0.5)) / count)
+    const azimuth = (2 * Math.PI * i) / goldenRatio
+    const sinInclination = Math.sin(inclination)
+    points.push(
+      new THREE.Vector3(
+        sinInclination * Math.cos(azimuth) * radius,
+        Math.cos(inclination) * radius,
+        sinInclination * Math.sin(azimuth) * radius,
+      ),
+    )
   }
 
-  while (points.length < count) {
-    const dir = fibonacciDirections(points.length + 1).at(-1)!
-    points.push(dir.clone().multiplyScalar(radius))
-  }
-
-  return points.slice(0, count)
+  return points
 }
 
 function applyFraudAxisBias(
