@@ -11,7 +11,7 @@ import type {
 import { computeClusterLayout } from './clusterLayout'
 import { itemFilterKey, resolveGlobeImageSrc } from './taxonomy'
 
-export const DEFAULT_GLOBE_ITEM_COUNT = 450
+export const DEFAULT_GLOBE_ITEM_COUNT = 1000
 export const MIN_GLOBE_ITEM_COUNT = 10
 export const MAX_GLOBE_ITEM_COUNT = 1000
 export const GLOBE_RADIUS = 420

@@ -52,11 +52,11 @@ export const MIN_DEPTH_FADE_RANGE = 0.25
 export const MAX_DEPTH_FADE_RANGE = 2.5
 
 export const DEFAULT_GLOBE_DISPLAY: GlobeDisplaySettings = {
-  imageSize: 0.5,
+  imageSize: 0.3,
   aspectRatio: 'square',
   imageShape: 'circle',
   cornerRadius: 3,
-  depthFade: 1,
+  depthFade: 1.15,
   depthVisibility: 80,
   depthFadeRange: 1,
 }
