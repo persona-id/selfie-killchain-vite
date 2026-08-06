@@ -81,7 +81,7 @@
 .settings-lib-info .network-dot-orb {
   position: absolute;
   top: 0;
-  right: 0;
+  right: 50px;
   width: 25px;
   height: 25px;
   flex-shrink: 0;

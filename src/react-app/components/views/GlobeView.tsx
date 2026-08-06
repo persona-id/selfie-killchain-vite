@@ -458,11 +458,15 @@ export function GlobeView({
   comprehensiveModeRef.current = comprehensiveMode
   highlightedFilterRef.current = highlightedFilter
 
-  const applyComprehensiveCameraTarget = (complexity: typeof activeComplexity) => {
+  const applyComprehensiveCameraTarget = () => {
     const state = interactionStateRef.current
     if (!state || !comprehensiveModeRef.current) return
 
-    if (complexity) {
+    const complexity = activeComplexityRef.current
+    const filter = highlightedFilterRef.current
+    const hasSelection = Boolean(complexity || filter)
+
+    if (hasSelection) {
       if (preComprehensiveCameraZRef.current == null) {
         preComprehensiveCameraZRef.current = state.cameraDistance
       }
@@ -494,17 +498,17 @@ export function GlobeView({
       }
       return
     }
-    applyComprehensiveCameraTarget(activeComplexity)
-  }, [comprehensiveMode, activeComplexity])
+    applyComprehensiveCameraTarget()
+  }, [comprehensiveMode, activeComplexity, highlightedFilter])
 
   useEffect(() => {
-    if (comprehensiveMode && !activeComplexity) {
+    if (comprehensiveMode && !activeComplexity && !highlightedFilter) {
       for (const obj of objectsRef.current) {
         const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
         if (sphereLocal) obj.position.copy(sphereLocal)
       }
     }
-  }, [comprehensiveMode, activeComplexity])
+  }, [comprehensiveMode, activeComplexity, highlightedFilter])
 
   useEffect(() => {
     if (introLocked) {
@@ -595,7 +599,7 @@ export function GlobeView({
   useEffect(() => {
     startFilterFocusAnimation()
     if (comprehensiveMode) {
-      applyComprehensiveCameraTarget(activeComplexity)
+      applyComprehensiveCameraTarget()
     }
   }, [
     activeComplexity,
@@ -1675,7 +1679,8 @@ export function GlobeView({
       const focusPullBack = clusterFocused && delta > 0
       const comprehensiveZoomActive =
         comprehensiveModeRef.current &&
-        Boolean(activeComplexityRef.current) &&
+        (Boolean(activeComplexityRef.current) ||
+          highlightedFilterRef.current !== null) &&
         comprehensiveZoomTargetRef.current != null
       const zoomSmooth = comprehensiveZoomActive
         ? 1 - Math.pow(COMPREHENSIVE_ZOOM_SMOOTH, timeScale)
@@ -1742,8 +1747,8 @@ export function GlobeView({
       const highlightedFilter = highlightedFilterRef.current
       const comprehensiveActive =
         comprehensiveModeRef.current &&
-        Boolean(activeComplexity) &&
-        complexityBlend > 0.01 &&
+        (Boolean(activeComplexity) || highlightedFilter !== null) &&
+        (complexityBlend > 0.01 || categoryBlend > 0.01) &&
         !clusterDimActive &&
         !constellationFocusId &&
         !linkClusterFocused
