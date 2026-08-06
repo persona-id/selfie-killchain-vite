@@ -1,44 +1,33 @@
-# React + Vite + Hono + Cloudflare Workers
+# Persona FAS Gallery (selfie killchain)
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/vite-react-template)
+An internal Persona app: a React + Vite SPA served by a Hono Cloudflare Worker, cataloguing
+face-anti-spoofing (FAS) attack techniques across the selfie killchain.
 
-This template provides a minimal setup for building a React application with TypeScript and Vite, designed to run on Cloudflare Workers. It features hot module replacement, ESLint integration, and the flexibility of Workers deployments.
+- [**React**](https://react.dev/) — UI
+- [**Vite**](https://vite.dev/) — build tooling and dev server
+- [**Hono**](https://hono.dev/) — Worker-side routing under `/api/*`
+- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) — hosting, with the SPA served
+  from `dist/client` as static assets
 
-![React + TypeScript + Vite + Cloudflare Workers](https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/fc7b4b62-442b-4769-641b-ad4422d74300/public)
+## Deploy names
 
-<!-- dash-content-start -->
+Every deployment is namespaced with a `persona-` prefix so this app never claims a generic
+Worker name (and its `workers.dev` hostname) that overlaps with a public upstream template. The
+names follow Persona's convention of `persona-<app>-staging` / `persona-<app>-prod`:
 
-🚀 Supercharge your web development with this powerful stack:
+| Environment | Worker name |
+| --- | --- |
+| `staging` (default) | `persona-selfie-killchain-staging` |
+| `production` | `persona-selfie-killchain-prod` |
 
-- [**React**](https://react.dev/) - A modern UI library for building interactive interfaces
-- [**Vite**](https://vite.dev/) - Lightning-fast build tooling and development server
-- [**Hono**](https://hono.dev/) - Ultralight, modern backend framework
-- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) - Edge computing platform for global deployment
+`wrangler.json` also sets a `persona-selfie-killchain` top-level name, so even a bare
+`wrangler deploy` with no environment selected lands on a prefixed Worker.
 
-### ✨ Key Features
-
-- 🔥 Hot Module Replacement (HMR) for rapid development
-- 📦 TypeScript support out of the box
-- 🛠️ ESLint configuration included
-- ⚡ Zero-config deployment to Cloudflare's global network
-- 🎯 API routes with Hono's elegant routing
-- 🔄 Full-stack development setup
-- 🔎 Built-in Observability to monitor your Worker
-
-Get started in minutes with local development or deploy directly via the Cloudflare dashboard. Perfect for building modern, performant web applications at the edge.
-
-<!-- dash-content-end -->
-
-## Getting Started
-
-To start a new project with this template, run:
-
-```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/vite-react-template
-```
-
-A live deployment of this template is available at:
-[https://react-vite-template.templates.workers.dev](https://react-vite-template.templates.workers.dev)
+Note that `@cloudflare/vite-plugin` resolves the target environment at **build** time from
+`CLOUDFLARE_ENV` and writes the fully-resolved Worker name into
+`dist/persona_selfie_killchain/wrangler.json`, which `wrangler deploy` then reads via
+`.wrangler/deploy/config.json`. Passing `--env` to `wrangler deploy` after the fact does not change
+which Worker you ship to — the `deploy:*` scripts below therefore bundle the matching build.
 
 ## Development
 
@@ -48,43 +37,46 @@ Install dependencies:
 npm install
 ```
 
-Start the development server with:
+Start the dev server (runs against the `staging` environment on port 8787):
 
 ```bash
 npm run dev
 ```
 
-Your application will be available at [http://localhost:5173](http://localhost:5173).
+Rebuild the gallery index from the source dataset:
+
+```bash
+npm run build:index
+```
+
+## Checks
+
+Typecheck, build, and validate the Worker config without deploying:
+
+```bash
+npm run check
+npm run lint
+```
 
 ## Production
 
-Build your project for production:
-
-```bash
-npm run build
-```
-
-Preview your build locally:
+Preview a build locally:
 
 ```bash
 npm run preview
 ```
 
-Deploy your project to Cloudflare Workers:
+Deploy to staging, then to production. Each script builds for its own environment first, so there
+is no way to ship a staging bundle to prod (or vice versa):
 
 ```bash
-npm run build && npm run deploy
+npm run deploy          # -> persona-selfie-killchain-staging (alias of deploy:staging)
+npm run deploy:prod     # -> persona-selfie-killchain-prod
 ```
 
-Monitor your workers:
+Tail logs by Worker name:
 
 ```bash
-npx wrangler tail
+npx wrangler tail persona-selfie-killchain-staging
+npx wrangler tail persona-selfie-killchain-prod
 ```
-
-## Additional Resources
-
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Vite Documentation](https://vitejs.dev/guide/)
-- [React Documentation](https://reactjs.org/)
-- [Hono Documentation](https://hono.dev/)
