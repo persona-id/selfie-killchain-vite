@@ -112,6 +112,7 @@ export type ConstellationSettings = {
 
 export const DEFAULT_COMPREHENSIVE_MODE = false
 export const DEFAULT_ZOOM_MODE = false
+export const DEFAULT_GLOBE_ARRANGEMENT: GlobeArrangement = 'cloud'
 
 export const DEFAULT_CONSTELLATION: ConstellationSettings = {
   clusterSpread: 1,

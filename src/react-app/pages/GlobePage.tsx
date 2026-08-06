@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 
-import type { Complexity } from '../types/gallery'
+import { DEFAULT_GLOBE_ARRANGEMENT, type Complexity } from '../types/gallery'
 import { useGallery } from '../context/GalleryContext'
 import { useGlobeIntro } from '../context/GlobeIntroContext'
 import { useKillchainChrome } from '../context/KillchainChromeContext'
@@ -37,7 +37,7 @@ export default function GlobePage() {
 
   useLayoutEffect(() => {
     setActiveComplexity(null)
-    setGlobeArrangement('even')
+    setGlobeArrangement(DEFAULT_GLOBE_ARRANGEMENT)
   }, [setActiveComplexity, setGlobeArrangement])
 
   useLayoutEffect(() => {

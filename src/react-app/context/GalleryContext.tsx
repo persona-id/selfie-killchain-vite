@@ -23,6 +23,7 @@ import {
   DEFAULT_CAMERA_CONTROLS,
   DEFAULT_CONSTELLATION,
   DEFAULT_COMPREHENSIVE_MODE,
+  DEFAULT_GLOBE_ARRANGEMENT,
   DEFAULT_ZOOM_MODE,
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
@@ -128,7 +129,7 @@ function loadStoredState(): StoredState {
         activeCategories: [...CATEGORIES],
         activeComplexity: null,
         backgroundColor: KILLCHAIN_PAGE_BG,
-        globeArrangement: 'even',
+        globeArrangement: DEFAULT_GLOBE_ARRANGEMENT,
         globeAnimation: 'drift',
         globeItemCount: DEFAULT_GLOBE_ITEM_COUNT,
         globeDisplay: { ...DEFAULT_GLOBE_DISPLAY },
@@ -150,7 +151,7 @@ function loadStoredState(): StoredState {
           ? KILLCHAIN_PAGE_BG
           : (parsed.backgroundColor ?? KILLCHAIN_PAGE_BG),
       ),
-      globeArrangement: parsed.globeArrangement ?? 'even',
+      globeArrangement: parsed.globeArrangement ?? DEFAULT_GLOBE_ARRANGEMENT,
       globeAnimation: isGlobeAnimation(parsed.globeAnimation)
         ? parsed.globeAnimation
         : 'drift',
@@ -216,7 +217,7 @@ function loadStoredState(): StoredState {
       activeCategories: [...CATEGORIES],
       activeComplexity: null,
       backgroundColor: KILLCHAIN_PAGE_BG,
-      globeArrangement: 'even',
+      globeArrangement: DEFAULT_GLOBE_ARRANGEMENT,
       globeAnimation: 'drift',
       globeItemCount: DEFAULT_GLOBE_ITEM_COUNT,
       globeDisplay: { ...DEFAULT_GLOBE_DISPLAY },
