@@ -49,24 +49,29 @@
   grid-column: 2;
   justify-self: center;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: clamp(2rem, 5vw, 4.5rem);
   font-family: var(--font-mono);
   font-size: var(--killchain-chrome-hint-font-size);
   font-weight: 300;
   line-height: 1.1;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  text-align: center;
   color: #8e8e8e;
   white-space: nowrap;
 }
 
-.killchain-top-menu-header__meta p {
+.killchain-top-menu-header__meta-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.killchain-top-menu-header__meta-col p {
   margin: 0;
-  width: 100%;
-  text-align: center;
+  text-align: left;
 }
 
 .killchain-top-menu-header__line {
@@ -83,8 +88,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  text-align: center;
+  text-align: left;
   white-space: nowrap;
 }
 

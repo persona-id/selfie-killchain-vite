@@ -43,8 +43,9 @@ export function KillchainTopMenuHeader({
   const lines = useMemo(
     () => [
       siteTitle,
-      `Ver.${version}`,
-      'A digital taxonomy of verification fraud by Persona',
+      `Ver. ${version}`,
+      'A digital taxonomy of',
+      'Verification fraud by Persona',
     ],
     [siteTitle, version],
   )
@@ -69,14 +70,30 @@ export function KillchainTopMenuHeader({
       </a>
 
       <div className="killchain-top-menu-header__meta" aria-hidden={!complete}>
-        {lines.map((line, index) => (
+        <div className="killchain-top-menu-header__meta-col">
           <TypewriterLine
-            key={line}
-            fullText={line}
-            value={values[index] ?? ''}
-            showCursor={lineIndex === index && !complete}
+            fullText={lines[0]}
+            value={values[0] ?? ''}
+            showCursor={lineIndex === 0 && !complete}
           />
-        ))}
+          <TypewriterLine
+            fullText={lines[1]}
+            value={values[1] ?? ''}
+            showCursor={lineIndex === 1 && !complete}
+          />
+        </div>
+        <div className="killchain-top-menu-header__meta-col">
+          <TypewriterLine
+            fullText={lines[2]}
+            value={values[2] ?? ''}
+            showCursor={lineIndex === 2 && !complete}
+          />
+          <TypewriterLine
+            fullText={lines[3]}
+            value={values[3] ?? ''}
+            showCursor={lineIndex === 3 && !complete}
+          />
+        </div>
       </div>
     </header>
   )
