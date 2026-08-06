@@ -1,6 +1,6 @@
 .image-modal {
   --modal-pad: clamp(1rem, 3vw, 3rem);
-  --modal-design-width: 629.2px;
+  --modal-design-width: 786.5px;
   --modal-min-height: 800px;
   --modal-height: 85dvh;
   --modal-max-height: calc(100dvh - var(--modal-pad) * 2);

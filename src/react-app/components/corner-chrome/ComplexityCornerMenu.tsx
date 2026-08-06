@@ -69,8 +69,8 @@ export function ComplexityCornerMenu({
   const {
     activeComplexity,
     setActiveComplexity,
-    highlightedCategories,
-    toggleHighlightCategory,
+    highlightedCategory,
+    selectHighlightCategory,
   } = useGallery()
   const { state, toggle, showPanel, triggerLocked } = useFilterMenuState()
   const visible = entranceReady && !hidden
@@ -92,13 +92,13 @@ export function ComplexityCornerMenu({
     const isActive =
       row.kind === 'complexity'
         ? row.value === activeComplexity
-        : highlightedCategories.has(row.value)
+        : highlightedCategory === row.value
     const label =
       row.kind === 'complexity' ? row.value : categoryLabel(row.value)
     const onClick =
       row.kind === 'complexity'
         ? () => handleComplexitySelect(row.value)
-        : () => toggleHighlightCategory(row.value)
+        : () => selectHighlightCategory(row.value)
 
     return (
       <motion.button

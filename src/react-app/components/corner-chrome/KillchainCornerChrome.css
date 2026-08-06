@@ -86,8 +86,6 @@
 .killchain-corner-chrome .complexity-corner__trigger {
   color: var(--corner-icon-idle);
   transition:
-    width var(--utility-menu-duration, 0.75s) var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
-    padding var(--utility-menu-duration, 0.75s) var(--utility-menu-ease, cubic-bezier(0.33, 1, 0.68, 1)),
     color 0.22s ease,
     background-color 0.22s ease;
 }

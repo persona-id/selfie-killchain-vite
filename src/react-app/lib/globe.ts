@@ -9,7 +9,6 @@ import type {
   Complexity,
   Category,
 } from '../types/gallery'
-import { CATEGORIES } from '../types/gallery'
 import { computeClusterLayout } from './clusterLayout'
 import { resolveGlobeImageSrc } from './taxonomy'
 
@@ -425,18 +424,18 @@ export function computeFilterFocusRotation(
   objects: CSS3DObject[],
   options: {
     complexity: Complexity | null
-    highlightedCategories: Set<Category>
+    highlightedCategory: Category | null
     preferBackHemisphere?: boolean
     clusterFieldCenters?: Map<string, THREE.Vector3>
   },
 ): { x: number; y: number } | null {
   const {
     complexity,
-    highlightedCategories,
+    highlightedCategory,
     preferBackHemisphere = false,
     clusterFieldCenters,
   } = options
-  const categoryFilterActive = highlightedCategories.size < CATEGORIES.length
+  const categoryFilterActive = highlightedCategory !== null
   if (!complexity && !categoryFilterActive) return null
 
   const selected: THREE.Vector3[] = []
@@ -452,7 +451,7 @@ export function computeFilterFocusRotation(
 
     const matchesComplexity = !complexity || item.complexity === complexity
     const matchesCategory =
-      !categoryFilterActive || highlightedCategories.has(item.category)
+      !categoryFilterActive || item.category === highlightedCategory
 
     if (matchesComplexity && matchesCategory) {
       selected.push(position)
@@ -472,7 +471,7 @@ export function computeComplexityFocusRotation(
 ): { x: number; y: number } | null {
   return computeFilterFocusRotation(objects, {
     complexity,
-    highlightedCategories: new Set(CATEGORIES),
+    highlightedCategory: null,
     preferBackHemisphere,
     clusterFieldCenters,
   })
