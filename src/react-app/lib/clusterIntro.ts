@@ -1,19 +1,38 @@
 import * as THREE from 'three'
 import {
   clamp01,
+  easeInOutCubic,
   easeOutCubic,
-  globeIntroCameraProgress,
+  globeIntroZoomPhaseT,
+  GLOBE_INTRO_CAMERA_START_FACTOR,
   introCenterFillCount,
   introCenterFillRank,
+  introCenterPrefetchActive,
   introIsRingMember,
   introRevealActive,
   introRingCount,
 } from '../utils/globeIntro'
-import { GLOBE_RADIUS, viewAxisAngularDistance } from './globe'
+import {
+  computeGlobeOverviewCameraZ,
+  GLOBE_CAMERA_FOV,
+  GLOBE_RADIUS,
+  viewAxisAngularDistance,
+} from './globe'
 import { miniGlobePositions, type ClusterGlobe } from './clusterLayout'
+
+/** Share of post-reveal timeline spent filling the hero globe before zoom-out. */
+export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 
 export function clusterIntroHeroSphereRadius(separation: number): number {
   return GLOBE_RADIUS * 0.82 * separation
+}
+
+export function clusterIntroHeroStartCameraZ(separation: number): number {
+  const overviewZ = computeGlobeOverviewCameraZ(
+    clusterIntroHeroSphereRadius(separation),
+    GLOBE_CAMERA_FOV,
+  )
+  return overviewZ * GLOBE_INTRO_CAMERA_START_FACTOR
 }
 
 export function applyHeroClusterIntroSphereLayout(
@@ -46,8 +65,44 @@ export function applyHeroClusterIntroSphereLayout(
 }
 
 export function clusterIntroHeroItemBlend(progress: number): number {
+  return clusterIntroZoomProgress(progress)
+}
+
+function clusterIntroPostRevealT(progress: number): number {
   if (!introRevealActive(progress)) return 0
-  return globeIntroCameraProgress(progress)
+  return globeIntroZoomPhaseT(progress)
+}
+
+/** 0→1 while the hero globe center-fills; camera stays put. */
+export function clusterIntroCenterFillProgress(progress: number): number {
+  if (!introCenterPrefetchActive(progress)) return 0
+  const postRevealT = clusterIntroPostRevealT(progress)
+  if (postRevealT <= 0) return 0
+  if (postRevealT >= CLUSTER_INTRO_FILL_PHASE_SHARE) return 1
+  return easeInOutCubic(
+    clamp01(postRevealT / Math.max(0.001, CLUSTER_INTRO_FILL_PHASE_SHARE)),
+  )
+}
+
+/** 0→1 during zoom-out after the hero globe has filled in. */
+export function clusterIntroZoomProgress(progress: number): number {
+  if (!introRevealActive(progress)) return 0
+  const postRevealT = clusterIntroPostRevealT(progress)
+  if (postRevealT <= CLUSTER_INTRO_FILL_PHASE_SHARE) return 0
+  return easeInOutCubic(
+    clamp01(
+      (postRevealT - CLUSTER_INTRO_FILL_PHASE_SHARE) /
+        Math.max(0.001, 1 - CLUSTER_INTRO_FILL_PHASE_SHARE),
+    ),
+  )
+}
+
+export function clusterIntroZoomActive(progress: number): boolean {
+  return clusterIntroZoomProgress(progress) > 0.001
+}
+
+export function clusterIntroDeferredLoadActive(progress: number): boolean {
+  return clusterIntroZoomActive(progress)
 }
 
 export function pickHeroClusterGlobe(
@@ -67,20 +122,20 @@ export function clusterIntroCameraZ(
   heroStartZ: number,
   overviewZ: number,
 ): number {
-  const t = globeIntroCameraProgress(progress)
+  const t = clusterIntroZoomProgress(progress)
   return heroStartZ + (overviewZ - heroStartZ) * t
 }
 
 export function clusterIntroHeroGroupBlend(progress: number): number {
-  return globeIntroCameraProgress(progress)
+  return clusterIntroZoomProgress(progress)
 }
 
 export function clusterIntroOtherReveal(
   progress: number,
   distanceNorm: number,
 ): number {
-  if (!introRevealActive(progress)) return 0
-  const t = globeIntroCameraProgress(progress)
+  const t = clusterIntroZoomProgress(progress)
+  if (t <= 0.001) return 0
   const threshold = clamp01(distanceNorm) * 0.42
   if (t <= threshold) return 0
   return easeOutCubic(clamp01((t - threshold) / Math.max(0.001, 1 - threshold)))

@@ -56,11 +56,16 @@ import {
 import {
   applyHeroClusterIntroSphereLayout,
   clusterIntroCameraZ,
+  clusterIntroCenterFillProgress,
+  clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
   clusterIntroHeroGroupBlend,
   clusterIntroHeroItemBlend,
   clusterIntroHeroPosition,
+  clusterIntroHeroStartCameraZ,
   clusterIntroOtherReveal,
+  clusterIntroZoomActive,
+  clusterIntroZoomProgress,
   configureHeroClusterIntroRanks,
   pickHeroClusterGlobe,
 } from '../../lib/clusterIntro'
@@ -125,6 +130,7 @@ import {
   introLoadBehindSchedule,
   introGlobeSequenceComplete,
   assignParallelHemisphereRanks,
+  assignRingLoadSeqOuterFirst,
   assignRingLoadSeqShuffled,
   introRingHemisphereLoadCaps,
   introCenterHemisphereLoadCaps,
@@ -1374,15 +1380,28 @@ export function GlobeView({
     const ringBackMembers = ringMembers.filter(
       (obj) => !obj.userData.introHemisphereFront,
     )
-    assignRingLoadSeqShuffled(
+    const assignRingSeq = clusterIntroActiveRef.current
+      ? assignRingLoadSeqOuterFirst
+      : assignRingLoadSeqShuffled
+    assignRingSeq(
       ringFrontMembers.map((obj) => ({
+        pos:
+          (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
+          (obj.userData.fieldLocal as THREE.Vector3) ??
+          (obj.userData.sphereLocal as THREE.Vector3) ??
+          new THREE.Vector3(),
         setSeq: (seq) => {
           obj.userData.introRingLoadSeq = seq
         },
       })),
     )
-    assignRingLoadSeqShuffled(
+    assignRingSeq(
       ringBackMembers.map((obj) => ({
+        pos:
+          (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
+          (obj.userData.fieldLocal as THREE.Vector3) ??
+          (obj.userData.sphereLocal as THREE.Vector3) ??
+          new THREE.Vector3(),
         setSeq: (seq) => {
           obj.userData.introRingLoadSeq = seq
         },
@@ -1439,23 +1458,12 @@ export function GlobeView({
 
     if (
       clusterIntroActiveRef.current &&
-      heroClusterIdRef.current &&
-      layout
+      heroClusterIdRef.current
     ) {
       const heroGroup = clusterGroups.get(heroClusterIdRef.current)
       heroGroup?.position.set(0, 0, 0)
-      globe.updateMatrixWorld(true)
-      const heroObjects = objects.filter(
-        (obj) => obj.userData.clusterId === heroClusterIdRef.current,
-      )
-      heroClusterStartZRef.current = fitClusterViewportFill(
-        heroObjects,
-        camera,
-        scene,
-        cssRenderer,
-        displaySettingsRef.current,
-        0.85,
-        container,
+      heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
+        categoryViewRef.current.clusterSpacing,
       )
     }
 
@@ -1697,18 +1705,26 @@ export function GlobeView({
         }
         if (
           clusterIntroActiveRef.current &&
-          heroClusterIdRef.current &&
-          !introRevealActive(introProgress)
+          heroClusterIdRef.current
         ) {
           const heroId = heroClusterIdRef.current
-          introImageTotal = sceneObjects.filter(
-            (obj) => obj.userData.clusterId === heroId,
-          ).length
-          introImagesLoaded = 0
-          for (const obj of sceneObjects) {
-            if (obj.userData.clusterId !== heroId) continue
-            const img = obj.userData.img as HTMLImageElement | undefined
-            if (img?.src) introImagesLoaded += 1
+          if (!introRevealActive(introProgress)) {
+            introImageTotal = sceneObjects.filter(
+              (obj) => obj.userData.clusterId === heroId,
+            ).length
+            introImagesLoaded = 0
+            for (const obj of sceneObjects) {
+              if (obj.userData.clusterId !== heroId) continue
+              const img = obj.userData.img as HTMLImageElement | undefined
+              if (img?.src) introImagesLoaded += 1
+            }
+          } else {
+            introImageTotal = sceneObjects.length
+            introImagesLoaded = 0
+            for (const obj of sceneObjects) {
+              const img = obj.userData.img as HTMLImageElement | undefined
+              if (img?.src) introImagesLoaded += 1
+            }
           }
         }
         const loadBehind = introLoadBehindSchedule(
@@ -1716,11 +1732,15 @@ export function GlobeView({
           introImagesLoaded,
           introImageTotal,
         )
-        introGlobeReadyRef.current = introGlobeSequenceComplete(
-          introProgress,
-          introImagesLoaded,
-          introImageTotal,
-        )
+        introGlobeReadyRef.current = clusterIntroActiveRef.current
+          ? (introProgress >= 1 ||
+              clusterIntroZoomProgress(introProgress) >= 0.995) &&
+            introImagesLoaded >= introImageTotal
+          : introGlobeSequenceComplete(
+              introProgress,
+              introImagesLoaded,
+              introImageTotal,
+            )
         introLoadedFractionRef.current = introGlobeLoadFraction(
           introImagesLoaded,
           introImageTotal,
@@ -1753,7 +1773,7 @@ export function GlobeView({
         if (introCenterPrefetchActive(introProgress)) {
           if (
             clusterIntroActiveRef.current &&
-            introRevealActive(introProgress)
+            clusterIntroDeferredLoadActive(introProgress)
           ) {
             for (const obj of sceneObjects) {
               if (!obj.userData.introIsDeferredCluster) continue
@@ -2000,8 +2020,10 @@ export function GlobeView({
             const fieldCenter = group.userData.fieldCenter as THREE.Vector3
             if (clusterId === heroClusterIdRef.current) {
               clusterIntroHeroPosition(fieldCenter, heroBlend, group.position)
-            } else {
+            } else if (clusterIntroZoomActive(introProgress)) {
               group.position.copy(fieldCenter)
+            } else {
+              group.position.set(0, 0, 0)
             }
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(1)
@@ -2334,7 +2356,9 @@ export function GlobeView({
       const introRevealOn =
         introVisualActive && introRevealActive(introVisualProgress)
       const introFillP = introVisualActive
-        ? globeIntroFillProgress(introVisualProgress)
+        ? clusterIntroActiveRef.current
+          ? clusterIntroCenterFillProgress(introVisualProgress)
+          : globeIntroFillProgress(introVisualProgress)
         : 0
       const introCutoutRad = introVisualActive
         ? introScreenCenterCutoutRad(introVisualProgress)
