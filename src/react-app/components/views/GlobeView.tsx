@@ -2349,7 +2349,7 @@ export function GlobeView({
         animate={{ opacity: entranceReady && showInteractionHint ? 1 : 0 }}
         transition={reduceMotion ? { duration: 0 } : SETTINGS_MENU_ENTRANCE.transition}
       >
-        <p className="text-[calc(0.75rem+3pt)] text-black">
+        <p className="text-black" style={{ fontSize: 'var(--killchain-chrome-hint-font-size)' }}>
           {cameraControls.enabled
             ? 'Point to move · hand closer/farther to zoom · pinch to select · pinch twice to close'
             : globeArrangement === 'clusters'
@@ -2364,7 +2364,8 @@ export function GlobeView({
         </p>
         <p
           ref={hoverLabelRef}
-          className="mt-1 text-[calc(0.75rem+3pt)] text-black capitalize"
+          className="mt-1 text-black capitalize"
+          style={{ fontSize: 'var(--killchain-chrome-hint-font-size)' }}
           style={{ display: 'none' }}
         />
       </motion.div>
