@@ -2365,8 +2365,10 @@ export function GlobeView({
         <p
           ref={hoverLabelRef}
           className="mt-1 text-black capitalize"
-          style={{ fontSize: 'var(--killchain-chrome-hint-font-size)' }}
-          style={{ display: 'none' }}
+          style={{
+            fontSize: 'var(--killchain-chrome-hint-font-size)',
+            display: 'none',
+          }}
         />
       </motion.div>
     </div>

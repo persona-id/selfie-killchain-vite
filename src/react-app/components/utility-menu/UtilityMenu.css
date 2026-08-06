@@ -156,13 +156,13 @@
 .utility-menu[data-layout='full']:is([data-state='opening'], [data-state='open']) .utility-menu__rail {
   position: absolute;
   top: var(--corner-menu-pad-y, 26px);
-  right: var(--corner-menu-pad-end, 26px);
+  right: calc(var(--corner-menu-pad-end, 26px) + 28px + 16px);
   left: var(--corner-menu-pad-start, 35px);
   width: auto;
   height: auto;
   padding: 0;
   z-index: 4;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   pointer-events: none;
 }
@@ -173,8 +173,9 @@
   left: 0;
   right: 0;
   height: var(--killchain-right-condensed-height);
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 0 var(--killchain-panel-content-inset);
+  padding-right: calc(var(--killchain-panel-content-inset) + 28px + 24px);
   transition:
     top var(--utility-menu-duration) var(--utility-menu-ease),
     left var(--utility-menu-duration) var(--utility-menu-ease),
@@ -189,15 +190,13 @@
   pointer-events: auto;
 }
 
-.utility-menu[data-layout='full']:is([data-state='opening'], [data-state='open']) .utility-menu__toggle {
-  top: var(--corner-menu-pad-y, 26px);
-  left: var(--corner-menu-pad-start, 35px);
-  transition-delay: 0s;
+.utility-menu[data-layout='full'][data-state='idle'] .utility-menu__rail {
+  justify-content: flex-start;
+  padding-right: calc(var(--killchain-panel-content-inset) + 28px + 24px);
 }
 
-.utility-menu[data-layout='full'][data-state='closing'] .utility-menu__toggle {
-  top: calc((var(--killchain-right-condensed-height) - 28px) / 2);
-  left: var(--killchain-panel-content-inset);
+.utility-menu[data-layout='full'][data-state='idle'] .utility-menu__actions {
+  margin-left: 0;
 }
 
 .utility-menu[data-state='opening'] .utility-menu__body,
@@ -282,8 +281,9 @@
 .utility-menu__toggle {
   position: absolute;
   top: calc((var(--killchain-right-condensed-height) - 28px) / 2);
-  left: var(--killchain-panel-content-inset);
-  z-index: 3;
+  right: var(--killchain-panel-content-inset);
+  left: auto;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -296,23 +296,37 @@
   pointer-events: auto;
   transition:
     top var(--utility-menu-duration) var(--utility-menu-ease),
-    left var(--utility-menu-duration) var(--utility-menu-ease);
+    right var(--utility-menu-duration) var(--utility-menu-ease);
 }
 
-.utility-menu[data-layout='menu-only'][data-state='idle'] .utility-menu__toggle {
-  left: calc((var(--killchain-right-condensed-width-menu-only) - 28px) / 2);
-}
-
+.utility-menu[data-layout='menu-only'][data-state='idle'] .utility-menu__toggle,
 .utility-menu[data-layout='menu-only'][data-state='closing'] .utility-menu__toggle {
   top: calc((var(--killchain-right-condensed-height) - 28px) / 2);
-  left: calc((var(--killchain-right-condensed-width-menu-only) - 28px) / 2);
+  right: calc((var(--killchain-right-condensed-width-menu-only) - 28px) / 2);
+  left: auto;
 }
 
-.utility-menu[data-layout='menu-only'][data-state='opening'] .utility-menu__toggle,
-.utility-menu[data-layout='menu-only'][data-state='open'] .utility-menu__toggle {
+.utility-menu:is([data-state='opening'], [data-state='open']) .utility-menu__toggle {
   top: var(--corner-menu-pad-y, 26px);
-  left: var(--corner-menu-pad-start, 35px);
+  right: var(--corner-menu-pad-end, 26px);
+  left: auto;
   transition-delay: 0s;
+}
+
+.utility-menu[data-layout='menu-only']:is([data-state='opening'], [data-state='open']) .utility-menu__toggle {
+  top: calc((var(--killchain-right-condensed-height) - 28px) / 2);
+  right: calc((var(--killchain-right-condensed-width-menu-only) - 28px) / 2);
+}
+
+.utility-menu[data-layout='full']:is([data-state='opening'], [data-state='open']) .utility-menu__toggle {
+  top: calc((var(--killchain-right-condensed-height) - 28px) / 2);
+  right: var(--killchain-panel-content-inset);
+}
+
+.utility-menu[data-layout='full'][data-state='closing'] .utility-menu__toggle {
+  top: calc((var(--killchain-right-condensed-height) - 28px) / 2);
+  right: var(--killchain-panel-content-inset);
+  left: auto;
 }
 
 .utility-menu:is([data-state='idle'], [data-state='closing']) .utility-menu__toggle:hover .menu-toggle-dots,
@@ -328,7 +342,7 @@
   flex: 0 0 auto;
   gap: 10px;
   height: 28px;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .utility-menu__action {
