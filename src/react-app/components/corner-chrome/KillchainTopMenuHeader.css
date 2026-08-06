@@ -48,21 +48,23 @@
   left: 50%;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0;
   transform: translate(-50%, -50%);
   font-family: var(--font-mono);
   font-size: var(--killchain-chrome-hint-font-size);
   font-weight: 300;
-  line-height: 1.2;
+  line-height: 1.1;
   letter-spacing: 0.01em;
   text-transform: uppercase;
+  text-align: center;
   color: #8e8e8e;
   white-space: nowrap;
 }
 
 .killchain-top-menu-header__meta p {
   margin: 0;
+  text-align: center;
 }
 
 .killchain-top-menu-header__line {
