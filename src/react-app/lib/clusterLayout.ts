@@ -119,10 +119,14 @@ export const CLUSTER_FIELD_LAYOUT_OPTIONS: {
 }[] = [
   { id: 'scattered', label: 'Nebula', hint: 'Loose cloud' },
   { id: 'globe', label: 'Globe', hint: 'Big sphere' },
-  { id: 'grid', label: 'Square', hint: 'Flat grid' },
+  { id: 'grid', label: 'Cube', hint: '3D cube surface' },
   { id: 'wall', label: 'Wall', hint: 'Flat screen grid' },
   { id: 'belt', label: 'Ring', hint: 'Equatorial ring' },
   { id: 'helix', label: 'Helix', hint: 'Cosmic spiral' },
+  { id: 'column', label: 'Tower', hint: 'Vertical stack' },
+  { id: 'cross', label: 'Cross', hint: 'Axis arms' },
+  { id: 'arc', label: 'Arc', hint: 'Semicircle sweep' },
+  { id: 'diamond', label: 'Diamond', hint: 'Octahedron lattice' },
 ]
 
 const MAX_CLUSTER_SIZE = 12
@@ -366,26 +370,99 @@ function helixFieldCenters(count: number, spread: number): THREE.Vector3[] {
   return points
 }
 
-function gridClusterCenters(count: number, spread: number): THREE.Vector3[] {
-  if (count === 0) return []
-  const cols = Math.ceil(Math.sqrt(count))
-  const rows = Math.ceil(count / cols)
-  const spacing = BASE_MIN_CLUSTER_SEP * spread * 0.92
-  const points: THREE.Vector3[] = []
+function sphereToCubePoint(dir: THREE.Vector3, half: number): THREE.Vector3 {
+  const ax = Math.abs(dir.x)
+  const ay = Math.abs(dir.y)
+  const az = Math.abs(dir.z)
+  const m = Math.max(ax, ay, az, 1e-6)
+  return new THREE.Vector3(
+    (dir.x / m) * half,
+    (dir.y / m) * half,
+    (dir.z / m) * half,
+  )
+}
 
+function cubeClusterCenters(count: number, spread: number): THREE.Vector3[] {
+  const half = BASE_CLUSTER_SPREAD * spread * 0.72
+  return fibonacciDirections(count).map((dir) => sphereToCubePoint(dir, half))
+}
+
+function columnClusterCenters(count: number, spread: number): THREE.Vector3[] {
+  if (count === 0) return []
+  const height = BASE_CLUSTER_SPREAD * spread * 1.6
+  const points: THREE.Vector3[] = []
   for (let i = 0; i < count; i++) {
-    const col = i % cols
-    const row = Math.floor(i / cols)
+    const t = count === 1 ? 0.5 : i / (count - 1)
     points.push(
       new THREE.Vector3(
-        (col - (cols - 1) / 2) * spacing,
-        0,
-        (row - (rows - 1) / 2) * spacing,
+        (seededRandom(i * 7) - 0.5) * 80 * spread,
+        (t - 0.5) * height,
+        (seededRandom(i * 11) - 0.5) * 80 * spread,
       ),
     )
   }
-
   return points
+}
+
+function crossClusterCenters(count: number, spread: number): THREE.Vector3[] {
+  if (count === 0) return []
+  const arm = BASE_CLUSTER_SPREAD * spread * 0.82
+  const arms = [
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(0, -1, 0),
+    new THREE.Vector3(0, 0, 1),
+    new THREE.Vector3(0, 0, -1),
+  ]
+  const points: THREE.Vector3[] = []
+  for (let i = 0; i < count; i++) {
+    const armDir = arms[i % arms.length]
+    const slot = Math.floor(i / arms.length) + 1
+    points.push(armDir.clone().multiplyScalar(arm * (0.45 + slot * 0.28)))
+  }
+  return points
+}
+
+function arcClusterCenters(count: number, spread: number): THREE.Vector3[] {
+  if (count === 0) return []
+  const radius = BASE_CLUSTER_SPREAD * spread * 0.9
+  const points: THREE.Vector3[] = []
+  for (let i = 0; i < count; i++) {
+    const theta = (i / Math.max(1, count - 1)) * Math.PI - Math.PI / 2
+    points.push(
+      new THREE.Vector3(
+        Math.cos(theta) * radius,
+        (seededRandom(i * 3) - 0.5) * 60 * spread,
+        Math.sin(theta) * radius * 0.5,
+      ),
+    )
+  }
+  return points
+}
+
+function diamondClusterCenters(count: number, spread: number): THREE.Vector3[] {
+  if (count === 0) return []
+  const radius = BASE_CLUSTER_SPREAD * spread * 0.85
+  const verts = [
+    new THREE.Vector3(0, radius, 0),
+    new THREE.Vector3(0, -radius, 0),
+    new THREE.Vector3(radius, 0, 0),
+    new THREE.Vector3(-radius, 0, 0),
+    new THREE.Vector3(0, 0, radius),
+    new THREE.Vector3(0, 0, -radius),
+  ]
+  const points: THREE.Vector3[] = []
+  for (let i = 0; i < count; i++) {
+    const a = verts[i % verts.length]
+    const b = verts[(i + 2) % verts.length]
+    points.push(a.clone().lerp(b, seededRandom(i * 19)))
+  }
+  return points
+}
+
+function gridClusterCenters(count: number, spread: number): THREE.Vector3[] {
+  return cubeClusterCenters(count, spread)
 }
 
 function wallClusterCenters(count: number, spread: number): THREE.Vector3[] {
@@ -421,6 +498,14 @@ function clusterFieldCenters(
       return shellClusterCenters(count, spread)
     case 'grid':
       return gridClusterCenters(count, spread)
+    case 'column':
+      return columnClusterCenters(count, spread)
+    case 'cross':
+      return crossClusterCenters(count, spread)
+    case 'arc':
+      return arcClusterCenters(count, spread)
+    case 'diamond':
+      return diamondClusterCenters(count, spread)
     case 'wall':
       return wallClusterCenters(count, spread)
     case 'belt':

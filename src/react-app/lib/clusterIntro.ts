@@ -9,8 +9,46 @@ import {
   introRevealActive,
   introRingCount,
 } from '../utils/globeIntro'
-import { viewAxisAngularDistance } from './globe'
-import type { ClusterGlobe } from './clusterLayout'
+import { GLOBE_RADIUS, viewAxisAngularDistance } from './globe'
+import { miniGlobePositions, type ClusterGlobe } from './clusterLayout'
+
+export function clusterIntroHeroSphereRadius(separation: number): number {
+  return GLOBE_RADIUS * 0.82 * separation
+}
+
+export function applyHeroClusterIntroSphereLayout(
+  objects: Array<{
+    userData: Record<string, unknown>
+    position: THREE.Vector3
+  }>,
+  heroClusterId: string,
+  separation: number,
+): void {
+  const heroObjects = objects
+    .filter((obj) => obj.userData.clusterId === heroClusterId)
+    .sort((a, b) => {
+      const aId = (a.userData.item as { id: string } | undefined)?.id ?? ''
+      const bId = (b.userData.item as { id: string } | undefined)?.id ?? ''
+      return aId.localeCompare(bId)
+    })
+
+  const positions = miniGlobePositions(
+    heroObjects.length,
+    clusterIntroHeroSphereRadius(separation),
+  )
+
+  heroObjects.forEach((obj, index) => {
+    const introLocal = positions[index].clone()
+    obj.userData.introSphereLocal = introLocal
+    obj.position.copy(introLocal)
+    obj.userData.introHemisphereFront = introLocal.z >= 0
+  })
+}
+
+export function clusterIntroHeroItemBlend(progress: number): number {
+  if (!introRevealActive(progress)) return 0
+  return globeIntroCameraProgress(progress)
+}
 
 export function pickHeroClusterGlobe(
   clusterGlobes: ClusterGlobe[],
@@ -93,7 +131,8 @@ export function configureHeroClusterIntroRanks(
     .map((obj) => ({
       obj,
       centrality: viewAxisAngularDistance(
-        obj.userData.fieldLocal as THREE.Vector3,
+        (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
+          (obj.userData.fieldLocal as THREE.Vector3),
       ),
     }))
     .sort((a, b) => a.centrality - b.centrality)

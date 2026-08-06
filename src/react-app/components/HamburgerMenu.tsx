@@ -255,6 +255,24 @@ export function HamburgerMenu({
                     : 'Off — focus glass plaque'}
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryView({
+                      clusterFocusSmoothZoom: !categoryView.clusterFocusSmoothZoom,
+                    })
+                  }
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.clusterFocusSmoothZoom
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.clusterFocusSmoothZoom
+                    ? 'On — smooth focus zoom'
+                    : 'Off — smooth focus zoom'}
+                </button>
+
                 {categoryView.clusterFocusPresentation ? (
                   <>
                     <button

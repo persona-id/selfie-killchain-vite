@@ -82,8 +82,8 @@
 
 .cluster-focus-plaque__dot {
   display: block;
-  width: 0.42rem;
-  height: 0.42rem;
+  width: 0.315rem;
+  height: 0.315rem;
   border-radius: 9999px;
   background: var(--accent-green, #6af4a1);
   animation: cluster-focus-plaque-dot-blink 2.8s ease-in-out infinite;

@@ -106,6 +106,10 @@ export type ClusterFieldLayout =
   | 'wall'
   | 'belt'
   | 'helix'
+  | 'column'
+  | 'cross'
+  | 'arc'
+  | 'diamond'
 
 export type ConstellationSettings = {
   clusterSpread: number
@@ -172,6 +176,7 @@ export type CategoryViewSettings = {
   clusterFocusOrbitSphere: boolean
   clusterFocusPlaqueAnimate: boolean
   clusterIntroTest: boolean
+  clusterFocusSmoothZoom: boolean
 }
 
 export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
@@ -192,6 +197,7 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   clusterFocusOrbitSphere: true,
   clusterFocusPlaqueAnimate: true,
   clusterIntroTest: false,
+  clusterFocusSmoothZoom: false,
 }
 
 export type Complexity = 'Low' | 'Moderate' | 'High'

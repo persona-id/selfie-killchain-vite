@@ -54,9 +54,11 @@ import {
   playClusterFocusPlaqueEntrance,
 } from '../../lib/clusterFocusPlaque'
 import {
+  applyHeroClusterIntroSphereLayout,
   clusterIntroCameraZ,
   clusterIntroDistanceNorm,
   clusterIntroHeroGroupBlend,
+  clusterIntroHeroItemBlend,
   clusterIntroHeroPosition,
   clusterIntroOtherReveal,
   configureHeroClusterIntroRanks,
@@ -544,9 +546,11 @@ export function GlobeView({
     )
 
     state.targetCameraDistance = targetZ
-    state.cameraDistance = targetZ
     focusCameraTargetRef.current = targetZ
-    camera.position.z = targetZ
+    if (!categoryViewRef.current.clusterFocusSmoothZoom) {
+      state.cameraDistance = targetZ
+      camera.position.z = targetZ
+    }
   }
 
   const focusConstellationCluster = (clusterId: string) => {
@@ -1350,6 +1354,11 @@ export function GlobeView({
       const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
       if (heroGlobe) {
         heroClusterIdRef.current = heroGlobe.id
+        applyHeroClusterIntroSphereLayout(
+          objects,
+          heroGlobe.id,
+          categoryViewRef.current.clusterSpacing,
+        )
         configureHeroClusterIntroRanks(objects, heroGlobe.id)
         const heroGroup = clusterGroups.get(heroGlobe.id)
         heroGroup?.position.set(0, 0, 0)
@@ -1540,6 +1549,7 @@ export function GlobeView({
     let frameId = 0
     let running = true
     const worldPos = new THREE.Vector3()
+    const clusterIntroBlendPos = new THREE.Vector3()
 
     const focusBlendTarget = { current: 0 }
 
@@ -2040,9 +2050,51 @@ export function GlobeView({
           const motion = categoryViewRef.current
           const clusterAnimActive =
             motion.clusterAnimation !== 'static' || motion.imageFlutter > 0
+          const clusterIntroHeroActive =
+            clusterIntroActiveRef.current &&
+            heroClusterIdRef.current &&
+            (introLockedRef.current || introExitBlend > 0.01)
+          const heroClusterId = heroClusterIdRef.current
+          const heroItemBlend = introLockedRef.current
+            ? clusterIntroHeroItemBlend(introProgress)
+            : 1
           for (let i = 0; i < objects.length; i++) {
             const obj = objects[i]
             const item = obj.userData.item as GalleryItem | undefined
+            const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
+            const introSphereLocal = obj.userData.introSphereLocal as
+              | THREE.Vector3
+              | undefined
+
+            if (
+              clusterIntroHeroActive &&
+              heroClusterId &&
+              obj.userData.clusterId === heroClusterId &&
+              introSphereLocal &&
+              fieldLocal
+            ) {
+              clusterIntroBlendPos.lerpVectors(
+                introSphereLocal,
+                fieldLocal,
+                heroItemBlend,
+              )
+              if (clusterAnimActive && heroItemBlend >= 0.99) {
+                const animated = animateClusterImageLocal(
+                  clusterIntroBlendPos,
+                  item?.id ?? String(i),
+                  now,
+                  motion.clusterAnimation,
+                  motion.imageFlutter,
+                  (obj.userData.hubIndex as number | undefined) ?? 0,
+                  motion.motionSpeed,
+                )
+                obj.position.copy(animated)
+              } else {
+                obj.position.copy(clusterIntroBlendPos)
+              }
+              continue
+            }
+
             const baseLocal = obj.userData.baseLocal as THREE.Vector3 | undefined
             if (!baseLocal || !obj.userData.clusterId) continue
             if (clusterAnimActive) {
@@ -2056,9 +2108,8 @@ export function GlobeView({
                 motion.motionSpeed,
               )
               obj.position.copy(animated)
-            } else {
-              const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
-              if (fieldLocal) obj.position.copy(fieldLocal)
+            } else if (fieldLocal) {
+              obj.position.copy(fieldLocal)
             }
           }
         }
@@ -2198,8 +2249,12 @@ export function GlobeView({
         interactionState.targetCameraDistance -
         interactionState.cameraDistance
       const focusEnterAge = now - clusterFocusedAtRef.current
+      const smoothClusterFocusZoom = categoryViewRef.current.clusterFocusSmoothZoom
       const focusSnap =
-        clusterFocused && focusEnterAge < 1200 && Math.abs(delta) > 0.5
+        clusterFocused &&
+        focusEnterAge < 1200 &&
+        Math.abs(delta) > 0.5 &&
+        !smoothClusterFocusZoom
       const focusPullBack = clusterFocused && delta > 0
       const filterZoomActive =
         filterZoomTargetRef.current != null &&
@@ -2207,11 +2262,13 @@ export function GlobeView({
           highlightedFilterRef.current !== null)
       const zoomSmooth = filterZoomActive
         ? 1 - Math.pow(COMPREHENSIVE_ZOOM_SMOOTH, timeScale)
-        : focusSnap
-          ? 1
-          : focusPullBack
-            ? 1 - Math.pow(0.015, timeScale)
-            : 1 - Math.pow(0.0012, timeScale)
+        : clusterFocused && smoothClusterFocusZoom
+          ? 1 - Math.pow(0.055, timeScale)
+          : focusSnap
+            ? 1
+            : focusPullBack
+              ? 1 - Math.pow(0.015, timeScale)
+              : 1 - Math.pow(0.0012, timeScale)
       interactionState.cameraDistance += delta * zoomSmooth
 
       const allowAutoZoom =
