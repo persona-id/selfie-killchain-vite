@@ -9,7 +9,7 @@
   width: 100%;
   min-height: var(--killchain-chrome-condensed-height);
   padding-right: calc(var(--killchain-chrome-condensed-height) * 1.85 + 1.5rem);
-  padding-left: var(--page-edge-pad, 1.5rem);
+  padding-left: calc(var(--killchain-chrome-condensed-height) * 0.8 + 1rem);
   z-index: 1;
   overflow: visible;
   pointer-events: none;
@@ -30,7 +30,7 @@
 .killchain-top-menu-header__logo {
   position: absolute;
   top: 50%;
-  right: calc(var(--killchain-chrome-condensed-height) + 1.25rem);
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
