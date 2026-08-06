@@ -278,7 +278,7 @@ export function ImageModal() {
                     onClick={() => goToView('deconstruct')}
                     className="image-modal__view-btn image-modal__view-btn--deconstruct"
                   >
-                    Deconstruct
+                    Deconstruct fraud path
                     <ArrowIcon />
                   </button>
                 </div>

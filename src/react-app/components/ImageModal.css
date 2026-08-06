@@ -74,7 +74,7 @@
   flex: 0 0 auto;
   flex-shrink: 0;
   text-align: center;
-  font-size: calc(24px * var(--type-scale));
+  font-size: calc(27px * var(--type-scale));
   line-height: 1.35;
   letter-spacing: -0.018em;
   color: var(--text-primary);

@@ -16,7 +16,7 @@
   --radius-utility: 94px;
   --font-sans: 'ABC Monument Grotesk', 'Helvetica Neue', system-ui, sans-serif;
   --font-mono: 'ABC Monument Grotesk Semi-Mono', 'ABC Monument Grotesk', monospace;
-  --killchain-chrome-hint-font-size: calc(0.75rem + 1pt);
+  --killchain-chrome-hint-font-size: calc(0.75rem);
   --page-pad-mult: 1.3;
   --inactive-node-opacity: 0.4;
   --page-edge-pad: 50px;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const CHAR_DELAY_MS = 24
+const CHAR_DELAY_MS = 28
 
 function prefersReducedMotion(): boolean {
   return (
@@ -10,36 +10,41 @@ function prefersReducedMotion(): boolean {
 }
 
 export function useSequentialTypewriter(lines: readonly string[], active: boolean) {
+  const linesKey = lines.join('\u0000')
   const [values, setValues] = useState<string[]>(() => lines.map(() => ''))
   const [lineIndex, setLineIndex] = useState(0)
   const [complete, setComplete] = useState(false)
 
   useEffect(() => {
+    const lineTexts = linesKey.split('\u0000')
+
     if (!active) {
-      setValues(lines.map(() => ''))
+      setValues(lineTexts.map(() => ''))
       setLineIndex(0)
       setComplete(false)
       return
     }
 
     if (prefersReducedMotion()) {
-      setValues([...lines])
-      setLineIndex(lines.length)
+      setValues([...lineTexts])
+      setLineIndex(lineTexts.length)
       setComplete(true)
       return
     }
 
-    setValues(lines.map(() => ''))
+    setValues(lineTexts.map(() => ''))
     setLineIndex(0)
     setComplete(false)
 
     let currentLine = 0
     let charIndex = 0
+    let cancelled = false
 
-    const timer = window.setInterval(() => {
-      const line = lines[currentLine]
+    const tick = () => {
+      if (cancelled) return
+
+      const line = lineTexts[currentLine]
       if (!line) {
-        window.clearInterval(timer)
         setComplete(true)
         return
       }
@@ -56,16 +61,22 @@ export function useSequentialTypewriter(lines: readonly string[], active: boolea
       if (charIndex >= line.length) {
         currentLine += 1
         charIndex = 0
-        if (currentLine >= lines.length) {
-          window.clearInterval(timer)
-          setLineIndex(lines.length)
+        if (currentLine >= lineTexts.length) {
+          setLineIndex(lineTexts.length)
           setComplete(true)
+          return
         }
       }
-    }, CHAR_DELAY_MS)
 
-    return () => window.clearInterval(timer)
-  }, [active, lines])
+      window.setTimeout(tick, CHAR_DELAY_MS)
+    }
+
+    const starter = window.setTimeout(tick, CHAR_DELAY_MS)
+    return () => {
+      cancelled = true
+      window.clearTimeout(starter)
+    }
+  }, [active, linesKey])
 
   return { values, lineIndex, complete }
 }
