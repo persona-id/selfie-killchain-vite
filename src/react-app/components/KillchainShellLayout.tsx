@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { useLocation, useOutlet } from 'react-router-dom'
+import { useLocation, useOutlet } from 'react-router'
 
 import { useGallery } from '../context/GalleryContext'
 import { useGlobeIntro } from '../context/GlobeIntroContext'

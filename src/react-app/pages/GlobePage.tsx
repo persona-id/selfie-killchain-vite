@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router'
 
 import { DEFAULT_GLOBE_ARRANGEMENT, type Complexity } from '../types/gallery'
 import { useGallery } from '../context/GalleryContext'
