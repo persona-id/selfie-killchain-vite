@@ -18,10 +18,8 @@ import {
   billboardTowardCamera,
   computeAnimationZoomOffset,
   computeClusterLayout,
-  computeComprehensiveCameraZ,
   computeFilterFocusRotation,
   computeGlobeOverviewCameraZ,
-  computeZoomFocusRotation,
   createGlobeRenderers,
   createPhotoElement,
   depthFadeDistanceT,
@@ -30,7 +28,6 @@ import {
   globeStaggeredLoadDelayMs,
   GLOBE_OVERVIEW_SCREEN_FRACTION,
   imageDimensions,
-  isGlobePointFacingCamera,
   layoutBoundingRadius,
   placeOnSphere,
   pullClusterIntoViewport,
@@ -49,6 +46,10 @@ import {
   type CameraPipelineStatus,
 } from '../../lib/cameraGesturePipeline'
 import { findSimilarItems } from '../../lib/similarity'
+import {
+  computeCategoryModeLayout,
+  isCategoryModeActive,
+} from '../../lib/categoryModes'
 import { itemMatchesFilter } from '../../lib/taxonomy'
 import {
   CLUSTER_OUTSIDE_OPACITY,
@@ -56,6 +57,7 @@ import {
   clusterItems,
   clusterMemberIds,
   drawClusterThreads,
+  drawLayoutClusterThreads,
   setClusterHighlight,
   type ImageCluster,
 } from '../../lib/threads'
@@ -137,8 +139,8 @@ export function GlobeView({
     closeModal,
     selectedItem,
     activeComplexity,
-    comprehensiveMode,
-    zoomMode,
+    categoryMode,
+    categoryView,
     highlightedFilter,
   } = useGallery()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -217,10 +219,12 @@ export function GlobeView({
     targetY: number
     startedAt: number
   } | null>(null)
-  const comprehensiveModeRef = useRef(comprehensiveMode)
-  const zoomModeRef = useRef(zoomMode)
-  const comprehensiveZoomTargetRef = useRef<number | null>(null)
-  const preComprehensiveCameraZRef = useRef<number | null>(null)
+  const categoryModeRef = useRef(categoryMode)
+  const categoryViewRef = useRef(categoryView)
+  const categoryHubCentersRef = useRef<Map<string, THREE.Vector3>>(new Map())
+  const categoryHubLabelsRef = useRef<CSS3DObject[]>([])
+  const filterZoomTargetRef = useRef<number | null>(null)
+  const preFilterCameraZRef = useRef<number | null>(null)
   const cssRendererRef = useRef<ReturnType<typeof createGlobeRenderers>['cssRenderer'] | null>(null)
   const globeGroupRef = useRef<THREE.Group | null>(null)
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
@@ -460,143 +464,58 @@ export function GlobeView({
   globeArrangementRef.current = globeArrangement
   displayItemsRef.current = displayItems
   activeComplexityRef.current = activeComplexity
-  comprehensiveModeRef.current = comprehensiveMode
-  zoomModeRef.current = zoomMode
+  categoryModeRef.current = categoryMode
+  categoryViewRef.current = categoryView
   highlightedFilterRef.current = highlightedFilter
 
-  const applyScreenFillCameraTarget = () => {
+  const restoreFilterCamera = () => {
     const state = interactionStateRef.current
-    if (!state) return
+    if (!state || filterZoomTargetRef.current == null) return
 
-    if (preComprehensiveCameraZRef.current == null) {
-      preComprehensiveCameraZRef.current = state.cameraDistance
-    }
-    const targetZ = computeComprehensiveCameraZ(layoutFieldRadiusRef.current)
-    state.targetCameraDistance = targetZ
-    comprehensiveZoomTargetRef.current = targetZ
-  }
-
-  const restoreScreenFillCamera = () => {
-    const state = interactionStateRef.current
-    if (!state || comprehensiveZoomTargetRef.current == null) return
-
-    const restoreZ =
-      preComprehensiveCameraZRef.current ?? overviewCameraZRef.current
+    const restoreZ = preFilterCameraZRef.current ?? overviewCameraZRef.current
     state.targetCameraDistance = restoreZ
-    comprehensiveZoomTargetRef.current = null
-    preComprehensiveCameraZRef.current = null
+    filterZoomTargetRef.current = null
+    preFilterCameraZRef.current = null
   }
 
   const applyFilterSelectionCameraTarget = () => {
-    if (comprehensiveModeRef.current || zoomModeRef.current) return
-
     const complexity = activeComplexityRef.current
     const filter = highlightedFilterRef.current
     const hasSelection = Boolean(complexity || filter)
 
     if (!hasSelection) {
-      restoreScreenFillCamera()
+      restoreFilterCamera()
       return
     }
 
     const state = interactionStateRef.current
     if (!state) return
 
-    if (preComprehensiveCameraZRef.current == null) {
-      preComprehensiveCameraZRef.current = state.cameraDistance
+    if (preFilterCameraZRef.current == null) {
+      preFilterCameraZRef.current = state.cameraDistance
     }
+    const screenFraction =
+      categoryModeRef.current === 'selfie' ? 0.82 : GLOBE_OVERVIEW_SCREEN_FRACTION
     const targetZ = computeGlobeOverviewCameraZ(
       layoutFieldRadiusRef.current,
       GLOBE_CAMERA_FOV,
-      GLOBE_OVERVIEW_SCREEN_FRACTION,
+      screenFraction,
     )
     state.targetCameraDistance = targetZ
-    comprehensiveZoomTargetRef.current = targetZ
-  }
-
-  const applyComprehensiveCameraTarget = () => {
-    if (!comprehensiveModeRef.current) return
-
-    const complexity = activeComplexityRef.current
-    const filter = highlightedFilterRef.current
-    const hasSelection = Boolean(complexity || filter)
-
-    if (hasSelection) {
-      applyScreenFillCameraTarget()
-      startFilterFocusAnimation()
-      return
-    }
-
-    restoreScreenFillCamera()
-  }
-
-  const startZoomFocusAnimation = () => {
-    const state = interactionStateRef.current
-    if (!zoomModeRef.current || !state || objectsRef.current.length === 0) {
-      complexityFocusAnimRef.current = null
-      return
-    }
-
-    const clusterFieldCenters = new Map<string, THREE.Vector3>()
-    clusterGroupsRef.current.forEach((group, clusterId) => {
-      const fieldCenter = group.userData.fieldCenter as THREE.Vector3 | undefined
-      if (fieldCenter) clusterFieldCenters.set(clusterId, fieldCenter)
-    })
-
-    const target = computeZoomFocusRotation(
-      objectsRef.current,
-      clusterFieldCenters.size > 0 ? clusterFieldCenters : undefined,
-    )
-    if (!target) {
-      complexityFocusAnimRef.current = null
-      return
-    }
-
-    complexityFocusAnimRef.current = {
-      startX: state.rotationX,
-      startY: state.rotationY,
-      targetX: target.x,
-      targetY: target.y,
-      startedAt: performance.now(),
-    }
-  }
-
-  const applyZoomModeCameraTarget = () => {
-    if (!zoomModeRef.current) return
-    applyScreenFillCameraTarget()
-    startZoomFocusAnimation()
+    filterZoomTargetRef.current = targetZ
   }
 
   useEffect(() => {
-    if (!comprehensiveMode && !zoomMode) {
-      if (!activeComplexity && !highlightedFilter) {
-        restoreScreenFillCamera()
-        for (const obj of objectsRef.current) {
-          const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
-          if (sphereLocal) obj.position.copy(sphereLocal)
-        }
-      } else {
-        applyFilterSelectionCameraTarget()
-      }
-      return
-    }
-
-    if (zoomMode) {
-      applyZoomModeCameraTarget()
-      return
-    }
-
-    applyComprehensiveCameraTarget()
-  }, [comprehensiveMode, zoomMode, activeComplexity, highlightedFilter])
-
-  useEffect(() => {
-    if (comprehensiveMode && !activeComplexity && !highlightedFilter) {
+    if (!activeComplexity && !highlightedFilter) {
+      restoreFilterCamera()
       for (const obj of objectsRef.current) {
         const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
         if (sphereLocal) obj.position.copy(sphereLocal)
       }
+    } else {
+      applyFilterSelectionCameraTarget()
     }
-  }, [comprehensiveMode, activeComplexity, highlightedFilter])
+  }, [activeComplexity, highlightedFilter, categoryMode])
 
   useEffect(() => {
     if (introLocked) {
@@ -666,8 +585,7 @@ export function GlobeView({
     const target = computeFilterFocusRotation(objectsRef.current, {
       complexity,
       highlightedFilter: highlighted,
-      preferBackHemisphere:
-        comprehensiveModeRef.current || zoomModeRef.current,
+      preferBackHemisphere: false,
       clusterFieldCenters:
         clusterFieldCenters.size > 0 ? clusterFieldCenters : undefined,
     })
@@ -687,20 +605,13 @@ export function GlobeView({
 
   useEffect(() => {
     startFilterFocusAnimation()
-    if (comprehensiveMode) {
-      applyComprehensiveCameraTarget()
-    } else if (zoomMode) {
-      applyZoomModeCameraTarget()
-    } else {
-      applyFilterSelectionCameraTarget()
-    }
+    applyFilterSelectionCameraTarget()
   }, [
     activeComplexity,
     highlightedFilter,
     displayItems,
     globeArrangement,
-    comprehensiveMode,
-    zoomMode,
+    categoryMode,
   ])
 
   const setHoverLabel = (item: GalleryItem | null) => {
@@ -934,15 +845,32 @@ export function GlobeView({
     introSceneStartedAtRef.current = performance.now()
     setFocusedClusterLabel(null)
 
-    const isClusters = globeArrangement === 'clusters'
+    const categoryLayout = computeCategoryModeLayout(
+      categoryMode,
+      displayItems,
+      categoryViewRef.current,
+    )
+    const isCategoryLayout = categoryLayout !== null
+    const isClusters = globeArrangement === 'clusters' && !isCategoryLayout
     const layout = isClusters
       ? computeClusterLayout(displayItems, constellationRef.current)
       : null
-    layoutClustersRef.current = layout?.clusters ?? []
-    layoutBridgesRef.current = layout?.bridges ?? []
-    layoutFieldRadiusRef.current = layout?.fieldRadius ?? GLOBE_RADIUS
-    layoutClusterGlobesRef.current = layout?.clusterGlobes ?? []
-    itemClusterIdRef.current = layout?.itemClusterId ?? new Map()
+
+    if (isCategoryLayout && categoryLayout) {
+      layoutClustersRef.current = categoryLayout.clusters
+      layoutBridgesRef.current = categoryLayout.bridges
+      layoutFieldRadiusRef.current = categoryLayout.fieldRadius
+      layoutClusterGlobesRef.current = []
+      itemClusterIdRef.current = categoryLayout.itemHubId
+      categoryHubCentersRef.current = categoryLayout.hubCentersById
+    } else {
+      layoutClustersRef.current = layout?.clusters ?? []
+      layoutBridgesRef.current = layout?.bridges ?? []
+      layoutFieldRadiusRef.current = layout?.fieldRadius ?? GLOBE_RADIUS
+      layoutClusterGlobesRef.current = layout?.clusterGlobes ?? []
+      itemClusterIdRef.current = layout?.itemClusterId ?? new Map()
+      categoryHubCentersRef.current = new Map()
+    }
 
     const { cssRenderer, camera, scene, globe } = createGlobeRenderers(
       container,
@@ -955,15 +883,29 @@ export function GlobeView({
 
     const objects: CSS3DObject[] = []
     const objectById = new Map<string, CSS3DObject>()
-    const positions = getGlobePositions(
-      globeArrangement,
-      displayItems.length,
-      GLOBE_RADIUS,
-      displayItems,
-    )
+    const positions =
+      isCategoryLayout && categoryLayout
+        ? categoryLayout.positions
+        : getGlobePositions(
+            globeArrangement,
+            displayItems.length,
+            GLOBE_RADIUS,
+            displayItems,
+          )
 
     const clusterGroups = new Map<string, THREE.Group>()
-    if (isClusters && layout) {
+    if (isCategoryLayout && categoryLayout) {
+      categoryLayout.hubs.forEach((hub) => {
+        const group = new THREE.Group()
+        group.position.copy(hub.center)
+        group.userData.clusterId = hub.id
+        group.userData.fieldCenter = hub.center.clone()
+        group.userData.floatPhase = hub.center.x * 0.0021 + hub.center.z * 0.0013
+        group.userData.hubColor = hub.color
+        globe.add(group)
+        clusterGroups.set(hub.id, group)
+      })
+    } else if (isClusters && layout) {
       layout.clusterGlobes.forEach((clusterGlobe) => {
         const group = new THREE.Group()
         group.position.copy(clusterGlobe.center)
@@ -976,11 +918,28 @@ export function GlobeView({
     }
     clusterGroupsRef.current = clusterGroups
 
+    const hubLabels: CSS3DObject[] = []
+    if (isCategoryLayout && categoryLayout && categoryView.showCategoryLabels) {
+      categoryLayout.hubs.forEach((hub) => {
+        const el = document.createElement('div')
+        el.className = 'globe-view__hub-label'
+        el.textContent = hub.label
+        const label = new CSS3DObject(el)
+        label.position.copy(hub.center)
+        label.position.y += categoryMode === 'selfie' ? 180 : 95
+        globe.add(label)
+        hubLabels.push(label)
+      })
+    }
+    categoryHubLabelsRef.current = hubLabels
+
     const loadRankByIndex = new Map<number, number>()
     const centralityOrder = displayItems
       .map((item, i) => {
         let worldPos = positions[i]
-        if (isClusters && layout) {
+        if (isCategoryLayout && categoryLayout) {
+          worldPos = categoryLayout.positions[i]
+        } else if (isClusters && layout) {
           const clusterId = layout.itemClusterId.get(item.id)
           const clusterGlobe = clusterId
             ? layout.clusterGlobes.find((g) => g.id === clusterId)
@@ -1033,13 +992,32 @@ export function GlobeView({
       object.userData.introCenterFillRank = centerFillRank
       object.userData.introCenterFillCount = centerFillCount
       const sphereZ =
-        isClusters && layout
+        isCategoryLayout && categoryLayout
+          ? positions[i].z
+          : isClusters && layout
           ? (object.userData.fieldLocal as THREE.Vector3 | undefined)?.z ??
             positions[i].z
           : positions[i].z
       object.userData.introHemisphereFront = sphereZ >= 0
 
-      if (isClusters && layout) {
+      if (isCategoryLayout && categoryLayout) {
+        const hubId = categoryLayout.itemHubId.get(item.id)
+        const group = hubId ? clusterGroups.get(hubId) : null
+        const fieldLocal = hubId
+          ? categoryLayout.hubFieldPositions.get(hubId)?.get(item.id)
+          : null
+        if (group && fieldLocal) {
+          placeOnSphere(object, fieldLocal.clone())
+          object.userData.clusterId = hubId
+          object.userData.fieldLocal = fieldLocal.clone()
+          object.userData.sphereLocal = categoryLayout.positions[i].clone()
+          group.add(object)
+        } else {
+          placeOnSphere(object, positions[i])
+          object.userData.sphereLocal = positions[i].clone()
+          globe.add(object)
+        }
+      } else if (isClusters && layout) {
         const clusterId = layout.itemClusterId.get(item.id)
         const group = clusterId ? clusterGroups.get(clusterId) : null
         const clusterGlobe = clusterId
@@ -1128,21 +1106,18 @@ export function GlobeView({
       .map((entry) => entry.obj)
 
     startFilterFocusAnimation()
-    if (zoomModeRef.current) {
-      applyZoomModeCameraTarget()
-    } else if (comprehensiveModeRef.current) {
-      applyComprehensiveCameraTarget()
-    } else {
-      applyFilterSelectionCameraTarget()
-    }
+    applyFilterSelectionCameraTarget()
 
     const overviewBoundingRadius =
-      isClusters && layout
+      isCategoryLayout && categoryLayout
+        ? layoutBoundingRadius(categoryLayout.positions, categoryLayout.fieldRadius)
+        : isClusters && layout
         ? layoutBoundingRadius(layout.positions, layout.fieldRadius)
         : GLOBE_RADIUS
     const overviewCameraZ = computeGlobeOverviewCameraZ(
       overviewBoundingRadius,
       GLOBE_CAMERA_FOV,
+      categoryMode === 'selfie' ? 0.88 : undefined,
     )
     overviewCameraZRef.current = overviewCameraZ
 
@@ -1174,7 +1149,7 @@ export function GlobeView({
         getDragSensitivity: () =>
           ANIMATION_PRESETS[animationRef.current].dragSensitivity,
         getZoomLimits: () => {
-          if (!isClusters) {
+          if (!isClusters && !isCategoryLayout) {
             if (linkClusterFocusRef.current) {
               return {
                 min: focusCameraTargetRef.current,
@@ -1467,9 +1442,7 @@ export function GlobeView({
           highlightedFilterRef.current !== null
         const inComplexityFocus =
           focusAnim &&
-          (activeComplexityRef.current ||
-            categoryFilterActive ||
-            zoomModeRef.current) &&
+          (activeComplexityRef.current || categoryFilterActive) &&
           !clusterFocusRef.current &&
           !linkClusterFocusRef.current
 
@@ -1743,6 +1716,18 @@ export function GlobeView({
         }
       }
 
+      if (isCategoryLayout && categoryViewRef.current.floatAnimation) {
+        clusterGroupsRef.current.forEach((group) => {
+          const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+          const phase = (group.userData.floatPhase as number) ?? 0
+          group.position.set(
+            fieldCenter.x + Math.sin(time * 0.0007 + phase) * 18,
+            fieldCenter.y + Math.cos(time * 0.0009 + phase * 1.3) * 12,
+            fieldCenter.z + Math.sin(time * 0.0006 + phase * 0.8) * 14,
+          )
+        })
+      }
+
       globe.rotation.x = interactionState.rotationX
       globe.rotation.y = interactionState.rotationY
       globe.rotation.z = interactionState.rotationZ
@@ -1754,9 +1739,7 @@ export function GlobeView({
         highlightedFilterRef.current !== null
       const inComplexityFocus = Boolean(
         complexityFocusAnimRef.current &&
-          (activeComplexityRef.current ||
-            categoryFilterActive ||
-            zoomModeRef.current) &&
+          (activeComplexityRef.current || categoryFilterActive) &&
           !clusterFocusRef.current &&
           !linkClusterFocusRef.current,
       )
@@ -1783,12 +1766,11 @@ export function GlobeView({
       const focusSnap =
         clusterFocused && focusEnterAge < 1200 && Math.abs(delta) > 0.5
       const focusPullBack = clusterFocused && delta > 0
-      const screenFillZoomActive =
-        comprehensiveZoomTargetRef.current != null &&
-        (zoomModeRef.current ||
-          Boolean(activeComplexityRef.current) ||
+      const filterZoomActive =
+        filterZoomTargetRef.current != null &&
+        (Boolean(activeComplexityRef.current) ||
           highlightedFilterRef.current !== null)
-      const zoomSmooth = screenFillZoomActive
+      const zoomSmooth = filterZoomActive
         ? 1 - Math.pow(COMPREHENSIVE_ZOOM_SMOOTH, timeScale)
         : focusSnap
           ? 1
@@ -1801,7 +1783,7 @@ export function GlobeView({
         !interactionState.dragActive &&
         !clusterFocused &&
         !inComplexityFocus &&
-        !screenFillZoomActive &&
+        !filterZoomActive &&
         !selectedItemRef.current
       const autoZoomRamp = 1 - introExitBlend
       const autoZoomOffset =
@@ -1853,19 +1835,6 @@ export function GlobeView({
       const categoryBlend = categoryBlendRef.current
       const activeComplexity = activeComplexityRef.current
       const highlightedFilter = highlightedFilterRef.current
-      const comprehensiveActive =
-        comprehensiveModeRef.current &&
-        (Boolean(activeComplexity) || highlightedFilter !== null) &&
-        (complexityBlend > 0.01 || categoryBlend > 0.01) &&
-        !clusterDimActive &&
-        !constellationFocusId &&
-        !linkClusterFocused
-      const zoomModeActive =
-        zoomModeRef.current &&
-        !clusterDimActive &&
-        !constellationFocusId &&
-        !linkClusterFocused
-      const screenFillActive = comprehensiveActive || zoomModeActive
 
       const introLockedNow = introLockedRef.current
       const introVisualProgress = introLockedNow ? introProgress : 1
@@ -1914,11 +1883,11 @@ export function GlobeView({
 
         if (!updateObjectVisibility(obj, camera, el, visibilityZ)) continue
 
-        if (screenFillActive && isGlobePointFacingCamera(obj, camera)) {
-          if (el.style.opacity !== '0') el.style.opacity = '0'
-          el.style.pointerEvents = 'none'
-          obj.userData.globePointerEvents = 'none'
-          continue
+        if (isCategoryLayout && categoryModeRef.current === 'selfie') {
+          const scale = 0.72 + (i % 7) * 0.02
+          if (Math.abs(obj.scale.x - scale) > 0.01) {
+            obj.scale.setScalar(scale)
+          }
         }
 
         if (introVisualActive) {
@@ -2137,23 +2106,10 @@ export function GlobeView({
           }
         }
 
-        const filterActive = highlightedFilter !== null
-        const matchesComprehensiveSelection =
-          comprehensiveActive &&
-          (!activeComplexity || item.complexity === activeComplexity) &&
-          (!filterActive || itemMatchesFilter(item, highlightedFilter))
-        const matchesZoomDisplay = zoomModeActive
-
-        if (matchesComprehensiveSelection || matchesZoomDisplay) {
-          opacity = 1
-        }
-
         if (el.style.zIndex !== zIndex) el.style.zIndex = zIndex
 
         if (
-          depthFade > 0 &&
-          !matchesComprehensiveSelection &&
-          !matchesZoomDisplay
+          depthFade > 0
         ) {
           worldPos.setFromMatrixPosition(obj.matrixWorld)
           const dist = worldPos.distanceTo(camera.position)
@@ -2252,7 +2208,28 @@ export function GlobeView({
       cssRenderer.render(scene, camera)
 
       const { clientWidth, clientHeight } = container
+      const categoryModeActive = isCategoryModeActive(categoryModeRef.current)
+      const categoryView = categoryViewRef.current
       if (
+        categoryModeActive &&
+        categoryView.showConnectionLines &&
+        layoutClustersRef.current.length > 0
+      ) {
+        drawLayoutClusterThreads(
+          threadCtx,
+          layoutClustersRef.current,
+          objectById,
+          camera,
+          clientWidth,
+          clientHeight,
+          layoutBridgesRef.current,
+          constellationRef.current.lineColor,
+          constellationRef.current.lineThickness,
+          constellationRef.current.lineColor,
+          categoryView.lineOpacity,
+          categoryHubCentersRef.current,
+        )
+      } else if (
         linkClusterRef.current.enabled &&
         linkClusterFocusRef.current &&
         clustersRef.current
@@ -2293,6 +2270,11 @@ export function GlobeView({
         globe.remove(obj)
         obj.element.remove()
       })
+      categoryHubLabelsRef.current.forEach((label) => {
+        globe.remove(label)
+        label.element.remove()
+      })
+      categoryHubLabelsRef.current = []
       objectsRef.current = []
       objectByIdRef.current.clear()
       clustersRef.current = null
@@ -2315,6 +2297,9 @@ export function GlobeView({
   }, [
     displayItems,
     globeArrangement,
+    categoryMode,
+    categoryView.clusterSpread,
+    categoryView.showCategoryLabels,
     constellation.clusterSpread,
     constellation.elementSeparation,
     constellation.elementLayout,

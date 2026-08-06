@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGallery } from '../context/GalleryContext'
-import { CATEGORIES, type Category } from '../types/gallery'
+import { CATEGORIES, CATEGORY_MODE_OPTIONS, type Category } from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
 import { MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT, ARRANGEMENT_OPTIONS } from '../lib/globe'
 import {
@@ -89,10 +89,10 @@ export function HamburgerMenu({
     setLinkCluster,
     cameraControls,
     setCameraControls,
-    comprehensiveMode,
-    setComprehensiveMode,
-    zoomMode,
-    setZoomMode,
+    categoryMode,
+    setCategoryMode,
+    categoryView,
+    setCategoryView,
     filteredItems,
   } = useGallery()
   const { state, toggle, close, showPanel, triggerLocked } = useSettingsMenuState()
@@ -172,37 +172,93 @@ export function HamburgerMenu({
           >
             <SettingsLibInfo />
 
-            <p className="hamburger-menu__section-label">Comprehensive mode</p>
-            <button
-              type="button"
-              onClick={() => setComprehensiveMode(!comprehensiveMode)}
-              className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                comprehensiveMode
-                  ? 'hamburger-menu__list-btn--active'
-                  : 'hamburger-menu__list-btn--inactive'
-              }`}
-            >
-              {comprehensiveMode
-                ? 'On — zoom fills screen on complexity'
-                : 'Off — standard globe view'}
-            </button>
+            <p className="hamburger-menu__section-label">Category view</p>
+            <div className="hamburger-menu__pill-row">
+              {CATEGORY_MODE_OPTIONS.map((option) => (
+                <PillButton
+                  key={option.id}
+                  label={option.label}
+                  active={categoryMode === option.id}
+                  onClick={() => setCategoryMode(option.id)}
+                />
+              ))}
+            </div>
 
-            <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
-              Zoom
-            </p>
-            <button
-              type="button"
-              onClick={() => setZoomMode(!zoomMode)}
-              className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
-                zoomMode
-                  ? 'hamburger-menu__list-btn--active'
-                  : 'hamburger-menu__list-btn--inactive'
-              }`}
-            >
-              {zoomMode
-                ? 'On — back hemisphere fills screen'
-                : 'Off — standard globe view'}
-            </button>
+            {categoryMode !== 'globe' ? (
+              <>
+                <p className="hamburger-menu__subsection-label">Connections</p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryView({
+                      showConnectionLines: !categoryView.showConnectionLines,
+                    })
+                  }
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.showConnectionLines
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.showConnectionLines
+                    ? 'On — lines between categories'
+                    : 'Off — hide category lines'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryView({
+                      showCategoryLabels: !categoryView.showCategoryLabels,
+                    })
+                  }
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.showCategoryLabels
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.showCategoryLabels
+                    ? 'On — show category labels'
+                    : 'Off — hide category labels'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryView({ floatAnimation: !categoryView.floatAnimation })
+                  }
+                  className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                    categoryView.floatAnimation
+                      ? 'hamburger-menu__list-btn--active'
+                      : 'hamburger-menu__list-btn--inactive'
+                  }`}
+                >
+                  {categoryView.floatAnimation
+                    ? 'On — categories drift gently'
+                    : 'Off — static category layout'}
+                </button>
+
+                <SliderControl
+                  label="Cluster spread"
+                  min={0.5}
+                  max={2.5}
+                  step={0.05}
+                  value={categoryView.clusterSpread}
+                  format={(v) => `${Math.round(v * 100)}%`}
+                  onChange={(clusterSpread) => setCategoryView({ clusterSpread })}
+                />
+                <SliderControl
+                  label="Line opacity"
+                  min={0.05}
+                  max={1}
+                  step={0.05}
+                  value={categoryView.lineOpacity}
+                  format={(v) => `${Math.round(v * 100)}%`}
+                  onChange={(lineOpacity) => setCategoryView({ lineOpacity })}
+                />
+              </>
+            ) : null}
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
               Group by

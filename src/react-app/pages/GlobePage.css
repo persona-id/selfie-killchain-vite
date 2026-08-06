@@ -14,6 +14,21 @@
   background-color: transparent;
 }
 
+.globe-view__hub-label {
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.42);
+  font-family: var(--font-mono);
+  font-size: calc(10px * var(--type-scale));
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e2e8f0;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
 .globe-page__nav {
   left: 0;
   right: 0;

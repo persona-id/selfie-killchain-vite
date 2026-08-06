@@ -22,9 +22,12 @@ import {
   DEFAULT_LINK_CLUSTER,
   DEFAULT_CAMERA_CONTROLS,
   DEFAULT_CONSTELLATION,
-  DEFAULT_COMPREHENSIVE_MODE,
+  DEFAULT_CATEGORY_MODE,
+  DEFAULT_CATEGORY_VIEW,
   DEFAULT_GLOBE_ARRANGEMENT,
-  DEFAULT_ZOOM_MODE,
+  type GlobeCategoryMode,
+  type CategoryViewSettings,
+  CATEGORY_MODE_OPTIONS,
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
   MAX_DEPTH_FADE,
@@ -56,8 +59,8 @@ type StoredState = {
   linkCluster: LinkClusterSettings
   cameraControls: CameraControlSettings
   constellation: ConstellationSettings
-  comprehensiveMode: boolean
-  zoomMode: boolean
+  categoryMode: GlobeCategoryMode
+  categoryView: CategoryViewSettings
 }
 
 type GalleryContextValue = {
@@ -79,10 +82,10 @@ type GalleryContextValue = {
   setCameraControls: (settings: Partial<CameraControlSettings>) => void
   setConstellation: (settings: Partial<ConstellationSettings>) => void
   setGlobeAnimation: (animation: GlobeAnimation) => void
-  comprehensiveMode: boolean
-  setComprehensiveMode: (enabled: boolean) => void
-  zoomMode: boolean
-  setZoomMode: (enabled: boolean) => void
+  categoryMode: GlobeCategoryMode
+  setCategoryMode: (mode: GlobeCategoryMode) => void
+  categoryView: CategoryViewSettings
+  setCategoryView: (settings: Partial<CategoryViewSettings>) => void
   activeCategories: Set<Category>
   toggleCategory: (category: Category) => void
   selectAllCategories: () => void
@@ -121,6 +124,13 @@ function normalizeHex(color: string): string {
   return KILLCHAIN_PAGE_BG
 }
 
+function isCategoryMode(value: unknown): value is GlobeCategoryMode {
+  return (
+    typeof value === 'string' &&
+    CATEGORY_MODE_OPTIONS.some((option) => option.id === value)
+  )
+}
+
 function loadStoredState(): StoredState {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
@@ -136,8 +146,8 @@ function loadStoredState(): StoredState {
         linkCluster: { ...DEFAULT_LINK_CLUSTER },
         cameraControls: { ...DEFAULT_CAMERA_CONTROLS },
         constellation: { ...DEFAULT_CONSTELLATION },
-        comprehensiveMode: DEFAULT_COMPREHENSIVE_MODE,
-        zoomMode: DEFAULT_ZOOM_MODE,
+        categoryMode: DEFAULT_CATEGORY_MODE,
+        categoryView: { ...DEFAULT_CATEGORY_VIEW },
       }
     }
     const parsed = JSON.parse(raw) as StoredState
@@ -209,8 +219,23 @@ function loadStoredState(): StoredState {
         fieldLayout:
           parsed.constellation?.fieldLayout ?? DEFAULT_CONSTELLATION.fieldLayout,
       },
-      comprehensiveMode: parsed.comprehensiveMode ?? DEFAULT_COMPREHENSIVE_MODE,
-      zoomMode: parsed.zoomMode ?? DEFAULT_ZOOM_MODE,
+      categoryMode: isCategoryMode(parsed.categoryMode)
+        ? parsed.categoryMode
+        : DEFAULT_CATEGORY_MODE,
+      categoryView: {
+        ...DEFAULT_CATEGORY_VIEW,
+        ...parsed.categoryView,
+        clusterSpread: clamp(
+          parsed.categoryView?.clusterSpread ?? DEFAULT_CATEGORY_VIEW.clusterSpread,
+          0.5,
+          2.5,
+        ),
+        lineOpacity: clamp(
+          parsed.categoryView?.lineOpacity ?? DEFAULT_CATEGORY_VIEW.lineOpacity,
+          0.05,
+          1,
+        ),
+      },
     }
   } catch {
     return {
@@ -224,8 +249,8 @@ function loadStoredState(): StoredState {
       linkCluster: { ...DEFAULT_LINK_CLUSTER },
       cameraControls: { ...DEFAULT_CAMERA_CONTROLS },
       constellation: { ...DEFAULT_CONSTELLATION },
-      comprehensiveMode: DEFAULT_COMPREHENSIVE_MODE,
-      zoomMode: DEFAULT_ZOOM_MODE,
+      categoryMode: DEFAULT_CATEGORY_MODE,
+      categoryView: { ...DEFAULT_CATEGORY_VIEW },
     }
   }
 }
@@ -265,10 +290,12 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   const [constellation, setConstellationState] = useState<ConstellationSettings>(
     stored.constellation,
   )
-  const [comprehensiveMode, setComprehensiveModeState] = useState(
-    stored.comprehensiveMode,
+  const [categoryMode, setCategoryModeState] = useState<GlobeCategoryMode>(
+    stored.categoryMode,
   )
-  const [zoomMode, setZoomModeState] = useState(stored.zoomMode)
+  const [categoryView, setCategoryViewState] = useState<CategoryViewSettings>(
+    stored.categoryView,
+  )
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
   const [modalScope, setModalScope] = useState<GalleryItem[] | null>(null)
 
@@ -293,8 +320,8 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
         linkCluster,
         cameraControls,
         constellation,
-        comprehensiveMode,
-        zoomMode,
+        categoryMode,
+        categoryView,
       }),
     )
 
@@ -309,8 +336,8 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     linkCluster,
     cameraControls,
     constellation,
-    comprehensiveMode,
-    zoomMode,
+    categoryMode,
+    categoryView,
   ])
 
   const categoryCounts = useMemo(() => {
@@ -465,14 +492,21 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  const setComprehensiveMode = useCallback((enabled: boolean) => {
-    setComprehensiveModeState(enabled)
-    if (enabled) setZoomModeState(false)
+  const setCategoryMode = useCallback((mode: GlobeCategoryMode) => {
+    setCategoryModeState(mode)
   }, [])
 
-  const setZoomMode = useCallback((enabled: boolean) => {
-    setZoomModeState(enabled)
-    if (enabled) setComprehensiveModeState(false)
+  const setCategoryView = useCallback((settings: Partial<CategoryViewSettings>) => {
+    setCategoryViewState((prev) => ({
+      ...prev,
+      ...settings,
+      clusterSpread: clamp(
+        settings.clusterSpread ?? prev.clusterSpread,
+        0.5,
+        2.5,
+      ),
+      lineOpacity: clamp(settings.lineOpacity ?? prev.lineOpacity, 0.05, 1),
+    }))
   }, [])
 
   const openModal = useCallback((item: GalleryItem) => {
@@ -519,10 +553,10 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     setCameraControls,
     constellation,
     setConstellation,
-    comprehensiveMode,
-    setComprehensiveMode,
-    zoomMode,
-    setZoomMode,
+    categoryMode,
+    setCategoryMode,
+    categoryView,
+    setCategoryView,
     activeCategories,
     toggleCategory,
     selectAllCategories,

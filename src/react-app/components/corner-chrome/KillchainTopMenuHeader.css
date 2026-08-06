@@ -69,11 +69,30 @@
   gap: 0;
 }
 
-.killchain-top-menu-header__meta-col p,
 .killchain-top-menu-header__line-text {
+  display: grid;
   margin: 0;
-  min-height: 1.1em;
   text-align: left;
+}
+
+.killchain-top-menu-header__line-measure,
+.killchain-top-menu-header__line-typed {
+  grid-area: 1 / 1;
+  justify-self: start;
+  align-self: start;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.killchain-top-menu-header__line-measure {
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.killchain-top-menu-header__line-typed {
+  position: relative;
+  z-index: 1;
 }
 
 .killchain-top-menu-header__cursor {

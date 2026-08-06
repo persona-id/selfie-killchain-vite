@@ -10,18 +10,25 @@ interface KillchainTopMenuHeaderProps {
 }
 
 function TypewriterLine({
+  fullLine,
   value,
   showCursor,
 }: {
+  fullLine: string
   value: string
   showCursor: boolean
 }) {
   return (
     <p className="killchain-top-menu-header__line-text">
-      {value}
-      {showCursor ? (
-        <span className="killchain-top-menu-header__cursor" aria-hidden />
-      ) : null}
+      <span className="killchain-top-menu-header__line-measure" aria-hidden>
+        {fullLine}
+      </span>
+      <span className="killchain-top-menu-header__line-typed">
+        {value}
+        {showCursor ? (
+          <span className="killchain-top-menu-header__cursor" aria-hidden />
+        ) : null}
+      </span>
     </p>
   )
 }
@@ -67,20 +74,24 @@ export function KillchainTopMenuHeader({
       >
         <div className="killchain-top-menu-header__meta-col">
           <TypewriterLine
+            fullLine={lines[0]}
             value={values[0] ?? ''}
             showCursor={lineIndex === 0 && !complete}
           />
           <TypewriterLine
+            fullLine={lines[1]}
             value={values[1] ?? ''}
             showCursor={lineIndex === 1 && !complete}
           />
         </div>
         <div className="killchain-top-menu-header__meta-col">
           <TypewriterLine
+            fullLine={lines[2]}
             value={values[2] ?? ''}
             showCursor={lineIndex === 2 && !complete}
           />
           <TypewriterLine
+            fullLine={lines[3]}
             value={values[3] ?? ''}
             showCursor={lineIndex === 3 && !complete}
           />

@@ -39,6 +39,11 @@ export function useSequentialTypewriter(lines: readonly string[], active: boolea
     let currentLine = 0
     let charIndex = 0
     let cancelled = false
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+    const schedule = (delay: number) => {
+      timeoutId = window.setTimeout(tick, delay)
+    }
 
     const tick = () => {
       if (cancelled) return
@@ -68,13 +73,14 @@ export function useSequentialTypewriter(lines: readonly string[], active: boolea
         }
       }
 
-      window.setTimeout(tick, CHAR_DELAY_MS)
+      schedule(CHAR_DELAY_MS)
     }
 
-    const starter = window.setTimeout(tick, CHAR_DELAY_MS)
+    schedule(CHAR_DELAY_MS)
+
     return () => {
       cancelled = true
-      window.clearTimeout(starter)
+      if (timeoutId !== null) window.clearTimeout(timeoutId)
     }
   }, [active, linesKey])
 
