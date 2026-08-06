@@ -1031,13 +1031,15 @@ export function GlobeView({
         const clusterItemsForOrb = displayItems.filter((item) =>
           clusterGlobe.itemIds.has(item.id),
         )
-        const orb = createSeverityOrb(
-          dominantClusterComplexity(clusterItemsForOrb),
-          categoryViewRef.current.severityOrbAnimation,
-        )
-        orb.userData.orbPhase =
-          clusterGlobe.center.x * 0.0031 + clusterGlobe.center.z * 0.0019
-        group.add(orb)
+        if (categoryViewRef.current.showSeverityOrb) {
+          const orb = createSeverityOrb(
+            dominantClusterComplexity(clusterItemsForOrb),
+            categoryViewRef.current.severityOrbAnimation,
+          )
+          orb.userData.orbPhase =
+            clusterGlobe.center.x * 0.0031 + clusterGlobe.center.z * 0.0019
+          group.add(orb)
+        }
         globe.add(group)
         clusterGroups.set(clusterGlobe.id, group)
       })
@@ -1751,22 +1753,24 @@ export function GlobeView({
         }
 
         const motion = categoryViewRef.current
-        clusterGroupsRef.current.forEach((group, clusterId) => {
-          const orbVisible = motion.showSeverityOrb && (!focusId || focusId === clusterId)
-          group.children.forEach((child) => {
-            if (!child.userData.isSeverityOrb) return
-            const orb = child as CSS3DObject
-            orb.element.style.display = orbVisible ? '' : 'none'
-            if (!orbVisible) return
-            updateSeverityOrb(
-              orb,
-              now,
-              motion.severityOrbAnimation,
-              motion.motionSpeed,
-            )
-            billboardTowardCamera(orb, camera)
+        if (motion.showSeverityOrb) {
+          clusterGroupsRef.current.forEach((group, clusterId) => {
+            const orbVisible = !focusId || focusId === clusterId
+            group.children.forEach((child) => {
+              if (!child.userData.isSeverityOrb) return
+              const orb = child as CSS3DObject
+              orb.element.style.display = orbVisible ? '' : 'none'
+              if (!orbVisible) return
+              updateSeverityOrb(
+                orb,
+                now,
+                motion.severityOrbAnimation,
+                motion.motionSpeed,
+              )
+              billboardTowardCamera(orb, camera)
+            })
           })
-        })
+        }
       }
 
       if (

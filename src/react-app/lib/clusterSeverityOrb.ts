@@ -51,24 +51,24 @@ export function updateSeverityOrb(
 
   switch (animation) {
     case 'pulse':
-      scale = 0.88 + Math.sin(t * 2.4 + phase) * 0.14
-      opacity = 0.62 + Math.sin(t * 2.4 + phase) * 0.22
+      scale = 0.9 + Math.sin(t * 2.4 + phase) * 0.12
+      opacity = 0.75 + Math.sin(t * 2.4 + phase) * 0.18
       break
     case 'breathe':
-      scale = 0.9 + Math.sin(t * 1.1 + phase) * 0.1
-      opacity = 0.7 + Math.sin(t * 1.1 + phase) * 0.12
+      scale = 0.92 + Math.sin(t * 1.1 + phase) * 0.08
+      opacity = 0.8 + Math.sin(t * 1.1 + phase) * 0.1
       break
     case 'glow':
       scale = 1
-      opacity = 0.68 + Math.sin(t * 1.8 + phase) * 0.2
-      el.style.filter = `blur(${6 + Math.sin(t * 1.8 + phase) * 3}px)`
+      opacity = 0.72 + Math.sin(t * 1.8 + phase) * 0.22
       break
     case 'static':
       scale = 1
-      opacity = 0.78
-      el.style.filter = 'blur(6px)'
+      opacity = 0.88
       break
   }
+
+  el.style.filter = 'none'
 
   orb.scale.setScalar(scale)
   el.style.opacity = String(opacity)

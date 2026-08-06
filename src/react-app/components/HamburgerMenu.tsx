@@ -326,8 +326,8 @@ export function HamburgerMenu({
                   }`}
                 >
                   {categoryView.showSeverityOrb
-                    ? 'On — fraud severity orb'
-                    : 'Off — hide severity orb'}
+                    ? 'On — severity orbs'
+                    : 'Off — severity orbs'}
                 </button>
 
                 {categoryView.showSeverityOrb ? (
