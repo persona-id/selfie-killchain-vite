@@ -225,10 +225,7 @@
     border-color 0.18s ease;
 }
 
-.image-modal__view-btn--matrix:hover {
-  background: var(--bg-preview);
-}
-
+.image-modal__view-btn--matrix:hover,
 .image-modal__view-btn--deconstruct:hover {
   background: var(--accent-green);
   border-color: var(--accent-green);

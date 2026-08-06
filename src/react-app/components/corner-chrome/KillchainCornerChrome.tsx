@@ -6,6 +6,7 @@ import type {
 import { HamburgerMenu } from '../HamburgerMenu'
 import UtilityMenu from '../utility-menu/UtilityMenu'
 import { ComplexityCornerMenu } from './ComplexityCornerMenu'
+import { KillchainTopMenuHeader } from './KillchainTopMenuHeader'
 import { StageNavCorner } from './StageNavCorner'
 import './KillchainCornerChrome.css'
 import './StageNavCorner.css'
@@ -43,6 +44,10 @@ export function KillchainCornerChrome({
       className={`killchain-corner-chrome${hidden ? ' killchain-corner-chrome--hidden' : ''}`}
       aria-hidden={hidden}
     >
+      {isGlobe ? (
+        <KillchainTopMenuHeader hidden={hidden} entranceReady={entranceReady} />
+      ) : null}
+
       <div className="killchain-corner-chrome__corner killchain-corner-chrome__corner--tl">
         {showStageNavShell && left.stageNav ? (
           <StageNavCorner

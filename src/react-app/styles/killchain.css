@@ -124,18 +124,9 @@
 
 @media (min-width: 1024px) {
   .killchain-app {
-    --utility-menu-open-width: min(
-      75vw,
-      calc(100vw - 2 * var(--page-edge-pad))
-    );
-    --corner-menu-preview-inner-width: calc(
-      var(--utility-menu-open-width) - var(--corner-menu-pad-start) - var(--corner-menu-pad-end) -
-        2 * var(--corner-menu-preview-pad-x)
-    );
-    --corner-menu-preview-frame-height: calc(var(--corner-menu-preview-inner-width) * 9 / 16);
-    --corner-menu-preview-shell-height: calc(
-      var(--corner-menu-preview-pad-y) * 2 + var(--corner-menu-preview-intro-height) +
-        var(--corner-menu-preview-content-gap) + var(--corner-menu-preview-frame-height)
+    --utility-menu-open-max-height: min(
+      75dvh,
+      calc(100dvh - 2 * var(--page-edge-pad))
     );
   }
 }

@@ -1,0 +1,79 @@
+.killchain-top-menu-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 41px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--shell-entrance-duration, 1.0625s)
+    var(--shell-entrance-ease, cubic-bezier(0.7, 0.01, 0.11, 0.96));
+}
+
+.killchain-top-menu-header--visible {
+  opacity: 1;
+}
+
+.killchain-top-menu-header--hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.killchain-top-menu-header__logo {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: flex;
+  align-items: center;
+  transform: translateY(-50%);
+  pointer-events: auto;
+  line-height: 0;
+}
+
+.killchain-top-menu-header__logo img {
+  display: block;
+  width: 23px;
+  height: 30px;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.18));
+}
+
+.killchain-top-menu-header__meta {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: 300;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #8e8e8e;
+  white-space: nowrap;
+}
+
+.killchain-top-menu-header__meta-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.killchain-top-menu-header__meta-col p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .killchain-top-menu-header__meta {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .killchain-top-menu-header {
+    transition: none;
+  }
+}

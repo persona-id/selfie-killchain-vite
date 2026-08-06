@@ -270,7 +270,7 @@ export function ImageModal() {
                     onClick={() => goToView('matrix')}
                     className="image-modal__view-btn image-modal__view-btn--matrix"
                   >
-                    Matrix
+                    Show tampering Layers
                     <ArrowIcon />
                   </button>
                   <button
