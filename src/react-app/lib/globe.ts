@@ -489,6 +489,21 @@ export function computeGlobeOverviewCameraZ(
   return boundingRadius / tan
 }
 
+export function computeZoomFocusRotation(
+  objects: CSS3DObject[],
+  clusterFieldCenters?: Map<string, THREE.Vector3>,
+): { x: number; y: number } | null {
+  const selected: THREE.Vector3[] = []
+
+  for (let i = 0; i < objects.length; i++) {
+    const position = collectGlobeObjectPosition(objects[i], clusterFieldCenters)
+    if (position) selected.push(position)
+  }
+
+  if (selected.length === 0) return null
+  return globeRotationToFaceDirections(selected, [], true)
+}
+
 /** Closest overview zoom so the globe fills the viewport (comprehensive mode). */
 export function computeComprehensiveCameraZ(
   boundingRadius: number,
@@ -963,12 +978,37 @@ export function updateObjectVisibility(
   return visible
 }
 
+export const DEPTH_FADE_NEAR_BASE = 0.85
+export const DEPTH_FADE_FAR_BASE = 0.95
+
+export function depthFadeDistanceBounds(
+  cameraZ: number,
+  fieldRadius: number,
+  fadeRange = 1,
+): { near: number; far: number } {
+  return {
+    near: cameraZ - fieldRadius * DEPTH_FADE_NEAR_BASE * fadeRange,
+    far: cameraZ + fieldRadius * DEPTH_FADE_FAR_BASE * fadeRange,
+  }
+}
+
+export function depthFadeDistanceT(
+  distance: number,
+  cameraZ: number,
+  fieldRadius: number,
+  fadeRange = 1,
+): number {
+  const { near, far } = depthFadeDistanceBounds(cameraZ, fieldRadius, fadeRange)
+  return Math.max(0, Math.min(1, (distance - near) / (far - near)))
+}
+
 export function distanceOpacity(
   object: CSS3DObject,
   camera: THREE.Camera,
   element: HTMLElement,
   cameraZ: number,
   depthFade: number,
+  fadeRange = 1,
 ): void {
   if (element.dataset.hovered === 'true' || depthFade <= 0) {
     if (element.style.opacity !== '1') element.style.opacity = '1'
@@ -977,10 +1017,7 @@ export function distanceOpacity(
 
   _worldPos.setFromMatrixPosition(object.matrixWorld)
   const dist = _worldPos.distanceTo(camera.position)
-
-  const near = cameraZ - GLOBE_RADIUS * 0.85
-  const far = cameraZ + GLOBE_RADIUS * 0.95
-  const t = THREE.MathUtils.clamp((dist - near) / (far - near), 0, 1)
+  const t = depthFadeDistanceT(dist, cameraZ, GLOBE_RADIUS, fadeRange)
   const opacity = String(Math.max(1 - depthFade * 0.85, 1 - t * 0.72 * depthFade))
   if (element.style.opacity !== opacity) element.style.opacity = opacity
 }

@@ -11,6 +11,10 @@
   gap: var(--corner-stack-gap, 12px);
 }
 
+.complexity-corner__panel.glass-surface {
+  box-shadow: none;
+}
+
 .complexity-corner__panel {
   box-sizing: border-box;
   width: min(320px, calc(100vw - 2 * var(--page-edge-pad, 50px)));

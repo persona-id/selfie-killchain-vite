@@ -23,8 +23,15 @@ import {
   DEFAULT_CAMERA_CONTROLS,
   DEFAULT_CONSTELLATION,
   DEFAULT_COMPREHENSIVE_MODE,
+  DEFAULT_ZOOM_MODE,
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
+  MAX_DEPTH_FADE,
+  MAX_DEPTH_FADE_RANGE,
+  MAX_DEPTH_VISIBILITY,
+  MIN_DEPTH_FADE,
+  MIN_DEPTH_FADE_RANGE,
+  MIN_DEPTH_VISIBILITY,
   type Complexity,
 } from '../types/gallery'
 import {
@@ -49,6 +56,7 @@ type StoredState = {
   cameraControls: CameraControlSettings
   constellation: ConstellationSettings
   comprehensiveMode: boolean
+  zoomMode: boolean
 }
 
 type GalleryContextValue = {
@@ -72,6 +80,8 @@ type GalleryContextValue = {
   setGlobeAnimation: (animation: GlobeAnimation) => void
   comprehensiveMode: boolean
   setComprehensiveMode: (enabled: boolean) => void
+  zoomMode: boolean
+  setZoomMode: (enabled: boolean) => void
   activeCategories: Set<Category>
   toggleCategory: (category: Category) => void
   selectAllCategories: () => void
@@ -126,6 +136,7 @@ function loadStoredState(): StoredState {
         cameraControls: { ...DEFAULT_CAMERA_CONTROLS },
         constellation: { ...DEFAULT_CONSTELLATION },
         comprehensiveMode: DEFAULT_COMPREHENSIVE_MODE,
+        zoomMode: DEFAULT_ZOOM_MODE,
       }
     }
     const parsed = JSON.parse(raw) as StoredState
@@ -153,7 +164,21 @@ function loadStoredState(): StoredState {
         ...parsed.globeDisplay,
         imageShape:
           parsed.globeDisplay?.imageShape ?? DEFAULT_GLOBE_DISPLAY.imageShape,
-        depthFade: 1,
+        depthFade: clamp(
+          parsed.globeDisplay?.depthFade ?? DEFAULT_GLOBE_DISPLAY.depthFade,
+          MIN_DEPTH_FADE,
+          MAX_DEPTH_FADE,
+        ),
+        depthVisibility: clamp(
+          parsed.globeDisplay?.depthVisibility ?? DEFAULT_GLOBE_DISPLAY.depthVisibility,
+          MIN_DEPTH_VISIBILITY,
+          MAX_DEPTH_VISIBILITY,
+        ),
+        depthFadeRange: clamp(
+          parsed.globeDisplay?.depthFadeRange ?? DEFAULT_GLOBE_DISPLAY.depthFadeRange,
+          MIN_DEPTH_FADE_RANGE,
+          MAX_DEPTH_FADE_RANGE,
+        ),
       },
       linkCluster: {
         ...DEFAULT_LINK_CLUSTER,
@@ -184,6 +209,7 @@ function loadStoredState(): StoredState {
           parsed.constellation?.fieldLayout ?? DEFAULT_CONSTELLATION.fieldLayout,
       },
       comprehensiveMode: parsed.comprehensiveMode ?? DEFAULT_COMPREHENSIVE_MODE,
+      zoomMode: parsed.zoomMode ?? DEFAULT_ZOOM_MODE,
     }
   } catch {
     return {
@@ -198,6 +224,7 @@ function loadStoredState(): StoredState {
       cameraControls: { ...DEFAULT_CAMERA_CONTROLS },
       constellation: { ...DEFAULT_CONSTELLATION },
       comprehensiveMode: DEFAULT_COMPREHENSIVE_MODE,
+      zoomMode: DEFAULT_ZOOM_MODE,
     }
   }
 }
@@ -240,6 +267,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
   const [comprehensiveMode, setComprehensiveModeState] = useState(
     stored.comprehensiveMode,
   )
+  const [zoomMode, setZoomModeState] = useState(stored.zoomMode)
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
   const [modalScope, setModalScope] = useState<GalleryItem[] | null>(null)
 
@@ -265,6 +293,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
         cameraControls,
         constellation,
         comprehensiveMode,
+        zoomMode,
       }),
     )
 
@@ -280,6 +309,7 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     cameraControls,
     constellation,
     comprehensiveMode,
+    zoomMode,
   ])
 
   const categoryCounts = useMemo(() => {
@@ -365,7 +395,21 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       aspectRatio: settings.aspectRatio ?? prev.aspectRatio,
       imageShape: settings.imageShape ?? prev.imageShape,
       cornerRadius: clamp(settings.cornerRadius ?? prev.cornerRadius, 0, 24),
-      depthFade: 1,
+      depthFade: clamp(
+        settings.depthFade ?? prev.depthFade,
+        MIN_DEPTH_FADE,
+        MAX_DEPTH_FADE,
+      ),
+      depthVisibility: clamp(
+        settings.depthVisibility ?? prev.depthVisibility,
+        MIN_DEPTH_VISIBILITY,
+        MAX_DEPTH_VISIBILITY,
+      ),
+      depthFadeRange: clamp(
+        settings.depthFadeRange ?? prev.depthFadeRange,
+        MIN_DEPTH_FADE_RANGE,
+        MAX_DEPTH_FADE_RANGE,
+      ),
     }))
   }, [])
 
@@ -422,6 +466,12 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
 
   const setComprehensiveMode = useCallback((enabled: boolean) => {
     setComprehensiveModeState(enabled)
+    if (enabled) setZoomModeState(false)
+  }, [])
+
+  const setZoomMode = useCallback((enabled: boolean) => {
+    setZoomModeState(enabled)
+    if (enabled) setComprehensiveModeState(false)
   }, [])
 
   const openModal = useCallback((item: GalleryItem) => {
@@ -470,6 +520,8 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
     setConstellation,
     comprehensiveMode,
     setComprehensiveMode,
+    zoomMode,
+    setZoomMode,
     activeCategories,
     toggleCategory,
     selectAllCategories,

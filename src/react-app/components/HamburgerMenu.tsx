@@ -7,6 +7,12 @@ import { MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT, ARRANGEMENT_OPTIONS } from 
 import {
   MAX_GLOBE_IMAGE_SIZE,
   MIN_GLOBE_IMAGE_SIZE,
+  MAX_DEPTH_FADE,
+  MAX_DEPTH_FADE_RANGE,
+  MAX_DEPTH_VISIBILITY,
+  MIN_DEPTH_FADE,
+  MIN_DEPTH_FADE_RANGE,
+  MIN_DEPTH_VISIBILITY,
 } from '../types/gallery'
 import { SETTINGS_MENU_ENTRANCE } from '../constants/shellMotion'
 import {
@@ -85,6 +91,8 @@ export function HamburgerMenu({
     setCameraControls,
     comprehensiveMode,
     setComprehensiveMode,
+    zoomMode,
+    setZoomMode,
     filteredItems,
   } = useGallery()
   const { state, toggle, close, showPanel, triggerLocked } = useSettingsMenuState()
@@ -180,6 +188,23 @@ export function HamburgerMenu({
             </button>
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
+              Zoom
+            </p>
+            <button
+              type="button"
+              onClick={() => setZoomMode(!zoomMode)}
+              className={`hamburger-menu__list-btn hamburger-menu__list-btn--all ${
+                zoomMode
+                  ? 'hamburger-menu__list-btn--active'
+                  : 'hamburger-menu__list-btn--inactive'
+              }`}
+            >
+              {zoomMode
+                ? 'On — back hemisphere fills screen'
+                : 'Off — standard globe view'}
+            </button>
+
+            <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">
               Group by
             </p>
             <div className="hamburger-menu__pill-row">
@@ -231,6 +256,33 @@ export function HamburgerMenu({
               value={globeDisplay.imageSize}
               format={(v) => `${Math.round(v * 100)}%`}
               onChange={(imageSize) => setGlobeDisplay({ imageSize })}
+            />
+            <SliderControl
+              label="Image fading"
+              min={MIN_DEPTH_FADE}
+              max={MAX_DEPTH_FADE}
+              step={0.05}
+              value={globeDisplay.depthFade}
+              format={(v) => (v === 0 ? 'Off' : `${Math.round(v * 100)}%`)}
+              onChange={(depthFade) => setGlobeDisplay({ depthFade })}
+            />
+            <SliderControl
+              label="Depth filter"
+              min={MIN_DEPTH_VISIBILITY}
+              max={MAX_DEPTH_VISIBILITY}
+              step={5}
+              value={globeDisplay.depthVisibility}
+              format={(v) => `${Math.round(v)}`}
+              onChange={(depthVisibility) => setGlobeDisplay({ depthVisibility })}
+            />
+            <SliderControl
+              label="Fade range"
+              min={MIN_DEPTH_FADE_RANGE}
+              max={MAX_DEPTH_FADE_RANGE}
+              step={0.05}
+              value={globeDisplay.depthFadeRange}
+              format={(v) => `${Math.round(v * 100)}%`}
+              onChange={(depthFadeRange) => setGlobeDisplay({ depthFadeRange })}
             />
 
             <p className="hamburger-menu__section-label hamburger-menu__section-label--spaced">

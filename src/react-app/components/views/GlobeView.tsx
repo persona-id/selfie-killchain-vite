@@ -21,8 +21,10 @@ import {
   computeComprehensiveCameraZ,
   computeFilterFocusRotation,
   computeGlobeOverviewCameraZ,
+  computeZoomFocusRotation,
   createGlobeRenderers,
   createPhotoElement,
+  depthFadeDistanceT,
   fitClusterCameraToViewport,
   getGlobePositions,
   globeStaggeredLoadDelayMs,
@@ -135,6 +137,7 @@ export function GlobeView({
     selectedItem,
     activeComplexity,
     comprehensiveMode,
+    zoomMode,
     highlightedFilter,
   } = useGallery()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -214,6 +217,7 @@ export function GlobeView({
     startedAt: number
   } | null>(null)
   const comprehensiveModeRef = useRef(comprehensiveMode)
+  const zoomModeRef = useRef(zoomMode)
   const comprehensiveZoomTargetRef = useRef<number | null>(null)
   const preComprehensiveCameraZRef = useRef<number | null>(null)
   const cssRendererRef = useRef<ReturnType<typeof createGlobeRenderers>['cssRenderer'] | null>(null)
@@ -456,26 +460,24 @@ export function GlobeView({
   displayItemsRef.current = displayItems
   activeComplexityRef.current = activeComplexity
   comprehensiveModeRef.current = comprehensiveMode
+  zoomModeRef.current = zoomMode
   highlightedFilterRef.current = highlightedFilter
 
-  const applyComprehensiveCameraTarget = () => {
+  const applyScreenFillCameraTarget = () => {
     const state = interactionStateRef.current
-    if (!state || !comprehensiveModeRef.current) return
+    if (!state) return
 
-    const complexity = activeComplexityRef.current
-    const filter = highlightedFilterRef.current
-    const hasSelection = Boolean(complexity || filter)
-
-    if (hasSelection) {
-      if (preComprehensiveCameraZRef.current == null) {
-        preComprehensiveCameraZRef.current = state.cameraDistance
-      }
-      const targetZ = computeComprehensiveCameraZ(layoutFieldRadiusRef.current)
-      state.targetCameraDistance = targetZ
-      comprehensiveZoomTargetRef.current = targetZ
-      startFilterFocusAnimation()
-      return
+    if (preComprehensiveCameraZRef.current == null) {
+      preComprehensiveCameraZRef.current = state.cameraDistance
     }
+    const targetZ = computeComprehensiveCameraZ(layoutFieldRadiusRef.current)
+    state.targetCameraDistance = targetZ
+    comprehensiveZoomTargetRef.current = targetZ
+  }
+
+  const restoreScreenFillCamera = () => {
+    const state = interactionStateRef.current
+    if (!state || comprehensiveZoomTargetRef.current == null) return
 
     const restoreZ =
       preComprehensiveCameraZRef.current ?? overviewCameraZRef.current
@@ -484,22 +486,76 @@ export function GlobeView({
     preComprehensiveCameraZRef.current = null
   }
 
+  const applyComprehensiveCameraTarget = () => {
+    if (!comprehensiveModeRef.current) return
+
+    const complexity = activeComplexityRef.current
+    const filter = highlightedFilterRef.current
+    const hasSelection = Boolean(complexity || filter)
+
+    if (hasSelection) {
+      applyScreenFillCameraTarget()
+      startFilterFocusAnimation()
+      return
+    }
+
+    restoreScreenFillCamera()
+  }
+
+  const startZoomFocusAnimation = () => {
+    const state = interactionStateRef.current
+    if (!zoomModeRef.current || !state || objectsRef.current.length === 0) {
+      complexityFocusAnimRef.current = null
+      return
+    }
+
+    const clusterFieldCenters = new Map<string, THREE.Vector3>()
+    clusterGroupsRef.current.forEach((group, clusterId) => {
+      const fieldCenter = group.userData.fieldCenter as THREE.Vector3 | undefined
+      if (fieldCenter) clusterFieldCenters.set(clusterId, fieldCenter)
+    })
+
+    const target = computeZoomFocusRotation(
+      objectsRef.current,
+      clusterFieldCenters.size > 0 ? clusterFieldCenters : undefined,
+    )
+    if (!target) {
+      complexityFocusAnimRef.current = null
+      return
+    }
+
+    complexityFocusAnimRef.current = {
+      startX: state.rotationX,
+      startY: state.rotationY,
+      targetX: target.x,
+      targetY: target.y,
+      startedAt: performance.now(),
+    }
+  }
+
+  const applyZoomModeCameraTarget = () => {
+    if (!zoomModeRef.current) return
+    applyScreenFillCameraTarget()
+    startZoomFocusAnimation()
+  }
+
   useEffect(() => {
-    if (!comprehensiveMode) {
-      const state = interactionStateRef.current
-      if (state && comprehensiveZoomTargetRef.current != null) {
-        state.targetCameraDistance = overviewCameraZRef.current
-        comprehensiveZoomTargetRef.current = null
-        preComprehensiveCameraZRef.current = null
-      }
+    if (!comprehensiveMode && !zoomMode) {
+      restoreScreenFillCamera()
       for (const obj of objectsRef.current) {
         const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
         if (sphereLocal) obj.position.copy(sphereLocal)
       }
       return
     }
+
+    if (zoomMode) {
+      applyZoomModeCameraTarget()
+      return
+    }
+
     applyComprehensiveCameraTarget()
-  }, [comprehensiveMode, activeComplexity, highlightedFilter])
+  }, [comprehensiveMode, zoomMode, activeComplexity, highlightedFilter])
 
   useEffect(() => {
     if (comprehensiveMode && !activeComplexity && !highlightedFilter) {
@@ -578,7 +634,8 @@ export function GlobeView({
     const target = computeFilterFocusRotation(objectsRef.current, {
       complexity,
       highlightedFilter: highlighted,
-      preferBackHemisphere: comprehensiveModeRef.current,
+      preferBackHemisphere:
+        comprehensiveModeRef.current || zoomModeRef.current,
       clusterFieldCenters:
         clusterFieldCenters.size > 0 ? clusterFieldCenters : undefined,
     })
@@ -600,6 +657,8 @@ export function GlobeView({
     startFilterFocusAnimation()
     if (comprehensiveMode) {
       applyComprehensiveCameraTarget()
+    } else if (zoomMode) {
+      applyZoomModeCameraTarget()
     }
   }, [
     activeComplexity,
@@ -607,6 +666,7 @@ export function GlobeView({
     displayItems,
     globeArrangement,
     comprehensiveMode,
+    zoomMode,
   ])
 
   const setHoverLabel = (item: GalleryItem | null) => {
@@ -1034,6 +1094,11 @@ export function GlobeView({
       .map((entry) => entry.obj)
 
     startFilterFocusAnimation()
+    if (zoomModeRef.current) {
+      applyZoomModeCameraTarget()
+    } else if (comprehensiveModeRef.current) {
+      applyComprehensiveCameraTarget()
+    }
 
     const overviewBoundingRadius =
       isClusters && layout
@@ -1357,6 +1422,7 @@ export function GlobeView({
       const depthFade =
         displaySettingsRef.current.depthFade *
         (introLockedRef.current || introExitBlend > 0.01 ? introDepthFadeP : 1)
+      const depthFadeRange = displaySettingsRef.current.depthFadeRange
 
       if (!interactionState.dragActive) {
         const friction = Math.pow(preset.friction, timeScale)
@@ -1365,7 +1431,9 @@ export function GlobeView({
           highlightedFilterRef.current !== null
         const inComplexityFocus =
           focusAnim &&
-          (activeComplexityRef.current || categoryFilterActive) &&
+          (activeComplexityRef.current ||
+            categoryFilterActive ||
+            zoomModeRef.current) &&
           !clusterFocusRef.current &&
           !linkClusterFocusRef.current
 
@@ -1650,7 +1718,9 @@ export function GlobeView({
         highlightedFilterRef.current !== null
       const inComplexityFocus = Boolean(
         complexityFocusAnimRef.current &&
-          (activeComplexityRef.current || categoryFilterActive) &&
+          (activeComplexityRef.current ||
+            categoryFilterActive ||
+            zoomModeRef.current) &&
           !clusterFocusRef.current &&
           !linkClusterFocusRef.current,
       )
@@ -1677,12 +1747,13 @@ export function GlobeView({
       const focusSnap =
         clusterFocused && focusEnterAge < 1200 && Math.abs(delta) > 0.5
       const focusPullBack = clusterFocused && delta > 0
-      const comprehensiveZoomActive =
-        comprehensiveModeRef.current &&
-        (Boolean(activeComplexityRef.current) ||
-          highlightedFilterRef.current !== null) &&
-        comprehensiveZoomTargetRef.current != null
-      const zoomSmooth = comprehensiveZoomActive
+      const screenFillZoomActive =
+        comprehensiveZoomTargetRef.current != null &&
+        ((comprehensiveModeRef.current &&
+          (Boolean(activeComplexityRef.current) ||
+            highlightedFilterRef.current !== null)) ||
+          zoomModeRef.current)
+      const zoomSmooth = screenFillZoomActive
         ? 1 - Math.pow(COMPREHENSIVE_ZOOM_SMOOTH, timeScale)
         : focusSnap
           ? 1
@@ -1695,7 +1766,7 @@ export function GlobeView({
         !interactionState.dragActive &&
         !clusterFocused &&
         !inComplexityFocus &&
-        !comprehensiveZoomActive &&
+        !screenFillZoomActive &&
         !selectedItemRef.current
       const autoZoomRamp = 1 - introExitBlend
       const autoZoomOffset =
@@ -1735,7 +1806,9 @@ export function GlobeView({
         linkClusterFocusRef.current
       const constellationFocusId = isClusters ? clusterFocusRef.current : null
       const visibilityZ =
-        (isClusters && constellationFocusId) || linkClusterFocused ? 240 : 80
+        (isClusters && constellationFocusId) || linkClusterFocused
+          ? 240
+          : displaySettingsRef.current.depthVisibility
       const focusedGlobeIds = constellationFocusId
         ? layoutClusterGlobesRef.current.find((g) => g.id === constellationFocusId)
             ?.itemIds
@@ -1752,6 +1825,12 @@ export function GlobeView({
         !clusterDimActive &&
         !constellationFocusId &&
         !linkClusterFocused
+      const zoomModeActive =
+        zoomModeRef.current &&
+        !clusterDimActive &&
+        !constellationFocusId &&
+        !linkClusterFocused
+      const screenFillActive = comprehensiveActive || zoomModeActive
 
       const introLockedNow = introLockedRef.current
       const introVisualProgress = introLockedNow ? introProgress : 1
@@ -1800,7 +1879,7 @@ export function GlobeView({
 
         if (!updateObjectVisibility(obj, camera, el, visibilityZ)) continue
 
-        if (comprehensiveActive && isGlobePointFacingCamera(obj, camera)) {
+        if (screenFillActive && isGlobePointFacingCamera(obj, camera)) {
           if (el.style.opacity !== '0') el.style.opacity = '0'
           el.style.pointerEvents = 'none'
           obj.userData.globePointerEvents = 'none'
@@ -1930,9 +2009,12 @@ export function GlobeView({
             worldPos.setFromMatrixPosition(obj.matrixWorld)
             const dist = worldPos.distanceTo(camera.position)
             const fieldRadius = layoutFieldRadiusRef.current
-            const near = effectiveCameraZ - fieldRadius * 0.85
-            const far = effectiveCameraZ + fieldRadius * 0.95
-            const t = Math.max(0, Math.min(1, (dist - near) / (far - near)))
+            const t = depthFadeDistanceT(
+              dist,
+              effectiveCameraZ,
+              fieldRadius,
+              depthFadeRange,
+            )
             introOpacity *= introDepthOpacityAtDistance(introDepthFadeP, t)
           }
 
@@ -1943,9 +2025,12 @@ export function GlobeView({
               worldPos.setFromMatrixPosition(obj.matrixWorld)
               const dist = worldPos.distanceTo(camera.position)
               const fieldRadius = layoutFieldRadiusRef.current
-              const near = effectiveCameraZ - fieldRadius * 0.85
-              const far = effectiveCameraZ + fieldRadius * 0.95
-              const t = Math.max(0, Math.min(1, (dist - near) / (far - near)))
+              const t = depthFadeDistanceT(
+                dist,
+                effectiveCameraZ,
+                fieldRadius,
+                depthFadeRange,
+              )
               settledOpacity *= introDepthOpacityAtDistance(depthFade, t)
             }
             introOpacity =
@@ -2022,20 +2107,28 @@ export function GlobeView({
           comprehensiveActive &&
           (!activeComplexity || item.complexity === activeComplexity) &&
           (!filterActive || itemMatchesFilter(item, highlightedFilter))
+        const matchesZoomDisplay = zoomModeActive
 
-        if (matchesComprehensiveSelection) {
+        if (matchesComprehensiveSelection || matchesZoomDisplay) {
           opacity = 1
         }
 
         if (el.style.zIndex !== zIndex) el.style.zIndex = zIndex
 
-        if (depthFade > 0 && !matchesComprehensiveSelection) {
+        if (
+          depthFade > 0 &&
+          !matchesComprehensiveSelection &&
+          !matchesZoomDisplay
+        ) {
           worldPos.setFromMatrixPosition(obj.matrixWorld)
           const dist = worldPos.distanceTo(camera.position)
           const fieldRadius = layoutFieldRadiusRef.current
-          const near = effectiveCameraZ - fieldRadius * 0.85
-          const far = effectiveCameraZ + fieldRadius * 0.95
-          const t = Math.max(0, Math.min(1, (dist - near) / (far - near)))
+          const t = depthFadeDistanceT(
+            dist,
+            effectiveCameraZ,
+            fieldRadius,
+            depthFadeRange,
+          )
           opacity *= introDepthOpacityAtDistance(depthFade, t)
         }
 

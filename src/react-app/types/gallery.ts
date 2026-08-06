@@ -31,6 +31,8 @@ export type GlobeDisplaySettings = {
   imageShape: GlobeImageShape
   cornerRadius: number
   depthFade: number
+  depthVisibility: number
+  depthFadeRange: number
 }
 
 export const ASPECT_RATIO_OPTIONS: { id: GlobeAspectRatio; label: string }[] = [
@@ -42,6 +44,12 @@ export const ASPECT_RATIO_OPTIONS: { id: GlobeAspectRatio; label: string }[] = [
 
 export const MIN_GLOBE_IMAGE_SIZE = 0.15
 export const MAX_GLOBE_IMAGE_SIZE = 2.5
+export const MIN_DEPTH_FADE = 0
+export const MAX_DEPTH_FADE = 2
+export const MIN_DEPTH_VISIBILITY = 20
+export const MAX_DEPTH_VISIBILITY = 500
+export const MIN_DEPTH_FADE_RANGE = 0.25
+export const MAX_DEPTH_FADE_RANGE = 2.5
 
 export const DEFAULT_GLOBE_DISPLAY: GlobeDisplaySettings = {
   imageSize: 0.5,
@@ -49,6 +57,8 @@ export const DEFAULT_GLOBE_DISPLAY: GlobeDisplaySettings = {
   imageShape: 'circle',
   cornerRadius: 3,
   depthFade: 1,
+  depthVisibility: 80,
+  depthFadeRange: 1,
 }
 
 export type LinkClusterSettings = {
@@ -101,6 +111,7 @@ export type ConstellationSettings = {
 }
 
 export const DEFAULT_COMPREHENSIVE_MODE = false
+export const DEFAULT_ZOOM_MODE = false
 
 export const DEFAULT_CONSTELLATION: ConstellationSettings = {
   clusterSpread: 1,
