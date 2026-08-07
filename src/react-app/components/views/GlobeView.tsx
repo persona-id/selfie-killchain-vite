@@ -68,7 +68,6 @@ import {
   clusterIntroZoomProgress,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
-  anchorHeroClusterAtOrigin,
   centerHeroClusterFieldPositions,
   recenterClusterLayoutAtCentroid,
 } from '../../lib/clusterIntro'
@@ -333,13 +332,10 @@ export function GlobeView({
 
   const removeClusterFocusPlaque = () => {
     const plaque = clusterFocusPlaqueRef.current
-    const clusterId = clusterFocusPlaqueClusterIdRef.current
     if (!plaque) return
     ;(plaque.userData.cancelPlaqueTypewriter as (() => void) | undefined)?.()
     plaque.userData.cancelPlaqueTypewriter = undefined
-    if (clusterId) {
-      clusterGroupsRef.current.get(clusterId)?.remove(plaque)
-    }
+    globeGroupRef.current?.remove(plaque)
     plaque.element.remove()
     clusterFocusPlaqueRef.current = null
     clusterFocusPlaqueClusterIdRef.current = null
@@ -351,10 +347,11 @@ export function GlobeView({
     count: number,
   ) => {
     removeClusterFocusPlaque()
-    const group = clusterGroupsRef.current.get(clusterId)
-    if (!group) return
+    const globe = globeGroupRef.current
+    if (!globe) return
     const plaque = createClusterFocusPlaque(label, count)
-    group.add(plaque)
+    plaque.position.set(0, 0, 0)
+    globe.add(plaque)
     clusterFocusPlaqueRef.current = plaque
     clusterFocusPlaqueClusterIdRef.current = clusterId
     playClusterFocusPlaqueEntrance(plaque, {
@@ -382,9 +379,17 @@ export function GlobeView({
     focusBlendRef.current = 0
     removeClusterFocusPlaque()
 
-    clusterGroupsRef.current.forEach((group) => {
+    const heroId = heroClusterIdRef.current
+    const introLayoutActive =
+      clusterIntroActiveRef.current && Boolean(heroId)
+
+    clusterGroupsRef.current.forEach((group, clusterId) => {
       const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-      group.position.copy(fieldCenter)
+      if (introLayoutActive && clusterId === heroId) {
+        group.position.set(0, 0, 0)
+      } else {
+        group.position.copy(fieldCenter)
+      }
       group.rotation.set(0, 0, 0)
       group.scale.setScalar(1)
     })
@@ -587,14 +592,17 @@ export function GlobeView({
       group.scale.setScalar(CLUSTER_FOCUS_SCALE)
     }
 
+    globeGroupRef.current?.rotation.set(0, 0, 0)
+    globeGroupRef.current?.position.set(0, 0, 0)
+
     const presentation = categoryViewRef.current.clusterFocusPresentation
 
     clusterGlobe.itemIds.forEach((itemId) => {
       const obj = objectByIdRef.current.get(itemId)
-      const focusLocal = clusterGlobe.focusPositions.get(itemId)
-      if (obj && focusLocal) {
-        obj.userData.focusLocal = focusLocal.clone()
-        obj.position.copy(focusLocal)
+      const fieldLocal = clusterGlobe.fieldPositions.get(itemId)
+      if (obj && fieldLocal) {
+        obj.userData.focusLocal = fieldLocal.clone()
+        obj.position.copy(fieldLocal)
       }
     })
 
@@ -1180,7 +1188,6 @@ export function GlobeView({
       recenterClusterLayoutAtCentroid(layout)
       const introHero = pickHeroClusterGlobe(layout.clusterGlobes)
       if (introHero) {
-        anchorHeroClusterAtOrigin(layout, introHero.id)
         centerHeroClusterFieldPositions(layout, introHero.id)
         clusterIntroHeroId = introHero.id
         displayItems.forEach((item, i) => {
@@ -2105,32 +2112,27 @@ export function GlobeView({
 
         globe.position.set(0, 0, 0)
 
-        if (clusterIntroActiveRef.current && heroClusterIdRef.current) {
-          const heroId = heroClusterIdRef.current
-          clusterGroupsRef.current.forEach((group, clusterId) => {
-            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-            if (clusterId === heroId) {
-              group.position.set(0, 0, 0)
-            } else {
-              group.position.copy(fieldCenter)
-            }
+        clusterGroupsRef.current.forEach((group, clusterId) => {
+          const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+          if (focusId && clusterId === focusId) {
+            group.position.set(0, 0, 0)
+            group.rotation.set(0, 0, 0)
+            group.scale.setScalar(CLUSTER_FOCUS_SCALE)
+          } else if (
+            !focusId &&
+            clusterIntroActiveRef.current &&
+            heroClusterIdRef.current &&
+            clusterId === heroClusterIdRef.current
+          ) {
+            group.position.set(0, 0, 0)
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(1)
-          })
-        } else {
-          clusterGroupsRef.current.forEach((group, clusterId) => {
-            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-            if (focusId === clusterId) {
-              group.position.set(0, 0, 0)
-              group.rotation.set(0, 0, 0)
-              group.scale.setScalar(CLUSTER_FOCUS_SCALE)
-            } else {
-              group.position.copy(fieldCenter)
-              group.rotation.set(0, 0, 0)
-              group.scale.setScalar(1)
-            }
-          })
-        }
+          } else {
+            group.position.copy(fieldCenter)
+            group.rotation.set(0, 0, 0)
+            group.scale.setScalar(1)
+          }
+        })
 
         if (focusId) {
           const motion = categoryViewRef.current

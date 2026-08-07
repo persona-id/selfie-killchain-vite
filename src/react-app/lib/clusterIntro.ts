@@ -101,10 +101,19 @@ export function pickHeroClusterGlobe(
   clusterGlobes: ClusterGlobe[],
 ): ClusterGlobe | null {
   if (clusterGlobes.length === 0) return null
+
+  const centroid = new THREE.Vector3()
+  for (const globe of clusterGlobes) {
+    centroid.add(globe.center)
+  }
+  centroid.multiplyScalar(1 / clusterGlobes.length)
+
   return clusterGlobes.reduce((best, globe) => {
-    if (globe.itemIds.size > best.itemIds.size) return globe
-    if (globe.itemIds.size < best.itemIds.size) return best
-    return globe.center.lengthSq() < best.center.lengthSq() ? globe : best
+    const dBest = best.center.distanceToSquared(centroid)
+    const dGlobe = globe.center.distanceToSquared(centroid)
+    if (dGlobe < dBest - 1e-4) return globe
+    if (dGlobe > dBest + 1e-4) return best
+    return globe.itemIds.size > best.itemIds.size ? globe : best
   })
 }
 
@@ -148,26 +157,6 @@ export function recenterClusterLayoutAtCentroid(layout: ClusterLayout): boolean 
   }
   for (const position of layout.positions) {
     position.sub(centroid)
-  }
-  return true
-}
-
-/** Nudge the field so the hero cluster globe center is exactly at the origin. */
-export function anchorHeroClusterAtOrigin(
-  layout: ClusterLayout,
-  heroId: string,
-): boolean {
-  const hero = layout.clusterGlobes.find((globe) => globe.id === heroId)
-  if (!hero) return false
-
-  const offset = hero.center.clone()
-  if (offset.lengthSq() < 1e-6) return true
-
-  for (const globe of layout.clusterGlobes) {
-    globe.center.sub(offset)
-  }
-  for (const position of layout.positions) {
-    position.sub(offset)
   }
   return true
 }
