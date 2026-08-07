@@ -18,12 +18,16 @@ import {
   GLOBE_RADIUS,
   viewAxisAngularDistance,
 } from './globe'
-import { miniGlobePositions, type ClusterGlobe } from './clusterLayout'
+import {
+  miniGlobePositions,
+  type ClusterGlobe,
+  type ClusterLayout,
+} from './clusterLayout'
 
 /** Share of post-reveal timeline spent completing the hero globe before zoom-out. */
 export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 
-/** Hero moves to its field slot during the final portion of zoom-out. */
+/** Hero mini-globe compresses during the final portion of zoom-out. */
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
 export function clusterIntroHeroSphereRadius(separation: number): number {
@@ -77,43 +81,29 @@ export function applyHeroClusterIntroSphereLayout(
   })
 }
 
-/** Decorative ring tiles from other clusters — same radius, fade out during globe fill. */
-export function applyClusterIntroGuestRingSphereLayout(
-  objects: Array<{
-    userData: Record<string, unknown>
-    position: THREE.Vector3
-  }>,
-  separation: number,
-): void {
-  const guests = objects
-    .filter((obj) => obj.userData.introIsIntroRingGuest)
-    .sort(
-      (a, b) =>
-        ((a.userData.introGlobalLoadRank as number) ??
-          (a.userData.introLoadRank as number) ??
-          0) -
-        ((b.userData.introGlobalLoadRank as number) ??
-          (b.userData.introLoadRank as number) ??
-          0),
-    )
+/** Shift the field so the hero cluster sits at the origin. */
+export function recenterClusterLayoutAroundHero(
+  layout: ClusterLayout,
+  heroId: string,
+): boolean {
+  const hero = layout.clusterGlobes.find((globe) => globe.id === heroId)
+  if (!hero) return false
 
-  const positions = miniGlobePositions(
-    guests.length,
-    clusterIntroHeroSphereRadius(separation),
-  )
+  const offset = hero.center.clone()
+  if (offset.lengthSq() < 1e-6) return true
 
-  guests.forEach((obj, index) => {
-    const introLocal = positions[index].clone()
-    obj.userData.introSphereLocal = introLocal
-    obj.position.copy(introLocal)
-    obj.userData.introHemisphereFront = introLocal.z >= 0
-  })
+  for (const globe of layout.clusterGlobes) {
+    globe.center.sub(offset)
+  }
+  for (const position of layout.positions) {
+    position.sub(offset)
+  }
+  return true
 }
 
 export function configureClusterIntroParticipation(
   objects: Array<{ userData: Record<string, unknown> }>,
   heroClusterId: string,
-  loadTotal: number,
 ): void {
   const heroObjects = objects.filter(
     (obj) => obj.userData.clusterId === heroClusterId,
@@ -143,30 +133,14 @@ export function configureClusterIntroParticipation(
       : -1
     entry.obj.userData.introCenterFillCount = heroCenterFillCount
     entry.obj.userData.introIsDeferredCluster = false
-    entry.obj.userData.introIsIntroRingGuest = false
   })
 
   for (const obj of objects) {
     if (obj.userData.clusterId === heroClusterId) continue
 
-    const globalRank =
-      (obj.userData.introGlobalLoadRank as number | undefined) ??
-      (obj.userData.introLoadRank as number) ??
-      0
-    const globalRing = introIsRingMember(globalRank, loadTotal)
-
-    if (globalRing) {
-      obj.userData.introIsRingMember = true
-      obj.userData.introIsCenterMember = false
-      obj.userData.introIsDeferredCluster = false
-      obj.userData.introIsIntroRingGuest = true
-      continue
-    }
-
     obj.userData.introIsRingMember = false
     obj.userData.introIsCenterMember = false
     obj.userData.introIsDeferredCluster = true
-    obj.userData.introIsIntroRingGuest = false
     delete obj.userData.introSphereLocal
   }
 }
@@ -185,13 +159,6 @@ export function clusterIntroCenterFillProgress(progress: number): number {
   return easeInOutCubic(
     clamp01(postRevealT / Math.max(0.001, CLUSTER_INTRO_FILL_PHASE_SHARE)),
   )
-}
-
-/** Ring guests fade out as the hero globe finishes forming. */
-export function clusterIntroRingGuestFade(progress: number): number {
-  const fillP = clusterIntroCenterFillProgress(progress)
-  if (fillP <= 0) return 1
-  return 1 - easeInOutCubic(clamp01(fillP / 0.55))
 }
 
 /** 0→1 during zoom-out after the hero globe has formed at center. */
@@ -240,10 +207,6 @@ export function clusterIntroCameraZ(
   return heroStartZ + (overviewZ - heroStartZ) * t
 }
 
-export function clusterIntroHeroGroupBlend(progress: number): number {
-  return clusterIntroHeroSettleBlend(progress)
-}
-
 export function clusterIntroMaxSpread(
   clusterGlobes: ClusterGlobe[],
   heroId: string,
@@ -281,10 +244,3 @@ export function clusterIntroOtherReveal(
   return easeOutCubic(clamp01((t - threshold) / Math.max(0.001, 1 - threshold)))
 }
 
-export function clusterIntroHeroPosition(
-  fieldCenter: THREE.Vector3,
-  blend: number,
-  out = new THREE.Vector3(),
-): THREE.Vector3 {
-  return out.lerpVectors(new THREE.Vector3(0, 0, 0), fieldCenter, blend)
-}

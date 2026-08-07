@@ -54,22 +54,19 @@ import {
   playClusterFocusPlaqueEntrance,
 } from '../../lib/clusterFocusPlaque'
 import {
-  applyClusterIntroGuestRingSphereLayout,
   applyHeroClusterIntroSphereLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
-  clusterIntroHeroGroupBlend,
   clusterIntroHeroItemBlend,
-  clusterIntroHeroPosition,
   clusterIntroHeroStartCameraZ,
   clusterIntroOtherReveal,
-  clusterIntroRingGuestFade,
   clusterIntroZoomActive,
   clusterIntroZoomProgress,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
+  recenterClusterLayoutAroundHero,
 } from '../../lib/clusterIntro'
 import {
   focusOrbitDepthOpacity,
@@ -1170,6 +1167,17 @@ export function GlobeView({
         )
       : null
 
+    if (
+      layout &&
+      isClusters &&
+      categoryViewRef.current.clusterIntroTest
+    ) {
+      const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
+      if (heroGlobe) {
+        recenterClusterLayoutAroundHero(layout, heroGlobe.id)
+      }
+    }
+
     layoutClustersRef.current = layout?.clusters ?? []
     layoutFieldRadiusRef.current = layout?.fieldRadius ?? GLOBE_RADIUS
     layoutClusterGlobesRef.current = layout?.clusterGlobes ?? []
@@ -1369,8 +1377,7 @@ export function GlobeView({
     const clusterIntroActive =
       isClusters &&
       Boolean(layout) &&
-      categoryViewRef.current.clusterIntroTest &&
-      introLockedRef.current
+      categoryViewRef.current.clusterIntroTest
     clusterIntroActiveRef.current = clusterIntroActive
     heroClusterIdRef.current = null
     heroClusterStartZRef.current = null
@@ -1379,24 +1386,27 @@ export function GlobeView({
       const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
       if (heroGlobe) {
         heroClusterIdRef.current = heroGlobe.id
-        configureClusterIntroParticipation(
-          objects,
-          heroGlobe.id,
-          displayItems.length,
-        )
-        applyHeroClusterIntroSphereLayout(
-          objects,
-          heroGlobe.id,
-          categoryViewRef.current.clusterSpacing,
-        )
-        applyClusterIntroGuestRingSphereLayout(
-          objects,
-          categoryViewRef.current.clusterSpacing,
-        )
-        clusterGroups.forEach((group) => group.position.set(0, 0, 0))
-        heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
-          categoryViewRef.current.clusterSpacing,
-        )
+        if (introLockedRef.current) {
+          configureClusterIntroParticipation(objects, heroGlobe.id)
+          applyHeroClusterIntroSphereLayout(
+            objects,
+            heroGlobe.id,
+            categoryViewRef.current.clusterSpacing,
+          )
+          clusterGroups.forEach((group) => group.position.set(0, 0, 0))
+          heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
+            categoryViewRef.current.clusterSpacing,
+          )
+        } else {
+          clusterGroups.forEach((group, clusterId) => {
+            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+            if (clusterId === heroGlobe.id) {
+              group.position.set(0, 0, 0)
+            } else {
+              group.position.copy(fieldCenter)
+            }
+          })
+        }
       } else {
         clusterIntroActiveRef.current = false
       }
@@ -2034,23 +2044,21 @@ export function GlobeView({
 
         globe.position.set(0, 0, 0)
 
-        if (
-          clusterIntroActiveRef.current &&
-          heroClusterIdRef.current &&
-          (introLockedRef.current || introExitBlend > 0.01)
-        ) {
+        if (clusterIntroActiveRef.current && heroClusterIdRef.current) {
           const heroId = heroClusterIdRef.current
-          const groupBlend = introLockedRef.current
-            ? clusterIntroHeroGroupBlend(introProgress)
-            : 1
+          const introAnimating =
+            introLockedRef.current || introExitBlend > 0.01
           clusterGroupsRef.current.forEach((group, clusterId) => {
             const fieldCenter = group.userData.fieldCenter as THREE.Vector3
             if (clusterId === heroId) {
-              clusterIntroHeroPosition(fieldCenter, groupBlend, group.position)
-            } else if (clusterIntroZoomActive(introProgress)) {
-              group.position.copy(fieldCenter)
-            } else {
               group.position.set(0, 0, 0)
+            } else if (
+              introAnimating &&
+              !clusterIntroZoomActive(introProgress)
+            ) {
+              group.position.set(0, 0, 0)
+            } else {
+              group.position.copy(fieldCenter)
             }
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(1)
@@ -2114,16 +2122,6 @@ export function GlobeView({
             const introSphereLocal = obj.userData.introSphereLocal as
               | THREE.Vector3
               | undefined
-
-            if (
-              clusterIntroActiveNow &&
-              obj.userData.introIsIntroRingGuest &&
-              introSphereLocal &&
-              fieldLocal
-            ) {
-              obj.position.copy(introSphereLocal)
-              continue
-            }
 
             if (
               clusterIntroActiveNow &&
@@ -2505,13 +2503,6 @@ export function GlobeView({
               )
             ) {
               introOpacity = 0
-            }
-
-            if (
-              obj.userData.introIsIntroRingGuest &&
-              clusterIntroActiveRef.current
-            ) {
-              introOpacity *= clusterIntroRingGuestFade(introVisualProgress)
             }
           } else if (
             isCenterMember &&
