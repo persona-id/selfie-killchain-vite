@@ -584,6 +584,41 @@ function groupItems(items: GalleryItem[]): GalleryItem[][] {
   return groups.sort((a, b) => a[0].id.localeCompare(b[0].id))
 }
 
+/** Bias the display sample toward the largest cluster for the hero intro ring. */
+export function sampleClusterIntroDisplayItems(
+  items: GalleryItem[],
+  max: number,
+): GalleryItem[] {
+  if (items.length <= max) return items
+
+  const groups = groupItems(items)
+  if (groups.length === 0) return items.slice(0, max)
+
+  const heroGroup = groups.reduce((best, group) =>
+    group.length > best.length ? group : best,
+  )
+  const heroBudget = Math.min(
+    heroGroup.length,
+    Math.max(Math.floor(max * 0.84), max - groups.length + 1),
+  )
+  const heroStep = heroGroup.length / heroBudget
+  const heroItems: GalleryItem[] = []
+  for (let i = 0; i < heroBudget; i++) {
+    heroItems.push(heroGroup[Math.floor(i * heroStep)])
+  }
+  const heroIds = new Set(heroItems.map((item) => item.id))
+  const others = items.filter((item) => !heroIds.has(item.id))
+  const remainder = max - heroItems.length
+  if (remainder <= 0) return heroItems
+
+  const otherStep = others.length / remainder
+  const otherItems: GalleryItem[] = []
+  for (let i = 0; i < remainder; i++) {
+    otherItems.push(others[Math.floor(i * otherStep)])
+  }
+  return [...heroItems, ...otherItems]
+}
+
 export type ClusterBridge = {
   fromId: string
   toId: string

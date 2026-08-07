@@ -26,7 +26,7 @@ export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
 /** Smaller center share → more hero tiles visible during the text/ring phase. */
-export const CLUSTER_INTRO_CENTER_FRACTION = 0.12
+export const CLUSTER_INTRO_CENTER_FRACTION = 0.06
 
 export function clusterIntroCenterCount(loadTotal: number): number {
   if (loadTotal <= 1) return 0
@@ -55,7 +55,7 @@ function clusterIntroCenterFillCount(loadTotal: number): number {
 
 /** Accelerated ring load curve for the smaller hero-only ring set. */
 export function clusterIntroRingLoadProgress(progress: number): number {
-  return clamp01(introRingLoadProgress(progress) * 1.65)
+  return clamp01(introRingLoadProgress(progress) * 2.1)
 }
 
 export function clusterIntroRingHemisphereLoadCaps(
@@ -251,7 +251,9 @@ export function configureClusterIntroParticipation(
     .map((obj) => ({
       obj,
       centrality: viewAxisAngularDistance(
-        (obj.userData.fieldLocal as THREE.Vector3) ?? new THREE.Vector3(),
+        (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
+          (obj.userData.fieldLocal as THREE.Vector3) ??
+          new THREE.Vector3(),
       ),
     }))
     .sort((a, b) => a.centrality - b.centrality)
