@@ -66,6 +66,7 @@ import {
   clusterIntroOtherReveal,
   clusterIntroRingHemisphereLoadCaps,
   clusterIntroZoomProgress,
+  CLUSTER_INTRO_RING_START,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
   anchorHeroClusterAtOrigin,
@@ -1885,7 +1886,10 @@ export function GlobeView({
 
         if (
           (ringFrontQueue.length > 0 || ringBackQueue.length > 0) &&
-          introProgress >= GLOBE_INTRO_RING_START
+          introProgress >=
+            (clusterIntroActiveRef.current
+              ? CLUSTER_INTRO_RING_START
+              : GLOBE_INTRO_RING_START)
         ) {
           const ringCaps = clusterIntroActiveRef.current
             ? clusterIntroRingHemisphereLoadCaps(
@@ -1905,19 +1909,19 @@ export function GlobeView({
             ringBackLoadIndexRef,
             lastRingPairLoadAtRef,
             clusterIntroActiveRef.current
-              ? GLOBE_INTRO_RING_PAIR_INTERVAL_MS * 0.42
+              ? GLOBE_INTRO_RING_PAIR_INTERVAL_MS * 0.28
               : GLOBE_INTRO_RING_PAIR_INTERVAL_MS,
             true,
             ringCaps.frontCap,
             ringCaps.backCap,
             loadBehind,
-            clusterIntroActiveRef.current ? (loadBehind ? 14 : 7) : loadBehind ? 7 : 2,
+            clusterIntroActiveRef.current ? (loadBehind ? 20 : 10) : loadBehind ? 7 : 2,
           )
         }
 
         const clusterEarlyCenterPrefetch =
           clusterIntroActiveRef.current &&
-          introProgress >= GLOBE_INTRO_RING_START &&
+          introProgress >= CLUSTER_INTRO_RING_START &&
           !introCenterPrefetchActive(introProgress)
 
         if (introCenterPrefetchActive(introProgress) || clusterEarlyCenterPrefetch) {

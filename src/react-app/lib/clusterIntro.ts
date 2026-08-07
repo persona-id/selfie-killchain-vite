@@ -5,7 +5,8 @@ import {
   easeOutCubic,
   globeIntroZoomPhaseT,
   GLOBE_INTRO_CAMERA_START_FACTOR,
-  GLOBE_INTRO_LINE3_START,
+  GLOBE_INTRO_LINE2_START,
+  GLOBE_INTRO_RING_LOAD_END,
   introCenterPrefetchActive,
   introRevealActive,
   introRingLoadProgress,
@@ -26,7 +27,10 @@ export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
 /** Smaller center share → more hero tiles visible during the text/ring phase. */
-export const CLUSTER_INTRO_CENTER_FRACTION = 0.06
+export const CLUSTER_INTRO_CENTER_FRACTION = 0.04
+
+/** Ring loads begin slightly before the standard intro ring phase. */
+export const CLUSTER_INTRO_RING_START = 0.02
 
 export function clusterIntroCenterCount(loadTotal: number): number {
   if (loadTotal <= 1) return 0
@@ -55,7 +59,16 @@ function clusterIntroCenterFillCount(loadTotal: number): number {
 
 /** Accelerated ring load curve for the smaller hero-only ring set. */
 export function clusterIntroRingLoadProgress(progress: number): number {
-  return clamp01(introRingLoadProgress(progress) * 2.1)
+  if (progress < CLUSTER_INTRO_RING_START) return 0
+  if (progress >= GLOBE_INTRO_RING_LOAD_END) return 1
+
+  const window = GLOBE_INTRO_RING_LOAD_END - CLUSTER_INTRO_RING_START
+  const elapsed = progress - CLUSTER_INTRO_RING_START
+  const t = clamp01(elapsed / Math.max(0.0001, window))
+  const eased = easeInOutCubic(t)
+  const earlyBoost = clamp01(elapsed / 0.07) * 0.32
+  const standard = introRingLoadProgress(progress)
+  return clamp01(Math.max(eased * 1.45 + earlyBoost, standard * 2.35))
 }
 
 export function clusterIntroRingHemisphereLoadCaps(
@@ -76,12 +89,12 @@ export function clusterIntroEarlyCenterLoadCaps(
   frontTotal: number,
   backTotal: number,
 ): { frontCap: number; backCap: number } {
-  if (progress < GLOBE_INTRO_LINE3_START) {
+  if (progress < GLOBE_INTRO_LINE2_START) {
     return { frontCap: 0, backCap: 0 }
   }
   const ringP = clusterIntroRingLoadProgress(progress)
-  if (ringP < 0.28) return { frontCap: 0, backCap: 0 }
-  const prefetchP = clamp01(((ringP - 0.28) / 0.72) * 0.96)
+  if (ringP < 0.1) return { frontCap: 0, backCap: 0 }
+  const prefetchP = clamp01(((ringP - 0.1) / 0.9) * 1.02)
   return introSharedHemisphereLoadCaps(frontTotal, backTotal, prefetchP)
 }
 
