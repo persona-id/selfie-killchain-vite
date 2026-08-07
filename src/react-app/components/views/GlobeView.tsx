@@ -68,8 +68,8 @@ import {
   clusterIntroZoomProgress,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
+  anchorHeroClusterAtOrigin,
   centerHeroClusterFieldPositions,
-  recenterClusterLayoutAtCentroid,
 } from '../../lib/clusterIntro'
 import {
   focusOrbitDepthOpacity,
@@ -1185,9 +1185,9 @@ export function GlobeView({
       isClusters &&
       categoryViewRef.current.clusterIntroTest
     ) {
-      recenterClusterLayoutAtCentroid(layout)
       const introHero = pickHeroClusterGlobe(layout.clusterGlobes)
       if (introHero) {
+        anchorHeroClusterAtOrigin(layout, introHero.id)
         centerHeroClusterFieldPositions(layout, introHero.id)
         clusterIntroHeroId = introHero.id
         displayItems.forEach((item, i) => {

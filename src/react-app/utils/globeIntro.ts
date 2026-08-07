@@ -4,42 +4,47 @@ import { viewAxisAngularDistance, viewSpaceAngularDistance } from '../lib/globe'
 
 export const GLOBE_INTRO_CENTER_FRACTION = 0.55
 export const GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD = 0.34
-export const GLOBE_INTRO_AUTO_DURATION_MS = 12000
-export const GLOBE_INTRO_TILE_LOAD_INTERVAL_MS = 75
-export const GLOBE_INTRO_CENTER_PREFETCH_INTERVAL_MS = 54
-export const GLOBE_INTRO_RING_PAIR_INTERVAL_MS = 98
-export const GLOBE_INTRO_TILE_FADE_MS = 1200
-export const GLOBE_INTRO_CENTER_TILE_FADE_MS = 1090
-export const GLOBE_INTRO_EXIT_BLEND_MS = 825
+export const GLOBE_INTRO_AUTO_DURATION_MS = 14400
+export const GLOBE_INTRO_TILE_LOAD_INTERVAL_MS = 90
+export const GLOBE_INTRO_CENTER_PREFETCH_INTERVAL_MS = 65
+export const GLOBE_INTRO_RING_PAIR_INTERVAL_MS = 118
+export const GLOBE_INTRO_TILE_FADE_MS = 1440
+export const GLOBE_INTRO_CENTER_TILE_FADE_MS = 1308
+export const GLOBE_INTRO_EXIT_BLEND_MS = 990
 
 export const GLOBE_INTRO_RING_START = 0.04
 export const GLOBE_INTRO_RING_END = 0.2
 
 export const GLOBE_INTRO_LINE1_START = 0.08
-export const GLOBE_INTRO_LINE1_END = 0.22
-export const GLOBE_INTRO_LINE1_OUT_START = 0.24
-export const GLOBE_INTRO_LINE1_OUT_END = 0.32
+export const GLOBE_INTRO_LINE1_END = 0.248
+export const GLOBE_INTRO_LINE1_OUT_START = 0.272
+export const GLOBE_INTRO_LINE1_OUT_END = 0.368
 
-export const GLOBE_INTRO_LINE2_START = 0.34
-export const GLOBE_INTRO_LINE2_END = 0.46
-export const GLOBE_INTRO_LINE2_OUT_START = 0.48
-export const GLOBE_INTRO_LINE2_OUT_END = 0.72
+export const GLOBE_INTRO_LINE2_START = 0.392
+export const GLOBE_INTRO_LINE2_END = 0.536
+export const GLOBE_INTRO_LINE2_OUT_START = 0.56
+export const GLOBE_INTRO_LINE2_OUT_END = 0.704
 
-/** Begin zoom at this point through line 2 blur-out (0–1). */
+export const GLOBE_INTRO_LINE3_START = 0.724
+export const GLOBE_INTRO_LINE3_END = 0.812
+export const GLOBE_INTRO_LINE3_OUT_START = 0.832
+export const GLOBE_INTRO_LINE3_OUT_END = 0.88
+
+/** Begin zoom at this point through the final line blur-out (0–1). */
 export const GLOBE_INTRO_REVEAL_AT_LINE2_OUT = 0.75
 
-const GLOBE_INTRO_LINE2_OUT_SPAN =
-  GLOBE_INTRO_LINE2_OUT_END - GLOBE_INTRO_LINE2_OUT_START
+const GLOBE_INTRO_LAST_LINE_OUT_SPAN =
+  GLOBE_INTRO_LINE3_OUT_END - GLOBE_INTRO_LINE3_OUT_START
 
-/** Last ring tile should start loading this long before line 2 fades out. */
+/** Last ring tile should start loading this long before the final line fades out. */
 export const GLOBE_INTRO_RING_LOAD_END =
-  GLOBE_INTRO_LINE2_OUT_START -
+  GLOBE_INTRO_LINE3_OUT_START -
   GLOBE_INTRO_TILE_FADE_MS / GLOBE_INTRO_AUTO_DURATION_MS
 
-/** Center/full-set load begins as line 2 nears the end of its blur-out. */
+/** Center/full-set load begins as the final line nears the end of its blur-out. */
 export const GLOBE_INTRO_POST_REVEAL_LOAD_START =
-  GLOBE_INTRO_LINE2_OUT_START +
-  GLOBE_INTRO_LINE2_OUT_SPAN * GLOBE_INTRO_REVEAL_AT_LINE2_OUT
+  GLOBE_INTRO_LINE3_OUT_START +
+  GLOBE_INTRO_LAST_LINE_OUT_SPAN * GLOBE_INTRO_REVEAL_AT_LINE2_OUT
 
 /** Zoom, cutout release, and center fill begin near the end of line 2 blur-out. */
 export const GLOBE_INTRO_REVEAL_START = GLOBE_INTRO_POST_REVEAL_LOAD_START
@@ -149,6 +154,22 @@ export function globeIntroLine2OutProgress(progress: number): number {
   )
 }
 
+export function globeIntroLine3InProgress(progress: number): number {
+  return globeIntroPhaseProgress(
+    progress,
+    GLOBE_INTRO_LINE3_START,
+    GLOBE_INTRO_LINE3_END,
+  )
+}
+
+export function globeIntroLine3OutProgress(progress: number): number {
+  return globeIntroPhaseProgress(
+    progress,
+    GLOBE_INTRO_LINE3_OUT_START,
+    GLOBE_INTRO_LINE3_OUT_END,
+  )
+}
+
 export function globeIntroLine1Strength(progress: number): number {
   const line1In = globeIntroLine1InProgress(progress)
   const line1Out = globeIntroLine1OutProgress(progress)
@@ -161,8 +182,17 @@ export function globeIntroLine2Strength(progress: number): number {
   return easeOutCubic(line2In) * (1 - easeOutCubic(line2Out))
 }
 
+export function globeIntroLine3Strength(progress: number): number {
+  const line3In = globeIntroLine3InProgress(progress)
+  const line3Out = globeIntroLine3OutProgress(progress)
+  return easeOutCubic(line3In) * (1 - easeOutCubic(line3Out))
+}
+
 export function introTypeReadable(progress: number): boolean {
-  return globeIntroLine2Strength(progress) > 0.06
+  return (
+    globeIntroLine3Strength(progress) > 0.06 ||
+    globeIntroLine2Strength(progress) > 0.06
+  )
 }
 
 /** Zoom, center fill, and back-hemisphere load begin near the end of line 2 blur-out. */
@@ -241,7 +271,7 @@ export function globeIntroImageLoadTimeline(progress: number): number {
     const ringP = globeIntroPhaseProgress(
       progress,
       GLOBE_INTRO_RING_START,
-      GLOBE_INTRO_LINE2_OUT_END,
+      GLOBE_INTRO_LINE3_OUT_END,
     )
     return easeInOutCubic(ringP) * GLOBE_INTRO_RING_LOAD_SHARE
   }
@@ -391,7 +421,7 @@ export function globeIntroDepthFadeProgress(progress: number): number {
     const ringP = globeIntroPhaseProgress(
       progress,
       GLOBE_INTRO_RING_START,
-      GLOBE_INTRO_LINE2_OUT_END,
+      GLOBE_INTRO_LINE3_OUT_END,
     )
     return easeInOutCubic(ringP) * 0.1
   }
@@ -529,7 +559,7 @@ export function introTileOpacity(
 
 // Legacy aliases used by overlay
 export function globeIntroTextOutProgress(progress: number): number {
-  return globeIntroLine2OutProgress(progress)
+  return globeIntroLine3OutProgress(progress)
 }
 
 export function globeIntroRingReveal(progress: number): number {
@@ -543,7 +573,7 @@ export function globeIntroRingReveal(progress: number): number {
 }
 
 export function globeIntroLine2OffScreen(progress: number): boolean {
-  return globeIntroLine2Strength(progress) <= 0.01
+  return globeIntroLine3Strength(progress) <= 0.01
 }
 
 /** Zoom-out finished and every intro image has loaded. */

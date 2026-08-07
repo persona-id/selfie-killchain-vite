@@ -10,6 +10,8 @@ import {
   globeIntroLine1OutProgress,
   globeIntroLine2InProgress,
   globeIntroLine2OutProgress,
+  globeIntroLine3InProgress,
+  globeIntroLine3OutProgress,
   introZoomTimelineComplete,
 } from '../../utils/globeIntro'
 import { CHROME_MENU_REVEAL_MS } from '../../constants/shellMotion'
@@ -19,6 +21,8 @@ import './GlobeIntro.css'
 const LINE1 = 'This model represents real time fraud'
 const LINE2 =
   'This taxonomy is built to showcase the ways in which attackers fraudulently bypass verification'
+const LINE3 =
+  'Each cluster represents a category of fraud found by our research team.'
 
 type GlobeIntroOverlayProps = {
   onProgress: (progress: number) => void
@@ -59,6 +63,7 @@ export function GlobeIntroOverlay({
   const autoStartRef = useRef(performance.now())
   const line1Ref = useRef<HTMLParagraphElement>(null)
   const line2Ref = useRef<HTMLParagraphElement>(null)
+  const line3Ref = useRef<HTMLParagraphElement>(null)
 
   const updateIntroLines = useCallback((introProgress: number) => {
     const line1 = lineStrength(
@@ -69,8 +74,13 @@ export function GlobeIntroOverlay({
       globeIntroLine2InProgress(introProgress),
       globeIntroLine2OutProgress(introProgress),
     )
+    const line3 = lineStrength(
+      globeIntroLine3InProgress(introProgress),
+      globeIntroLine3OutProgress(introProgress),
+    )
     applyLineStyle(line1Ref.current, line1)
     applyLineStyle(line2Ref.current, line2)
+    applyLineStyle(line3Ref.current, line3)
   }, [])
 
   const reportProgress = useCallback(
@@ -163,6 +173,9 @@ export function GlobeIntroOverlay({
         </p>
         <p ref={line2Ref} className="globe-intro__line globe-intro__line--second">
           {LINE2}
+        </p>
+        <p ref={line3Ref} className="globe-intro__line globe-intro__line--third">
+          {LINE3}
         </p>
       </div>
 

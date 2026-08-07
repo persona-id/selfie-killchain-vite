@@ -31,7 +31,7 @@
   font-family: var(--font-sans);
   font-size: calc(clamp(14px, 1.65vw, 20px) * var(--type-scale));
   font-weight: 300;
-  line-height: 1.2;
+  line-height: 1.35;
   letter-spacing: 0.2px;
   color: #4a4a4a;
   white-space: nowrap;
@@ -39,6 +39,12 @@
   backface-visibility: hidden;
   transform: translate3d(0, 12px, 0);
   will-change: opacity, transform;
+}
+
+.globe-intro__line--second,
+.globe-intro__line--third {
+  white-space: normal;
+  max-width: min(88vw, 42rem);
 }
 
 .globe-intro__skip {
