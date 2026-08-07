@@ -232,6 +232,8 @@ export function GlobeView({
     complexity: Complexity
   } | null>(null)
   const [focusedImageTitle, setFocusedImageTitle] = useState<string | null>(null)
+  const [focusedImageComplexity, setFocusedImageComplexity] =
+    useState<Complexity | null>(null)
   const [isConstellationFocused, setIsConstellationFocused] = useState(false)
   const [clusterHover, setClusterHover] = useState<{
     label: string
@@ -457,6 +459,7 @@ export function GlobeView({
     setIsConstellationFocused(false)
     setFocusedClusterInfo(null)
     setFocusedImageTitle(null)
+    setFocusedImageComplexity(null)
     setClusterHover(null)
     restoreClusterOverviewState()
     if (restoreZoom) restorePreFocusCameraZ()
@@ -694,11 +697,21 @@ export function GlobeView({
     () => {
       const max = Math.min(globeItemCount, MAX_GLOBE_ITEM_COUNT)
       if (categoryView.clusterIntroTest && globeArrangement === 'clusters') {
-        return sampleClusterIntroDisplayItems(filteredItems, max)
+        return sampleClusterIntroDisplayItems(
+          filteredItems,
+          max,
+          categoryView.clusterGroupMode,
+        )
       }
       return sampleEvenly(filteredItems, max)
     },
-    [filteredItems, globeItemCount, categoryView.clusterIntroTest, globeArrangement],
+    [
+      filteredItems,
+      globeItemCount,
+      categoryView.clusterIntroTest,
+      categoryView.clusterGroupMode,
+      globeArrangement,
+    ],
   )
 
   openModalRef.current = openModal
@@ -871,10 +884,12 @@ export function GlobeView({
         itemClusterIdRef.current.get(item.id) === focusId
       ) {
         setFocusedImageTitle(galleryItemTitle(item))
+        setFocusedImageComplexity(item.complexity)
         return
       }
 
       setFocusedImageTitle(null)
+      setFocusedImageComplexity(null)
       const el = hoverLabelRef.current
       if (el) {
         el.textContent = ''
@@ -884,6 +899,7 @@ export function GlobeView({
     }
 
     setFocusedImageTitle(null)
+    setFocusedImageComplexity(null)
     setClusterHover(null)
     const el = hoverLabelRef.current
     if (!el) return
@@ -3098,6 +3114,7 @@ export function GlobeView({
   }, [
     displayItems,
     globeArrangement,
+    categoryView.clusterGroupMode,
     categoryView.clusterSpacing,
     categoryView.clusterShape,
     categoryView.clusterFieldLayout,
@@ -3201,8 +3218,10 @@ export function GlobeView({
         transition={reduceMotion ? { duration: 0 } : SETTINGS_MENU_ENTRANCE.transition}
       >
         <p className="text-black" style={{ fontSize: 'var(--killchain-chrome-hint-font-size)' }}>
-          {clusterFocusHintActive && focusedClusterInfo
-            ? `${focusedClusterInfo.label} — ${toSentenceCase(focusedClusterInfo.complexity)}`
+          {clusterFocusHintActive
+            ? focusedImageTitle && focusedImageComplexity
+              ? `${focusedImageTitle} — ${toSentenceCase(focusedImageComplexity)}`
+              : 'Click any image to reveal its fraud path'
             : cameraControls.enabled
             ? 'Point to move · hand closer/farther to zoom · pinch to select · pinch twice to close'
             : globeArrangement === 'clusters'
@@ -3213,14 +3232,6 @@ export function GlobeView({
                 : 'Click an image to zoom into its cluster'
               : 'Drag or pinch to spin · scroll to zoom · click to inspect'}
         </p>
-        {clusterFocusHintActive && focusedImageTitle ? (
-          <p
-            className="mt-1 text-black"
-            style={{ fontSize: 'var(--killchain-chrome-hint-font-size)' }}
-          >
-            {focusedImageTitle}
-          </p>
-        ) : null}
         <p
           ref={hoverLabelRef}
           className="mt-1 text-black"

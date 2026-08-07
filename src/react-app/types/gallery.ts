@@ -158,10 +158,23 @@ export const FRAUD_AXIS_LABEL_OPTIONS: {
   { id: 'full', label: 'Full labels' },
 ]
 
+export type ClusterGroupMode = 'subcategory' | 'category' | 'medium' | 'complexity'
+
+export const CLUSTER_GROUP_MODE_OPTIONS: {
+  id: ClusterGroupMode
+  label: string
+}[] = [
+  { id: 'subcategory', label: 'Attack type' },
+  { id: 'category', label: 'Category' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'complexity', label: 'Complexity' },
+]
+
 export type CategoryViewSettings = {
   unfocusedClusterOpacity: number
   clusterShape: ClusterElementLayout
   clusterFieldLayout: ClusterFieldLayout
+  clusterGroupMode: ClusterGroupMode
   clusterSpacing: number
   groupSpread: number
   clusterAnimation: GlobeAnimation
@@ -183,6 +196,7 @@ export const DEFAULT_CATEGORY_VIEW: CategoryViewSettings = {
   unfocusedClusterOpacity: 0.2,
   clusterShape: 'globe',
   clusterFieldLayout: 'scattered',
+  clusterGroupMode: 'subcategory',
   clusterSpacing: 1,
   groupSpread: 1,
   clusterAnimation: 'sway',

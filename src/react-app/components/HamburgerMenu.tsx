@@ -6,11 +6,13 @@ import {
   CATEGORIES,
   SEVERITY_ORB_ANIMATION_OPTIONS,
   FRAUD_AXIS_LABEL_OPTIONS,
+  CLUSTER_GROUP_MODE_OPTIONS,
   type Category,
   type GlobeAnimation,
   type SeverityOrbAnimation,
   type FraudAxisLabelStyle,
   type ClusterFieldLayout,
+  type ClusterGroupMode,
 } from '../types/gallery'
 import { categoryLabel } from '../lib/taxonomy'
 import { ANIMATION_OPTIONS, ARRANGEMENT_OPTIONS, MAX_GLOBE_ITEM_COUNT, MIN_GLOBE_ITEM_COUNT } from '../lib/globe'
@@ -203,6 +205,22 @@ export function HamburgerMenu({
                   onChange={(groupSpread) => setCategoryView({ groupSpread })}
                 />
 
+                <p className="hamburger-menu__subsection-label">Cluster grouping</p>
+                <div className="hamburger-menu__pill-row">
+                  {CLUSTER_GROUP_MODE_OPTIONS.map((option) => (
+                    <PillButton
+                      key={option.id}
+                      label={option.label}
+                      active={categoryView.clusterGroupMode === option.id}
+                      onClick={() =>
+                        setCategoryView({
+                          clusterGroupMode: option.id as ClusterGroupMode,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+
                 <p className="hamburger-menu__subsection-label">Field shape</p>
                 <div className="hamburger-menu__pill-row">
                   {CLUSTER_FIELD_LAYOUT_OPTIONS.map((option) => (
@@ -366,8 +384,8 @@ export function HamburgerMenu({
                   }`}
                 >
                   {categoryView.fraudAxisEnabled
-                    ? 'On — digital clusters top / physical bottom'
-                    : 'Off — fraud axis layout'}
+                    ? 'On — physical clusters top / digital bottom'
+                    : 'Off — physical top / digital bottom'}
                 </button>
 
                 {categoryView.fraudAxisEnabled ? (

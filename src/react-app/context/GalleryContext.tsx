@@ -25,6 +25,8 @@ import {
   DEFAULT_CATEGORY_VIEW,
   DEFAULT_GLOBE_ARRANGEMENT,
   type CategoryViewSettings,
+  type ClusterGroupMode,
+  CLUSTER_GROUP_MODE_OPTIONS,
   type FraudAxisLabelStyle,
   type SeverityOrbAnimation,
   MAX_GLOBE_IMAGE_SIZE,
@@ -126,6 +128,10 @@ function isSeverityOrbAnimation(value: unknown): value is SeverityOrbAnimation {
 
 function isFraudAxisLabelStyle(value: unknown): value is FraudAxisLabelStyle {
   return value === 'none' || value === 'short' || value === 'full'
+}
+
+function isClusterGroupMode(value: unknown): value is ClusterGroupMode {
+  return CLUSTER_GROUP_MODE_OPTIONS.some((option) => option.id === value)
 }
 
 function loadStoredState(): StoredState {
@@ -246,6 +252,9 @@ function loadStoredState(): StoredState {
             ? 'globe'
             : parsed.constellation?.fieldLayout) ??
           DEFAULT_CATEGORY_VIEW.clusterFieldLayout,
+        clusterGroupMode: isClusterGroupMode(parsed.categoryView?.clusterGroupMode)
+          ? parsed.categoryView.clusterGroupMode
+          : DEFAULT_CATEGORY_VIEW.clusterGroupMode,
         clusterAnimation: isGlobeAnimation(parsed.categoryView?.clusterAnimation)
           ? parsed.categoryView.clusterAnimation
           : DEFAULT_CATEGORY_VIEW.clusterAnimation,

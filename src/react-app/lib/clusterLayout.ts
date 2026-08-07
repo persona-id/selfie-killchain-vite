@@ -4,10 +4,11 @@ import {
   type CategoryViewSettings,
   type ClusterElementLayout,
   type ClusterFieldLayout,
+  type ClusterGroupMode,
   type ConstellationSettings,
   type GalleryItem,
 } from '../types/gallery'
-import { fraudMediumForItem } from './taxonomy'
+import { fraudMediumForItem, categoryLabel } from './taxonomy'
 import type { ImageCluster } from './threads'
 
 export const CLUSTER_FIELD_RADIUS = 1450
@@ -203,8 +204,70 @@ function applyFraudAxisToClusterCenters(
   for (let i = 0; i < groups.length; i++) {
     const medium = fraudMediumForItem(groups[i][0])
     centers[i].y *= 0.4
-    centers[i].y += medium === 'digital' ? bandOffset : -bandOffset
+    centers[i].y += medium === 'physical' ? bandOffset : -bandOffset
   }
+}
+
+export function clusterGroupKey(
+  item: GalleryItem,
+  mode: ClusterGroupMode = 'subcategory',
+): string {
+  switch (mode) {
+    case 'category':
+      return item.category
+    case 'medium':
+      return fraudMediumForItem(item)
+    case 'complexity':
+      return item.complexity
+    case 'subcategory':
+    default:
+      return item.subcategory ?? item.category
+  }
+}
+
+export function clusterGroupLabel(
+  anchor: GalleryItem,
+  mode: ClusterGroupMode = 'subcategory',
+): string {
+  switch (mode) {
+    case 'category':
+      return categoryLabel(anchor.category)
+    case 'medium':
+      return fraudMediumForItem(anchor) === 'digital' ? 'Digital' : 'Physical'
+    case 'complexity':
+      return anchor.complexity
+    case 'subcategory':
+    default:
+      return anchor.subcategory?.replace(/_/g, ' ') ?? anchor.category.replace(/_/g, ' ')
+  }
+}
+
+function groupItems(
+  items: GalleryItem[],
+  mode: ClusterGroupMode = 'subcategory',
+): GalleryItem[][] {
+  const buckets = new Map<string, GalleryItem[]>()
+
+  for (const item of items) {
+    const key = clusterGroupKey(item, mode)
+    const bucket = buckets.get(key) ?? []
+    bucket.push(item)
+    buckets.set(key, bucket)
+  }
+
+  const groups: GalleryItem[][] = []
+  for (const bucket of buckets.values()) {
+    if (bucket.length <= MAX_CLUSTER_SIZE) {
+      groups.push(bucket)
+      continue
+    }
+
+    for (let i = 0; i < bucket.length; i += MAX_CLUSTER_SIZE) {
+      groups.push(bucket.slice(i, i + MAX_CLUSTER_SIZE))
+    }
+  }
+
+  return groups.sort((a, b) => a[0].id.localeCompare(b[0].id))
 }
 
 function miniRingPositions(count: number, radius: number): THREE.Vector3[] {
@@ -559,39 +622,15 @@ function spreadClusterCenters(count: number, spread: number): THREE.Vector3[] {
   return centers
 }
 
-function groupItems(items: GalleryItem[]): GalleryItem[][] {
-  const buckets = new Map<string, GalleryItem[]>()
-
-  for (const item of items) {
-    const key = item.subcategory ?? item.category
-    const bucket = buckets.get(key) ?? []
-    bucket.push(item)
-    buckets.set(key, bucket)
-  }
-
-  const groups: GalleryItem[][] = []
-  for (const bucket of buckets.values()) {
-    if (bucket.length <= MAX_CLUSTER_SIZE) {
-      groups.push(bucket)
-      continue
-    }
-
-    for (let i = 0; i < bucket.length; i += MAX_CLUSTER_SIZE) {
-      groups.push(bucket.slice(i, i + MAX_CLUSTER_SIZE))
-    }
-  }
-
-  return groups.sort((a, b) => a[0].id.localeCompare(b[0].id))
-}
-
 /** Bias the display sample toward the largest cluster for the hero intro ring. */
 export function sampleClusterIntroDisplayItems(
   items: GalleryItem[],
   max: number,
+  groupMode: ClusterGroupMode = 'subcategory',
 ): GalleryItem[] {
   if (items.length <= max) return items
 
-  const groups = groupItems(items)
+  const groups = groupItems(items, groupMode)
   if (groups.length === 0) return items.slice(0, max)
 
   const heroGroup = groups.reduce((best, group) =>
@@ -682,7 +721,7 @@ export function computeClusterLayout(
   settings: ConstellationSettings = DEFAULT_CONSTELLATION,
   categoryView?: Pick<
     CategoryViewSettings,
-    'fraudAxisEnabled' | 'fraudAxisSpread'
+    'fraudAxisEnabled' | 'fraudAxisSpread' | 'clusterGroupMode'
   >,
 ): ClusterLayout {
   const spread = settings.clusterSpread
@@ -701,7 +740,8 @@ export function computeClusterLayout(
     }
   }
 
-  const groups = groupItems(items)
+  const groupMode = categoryView?.clusterGroupMode ?? 'subcategory'
+  const groups = groupItems(items, groupMode)
   const centers = clusterFieldCenters(settings.fieldLayout, groups.length, spread)
   if (categoryView?.fraudAxisEnabled) {
     applyFraudAxisToClusterCenters(groups, centers, categoryView.fraudAxisSpread)
@@ -730,9 +770,7 @@ export function computeClusterLayout(
     )
 
     const clusterId = `layout-${anchor.id}`
-    const label =
-      anchor.subcategory?.replace(/_/g, ' ') ??
-      anchor.category.replace(/_/g, ' ')
+    const label = clusterGroupLabel(anchor, groupMode)
 
     members.forEach((item, memberIdx) => {
       const index = itemIndex.get(item.id)
