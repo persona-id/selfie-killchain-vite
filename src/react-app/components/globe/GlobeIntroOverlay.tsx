@@ -44,7 +44,7 @@ function applyLineStyle(el: HTMLElement | null, strength: number) {
   const motion = 1 - t
   el.style.opacity = String(t)
   el.style.filter = `blur(${9 * motion}px)`
-  el.style.transform = `translate3d(0, ${12 * motion}px, 0)`
+  el.style.transform = `translate(-50%, calc(-50% + ${12 * motion}px))`
 }
 
 export function GlobeIntroOverlay({
@@ -171,10 +171,10 @@ export function GlobeIntroOverlay({
         <p ref={line1Ref} className="globe-intro__line">
           {LINE1}
         </p>
-        <p ref={line2Ref} className="globe-intro__line globe-intro__line--second">
+        <p ref={line2Ref} className="globe-intro__line">
           {LINE2}
         </p>
-        <p ref={line3Ref} className="globe-intro__line globe-intro__line--third">
+        <p ref={line3Ref} className="globe-intro__line">
           {LINE3}
         </p>
       </div>

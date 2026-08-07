@@ -12,39 +12,33 @@
 }
 
 .globe-intro__copy {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  width: min(92vw, 72rem);
-  min-height: clamp(2rem, 6vh, 3rem);
-  padding: 0 1.5rem;
-  text-align: center;
   pointer-events: none;
 }
 
 .globe-intro__line {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  top: 50%;
+  left: 50%;
+  width: max-content;
+  max-width: 96vw;
   margin: 0;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
   font-family: var(--font-sans);
-  font-size: calc(clamp(14px, 1.65vw, 20px) * var(--type-scale));
+  font-size: calc(clamp(12px, 1.45vw, 18px) * var(--type-scale));
   font-weight: 300;
-  line-height: 1.35;
+  line-height: 1.2;
   letter-spacing: 0.2px;
   color: #4a4a4a;
+  text-align: center;
   white-space: nowrap;
   opacity: 0;
   backface-visibility: hidden;
-  transform: translate3d(0, 12px, 0);
-  will-change: opacity, transform;
-}
-
-.globe-intro__line--second,
-.globe-intro__line--third {
-  white-space: normal;
-  max-width: min(88vw, 42rem);
+  transform: translate(-50%, -50%);
+  will-change: opacity, transform, filter;
 }
 
 .globe-intro__skip {

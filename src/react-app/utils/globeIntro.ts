@@ -15,20 +15,39 @@ export const GLOBE_INTRO_EXIT_BLEND_MS = 990
 export const GLOBE_INTRO_RING_START = 0.04
 export const GLOBE_INTRO_RING_END = 0.2
 
-export const GLOBE_INTRO_LINE1_START = 0.08
-export const GLOBE_INTRO_LINE1_END = 0.248
-export const GLOBE_INTRO_LINE1_OUT_START = 0.272
-export const GLOBE_INTRO_LINE1_OUT_END = 0.368
+/** Each intro line gets an identical on-screen window. */
+const GLOBE_INTRO_TEXT_START = 0.08
+const GLOBE_INTRO_LINE_SLOT = 0.22
+const GLOBE_INTRO_LINE_IN_END = 0.4
+const GLOBE_INTRO_LINE_OUT_START = 0.5
+const GLOBE_INTRO_LINE_OUT_END = 0.86
 
-export const GLOBE_INTRO_LINE2_START = 0.392
-export const GLOBE_INTRO_LINE2_END = 0.536
-export const GLOBE_INTRO_LINE2_OUT_START = 0.56
-export const GLOBE_INTRO_LINE2_OUT_END = 0.704
+const lineSlotBase = (index: number) =>
+  GLOBE_INTRO_TEXT_START + index * GLOBE_INTRO_LINE_SLOT
 
-export const GLOBE_INTRO_LINE3_START = 0.724
-export const GLOBE_INTRO_LINE3_END = 0.812
-export const GLOBE_INTRO_LINE3_OUT_START = 0.832
-export const GLOBE_INTRO_LINE3_OUT_END = 0.88
+export const GLOBE_INTRO_LINE1_START = lineSlotBase(0)
+export const GLOBE_INTRO_LINE1_END =
+  lineSlotBase(0) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_IN_END
+export const GLOBE_INTRO_LINE1_OUT_START =
+  lineSlotBase(0) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_OUT_START
+export const GLOBE_INTRO_LINE1_OUT_END =
+  lineSlotBase(0) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_OUT_END
+
+export const GLOBE_INTRO_LINE2_START = lineSlotBase(1)
+export const GLOBE_INTRO_LINE2_END =
+  lineSlotBase(1) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_IN_END
+export const GLOBE_INTRO_LINE2_OUT_START =
+  lineSlotBase(1) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_OUT_START
+export const GLOBE_INTRO_LINE2_OUT_END =
+  lineSlotBase(1) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_OUT_END
+
+export const GLOBE_INTRO_LINE3_START = lineSlotBase(2)
+export const GLOBE_INTRO_LINE3_END =
+  lineSlotBase(2) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_IN_END
+export const GLOBE_INTRO_LINE3_OUT_START =
+  lineSlotBase(2) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_OUT_START
+export const GLOBE_INTRO_LINE3_OUT_END =
+  lineSlotBase(2) + GLOBE_INTRO_LINE_SLOT * GLOBE_INTRO_LINE_OUT_END
 
 /** Begin zoom at this point through the final line blur-out (0–1). */
 export const GLOBE_INTRO_REVEAL_AT_LINE2_OUT = 0.75
