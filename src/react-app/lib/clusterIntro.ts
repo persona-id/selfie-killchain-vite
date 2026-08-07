@@ -23,6 +23,9 @@ import { miniGlobePositions, type ClusterGlobe } from './clusterLayout'
 /** Share of post-reveal timeline spent filling the hero globe before zoom-out. */
 export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 
+/** Hero stays as the central intro globe during most of the zoom; settles last. */
+export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
+
 export function clusterIntroHeroSphereRadius(separation: number): number {
   return GLOBE_RADIUS * 0.82 * separation
 }
@@ -40,35 +43,35 @@ export function pickHeroClusterGlobe(
 ): ClusterGlobe | null {
   if (clusterGlobes.length === 0) return null
   return clusterGlobes.reduce((best, globe) =>
-    viewAxisAngularDistance(globe.center) <
-    viewAxisAngularDistance(best.center)
-      ? globe
-      : best,
+    globe.itemIds.size > best.itemIds.size ? globe : best,
   )
 }
 
-export function applyHeroClusterIntroSphereLayout(
+export function applyClusterIntroRingSphereLayout(
   objects: Array<{
     userData: Record<string, unknown>
     position: THREE.Vector3
   }>,
-  heroClusterId: string,
   separation: number,
 ): void {
-  const heroObjects = objects
-    .filter((obj) => obj.userData.clusterId === heroClusterId)
-    .sort((a, b) => {
-      const aId = (a.userData.item as { id: string } | undefined)?.id ?? ''
-      const bId = (b.userData.item as { id: string } | undefined)?.id ?? ''
-      return aId.localeCompare(bId)
-    })
+  const ringMembers = objects
+    .filter((obj) => obj.userData.introIsRingMember)
+    .sort(
+      (a, b) =>
+        ((a.userData.introGlobalLoadRank as number) ??
+          (a.userData.introLoadRank as number) ??
+          0) -
+        ((b.userData.introGlobalLoadRank as number) ??
+          (b.userData.introLoadRank as number) ??
+          0),
+    )
 
   const positions = miniGlobePositions(
-    heroObjects.length,
+    ringMembers.length,
     clusterIntroHeroSphereRadius(separation),
   )
 
-  heroObjects.forEach((obj, index) => {
+  ringMembers.forEach((obj, index) => {
     const introLocal = positions[index].clone()
     obj.userData.introSphereLocal = introLocal
     obj.position.copy(introLocal)
@@ -76,9 +79,10 @@ export function applyHeroClusterIntroSphereLayout(
   })
 }
 
-export function configureHeroClusterIntroRanks(
+export function configureClusterIntroParticipation(
   objects: Array<{ userData: Record<string, unknown> }>,
   heroClusterId: string,
+  loadTotal: number,
 ): void {
   const heroObjects = objects.filter(
     (obj) => obj.userData.clusterId === heroClusterId,
@@ -94,8 +98,8 @@ export function configureHeroClusterIntroRanks(
     .sort((a, b) => a.centrality - b.centrality)
 
   const heroLoadTotal = heroRanked.length
-  const ringCount = introRingCount(heroLoadTotal)
-  const centerFillCount = introCenterFillCount(heroLoadTotal)
+  const heroRingCount = introRingCount(heroLoadTotal)
+  const heroCenterFillCount = introCenterFillCount(heroLoadTotal)
 
   heroRanked.forEach((entry, rank) => {
     const isRingMember = introIsRingMember(rank, heroLoadTotal)
@@ -103,25 +107,39 @@ export function configureHeroClusterIntroRanks(
     entry.obj.userData.introIsRingMember = isRingMember
     entry.obj.userData.introIsCenterMember = isCenterMember
     entry.obj.userData.introLoadRank = rank
-    entry.obj.userData.introRingCount = ringCount
+    entry.obj.userData.introRingCount = heroRingCount
     entry.obj.userData.introCenterFillRank = isCenterMember
       ? introCenterFillRank(rank, heroLoadTotal)
       : -1
-    entry.obj.userData.introCenterFillCount = centerFillCount
+    entry.obj.userData.introCenterFillCount = heroCenterFillCount
     entry.obj.userData.introIsDeferredCluster = false
+    entry.obj.userData.introIsIntroRingGuest = false
   })
 
   for (const obj of objects) {
     if (obj.userData.clusterId === heroClusterId) continue
+
+    const globalRank =
+      (obj.userData.introGlobalLoadRank as number | undefined) ??
+      (obj.userData.introLoadRank as number) ??
+      0
+    const globalRing = introIsRingMember(globalRank, loadTotal)
+
+    if (globalRing) {
+      obj.userData.introIsRingMember = true
+      obj.userData.introIsCenterMember = false
+      obj.userData.introIsDeferredCluster = false
+      obj.userData.introIsIntroRingGuest = true
+      continue
+    }
+
     obj.userData.introIsRingMember = false
     obj.userData.introIsCenterMember = false
     obj.userData.introIsDeferredCluster = true
+    obj.userData.introIsIntroRingGuest = false
     delete obj.userData.introSphereLocal
   }
 }
-
-/** Hero stays as the central intro globe during most of the zoom; settles last. */
-export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
 export function clusterIntroHeroSettleBlend(progress: number): number {
   const zoom = clusterIntroZoomProgress(progress)
@@ -231,4 +249,10 @@ export function clusterIntroHeroPosition(
   out = new THREE.Vector3(),
 ): THREE.Vector3 {
   return out.lerpVectors(new THREE.Vector3(0, 0, 0), fieldCenter, blend)
+}
+
+export function clusterIntroRingGuestVisible(
+  progress: number,
+): boolean {
+  return !introCenterPrefetchActive(progress)
 }

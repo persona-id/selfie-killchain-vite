@@ -54,7 +54,7 @@ import {
   playClusterFocusPlaqueEntrance,
 } from '../../lib/clusterFocusPlaque'
 import {
-  applyHeroClusterIntroSphereLayout,
+  applyClusterIntroRingSphereLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
   clusterIntroDeferredLoadActive,
@@ -64,8 +64,10 @@ import {
   clusterIntroHeroPosition,
   clusterIntroHeroStartCameraZ,
   clusterIntroOtherReveal,
+  clusterIntroRingGuestVisible,
+  clusterIntroZoomActive,
   clusterIntroZoomProgress,
-  configureHeroClusterIntroRanks,
+  configureClusterIntroParticipation,
   pickHeroClusterGlobe,
 } from '../../lib/clusterIntro'
 import {
@@ -1308,6 +1310,8 @@ export function GlobeView({
       object.userData.introIsRingMember = isRingMember
       object.userData.introIsCenterMember = isCenterMember
       object.userData.introLoadRank = loadRank
+      object.userData.introGlobalLoadRank = loadRank
+      object.userData.introLoadTotal = loadTotal
       object.userData.introRingCount = ringCount
       object.userData.introCenterFillRank = centerFillRank
       object.userData.introCenterFillCount = centerFillCount
@@ -1374,19 +1378,16 @@ export function GlobeView({
       const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
       if (heroGlobe) {
         heroClusterIdRef.current = heroGlobe.id
-        applyHeroClusterIntroSphereLayout(
+        configureClusterIntroParticipation(
           objects,
           heroGlobe.id,
+          displayItems.length,
+        )
+        applyClusterIntroRingSphereLayout(
+          objects,
           categoryViewRef.current.clusterSpacing,
         )
-        configureHeroClusterIntroRanks(objects, heroGlobe.id)
-        clusterGroups.forEach((group, clusterId) => {
-          if (clusterId === heroGlobe.id) {
-            group.position.set(0, 0, 0)
-          } else {
-            group.position.copy(group.userData.fieldCenter as THREE.Vector3)
-          }
-        })
+        clusterGroups.forEach((group) => group.position.set(0, 0, 0))
         heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
           categoryViewRef.current.clusterSpacing,
         )
@@ -1714,26 +1715,36 @@ export function GlobeView({
         }
         if (
           clusterIntroActiveRef.current &&
-          heroClusterIdRef.current
+          heroClusterIdRef.current &&
+          !introRevealActive(introProgress)
         ) {
-          const heroId = heroClusterIdRef.current
-          if (!introRevealActive(introProgress)) {
-            introImageTotal = sceneObjects.filter(
-              (obj) => obj.userData.clusterId === heroId,
-            ).length
-            introImagesLoaded = 0
-            for (const obj of sceneObjects) {
-              if (obj.userData.clusterId !== heroId) continue
-              const img = obj.userData.img as HTMLImageElement | undefined
-              if (img?.src) introImagesLoaded += 1
-            }
-          } else {
-            introImageTotal = sceneObjects.length
-            introImagesLoaded = 0
-            for (const obj of sceneObjects) {
-              const img = obj.userData.img as HTMLImageElement | undefined
-              if (img?.src) introImagesLoaded += 1
-            }
+          introImageTotal =
+            ringFrontQueue.length +
+            ringBackQueue.length +
+            centerFrontQueue.length +
+            centerBackQueue.length
+          introImagesLoaded = 0
+          const introParticipantIds = new Set([
+            ...ringFrontQueue,
+            ...ringBackQueue,
+            ...centerFrontQueue,
+            ...centerBackQueue,
+          ])
+          for (const obj of sceneObjects) {
+            if (!introParticipantIds.has(obj)) continue
+            const img = obj.userData.img as HTMLImageElement | undefined
+            if (img?.src) introImagesLoaded += 1
+          }
+        } else if (
+          clusterIntroActiveRef.current &&
+          heroClusterIdRef.current &&
+          introRevealActive(introProgress)
+        ) {
+          introImageTotal = sceneObjects.length
+          introImagesLoaded = 0
+          for (const obj of sceneObjects) {
+            const img = obj.userData.img as HTMLImageElement | undefined
+            if (img?.src) introImagesLoaded += 1
           }
         }
         const loadBehind = introLoadBehindSchedule(
@@ -2030,8 +2041,10 @@ export function GlobeView({
             const fieldCenter = group.userData.fieldCenter as THREE.Vector3
             if (clusterId === heroId) {
               clusterIntroHeroPosition(fieldCenter, groupBlend, group.position)
-            } else {
+            } else if (clusterIntroZoomActive(introProgress)) {
               group.position.copy(fieldCenter)
+            } else {
+              group.position.set(0, 0, 0)
             }
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(1)
@@ -2095,6 +2108,16 @@ export function GlobeView({
             const introSphereLocal = obj.userData.introSphereLocal as
               | THREE.Vector3
               | undefined
+
+            if (
+              clusterIntroActiveNow &&
+              obj.userData.introIsIntroRingGuest &&
+              introSphereLocal &&
+              fieldLocal
+            ) {
+              obj.position.copy(introSphereLocal)
+              continue
+            }
 
             if (
               clusterIntroActiveNow &&
@@ -2445,6 +2468,15 @@ export function GlobeView({
               }
             }
           } else if (isRingMember) {
+            if (
+              obj.userData.introIsIntroRingGuest &&
+              !clusterIntroRingGuestVisible(introVisualProgress)
+            ) {
+              if (el.style.opacity !== '0') el.style.opacity = '0'
+              el.style.pointerEvents = 'none'
+              continue
+            }
+
             const loadStartedAt = obj.userData.introLoadStartedAt as
               | number
               | undefined
