@@ -26,7 +26,7 @@ export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
 /** Smaller center share → more hero tiles visible during the text/ring phase. */
-export const CLUSTER_INTRO_CENTER_FRACTION = 0.22
+export const CLUSTER_INTRO_CENTER_FRACTION = 0.12
 
 export function clusterIntroCenterCount(loadTotal: number): number {
   if (loadTotal <= 1) return 0
@@ -55,7 +55,7 @@ function clusterIntroCenterFillCount(loadTotal: number): number {
 
 /** Accelerated ring load curve for the smaller hero-only ring set. */
 export function clusterIntroRingLoadProgress(progress: number): number {
-  return clamp01(introRingLoadProgress(progress) * 1.45)
+  return clamp01(introRingLoadProgress(progress) * 1.65)
 }
 
 export function clusterIntroRingHemisphereLoadCaps(
@@ -80,8 +80,8 @@ export function clusterIntroEarlyCenterLoadCaps(
     return { frontCap: 0, backCap: 0 }
   }
   const ringP = clusterIntroRingLoadProgress(progress)
-  if (ringP < 0.42) return { frontCap: 0, backCap: 0 }
-  const prefetchP = clamp01(((ringP - 0.42) / 0.58) * 0.92)
+  if (ringP < 0.28) return { frontCap: 0, backCap: 0 }
+  const prefetchP = clamp01(((ringP - 0.28) / 0.72) * 0.96)
   return introSharedHemisphereLoadCaps(frontTotal, backTotal, prefetchP)
 }
 
@@ -169,6 +169,41 @@ export function anchorHeroClusterAtOrigin(
   for (const position of layout.positions) {
     position.sub(offset)
   }
+  return true
+}
+
+/** Center hero tile offsets on x/y/z so the mini-globe sits at the cluster origin. */
+export function centerHeroClusterFieldPositions(
+  layout: ClusterLayout,
+  heroId: string,
+): boolean {
+  const hero = layout.clusterGlobes.find((globe) => globe.id === heroId)
+  if (!hero || hero.fieldPositions.size === 0) return false
+
+  const centroid = new THREE.Vector3()
+  for (const local of hero.fieldPositions.values()) {
+    centroid.add(local)
+  }
+  centroid.multiplyScalar(1 / hero.fieldPositions.size)
+  if (centroid.lengthSq() < 1e-6) return true
+
+  for (const [itemId, local] of hero.fieldPositions.entries()) {
+    hero.fieldPositions.set(itemId, local.clone().sub(centroid))
+    const focusLocal = hero.focusPositions.get(itemId)
+    if (focusLocal) {
+      hero.focusPositions.set(itemId, focusLocal.clone().sub(centroid))
+    }
+  }
+
+  for (let i = 0; i < layout.positions.length; i++) {
+    const itemId = [...layout.itemClusterId.entries()].find(
+      ([, clusterId]) => clusterId === heroId,
+    )?.[0]
+    if (!itemId || layout.itemClusterId.get(itemId) !== heroId) continue
+    const itemIndex = [...layout.itemClusterId.keys()].indexOf(itemId)
+    // positions indexed by display item order — rebuild from cluster map
+  }
+
   return true
 }
 
