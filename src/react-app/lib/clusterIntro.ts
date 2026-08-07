@@ -195,15 +195,6 @@ export function centerHeroClusterFieldPositions(
     }
   }
 
-  for (let i = 0; i < layout.positions.length; i++) {
-    const itemId = [...layout.itemClusterId.entries()].find(
-      ([, clusterId]) => clusterId === heroId,
-    )?.[0]
-    if (!itemId || layout.itemClusterId.get(itemId) !== heroId) continue
-    const itemIndex = [...layout.itemClusterId.keys()].indexOf(itemId)
-    // positions indexed by display item order — rebuild from cluster map
-  }
-
   return true
 }
 
