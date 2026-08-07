@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 
-const CHAR_DELAY_MS = 22
+import {
+  runSequentialTypewriter,
+  SEQUENTIAL_TYPEWRITER_CHAR_DELAY_MS,
+} from '../lib/sequentialTypewriter'
+
+const CHAR_DELAY_MS = SEQUENTIAL_TYPEWRITER_CHAR_DELAY_MS
 
 export function useSequentialTypewriter(lines: readonly string[], active: boolean) {
   const linesKey = lines.join('\u0000')
@@ -16,41 +21,18 @@ export function useSequentialTypewriter(lines: readonly string[], active: boolea
 
     setValues(lineTexts.map(() => ''))
 
-    let currentLine = 0
-    let charIndex = 0
-    let cancelled = false
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-    const tick = () => {
-      if (cancelled) return
-
-      const line = lineTexts[currentLine]
-      if (!line) return
-
-      charIndex += 1
-      const nextValue = line.slice(0, charIndex)
+    const cancel = runSequentialTypewriter(lineTexts, (lineIndex, value) => {
       setValues((prev) => {
         const next = [...prev]
-        next[currentLine] = nextValue
+        next[lineIndex] = value
         return next
       })
+    })
 
-      if (charIndex >= line.length) {
-        currentLine += 1
-        charIndex = 0
-        if (currentLine >= lineTexts.length) return
-      }
-
-      timeoutId = window.setTimeout(tick, CHAR_DELAY_MS)
-    }
-
-    timeoutId = window.setTimeout(tick, CHAR_DELAY_MS)
-
-    return () => {
-      cancelled = true
-      if (timeoutId !== null) window.clearTimeout(timeoutId)
-    }
+    return cancel
   }, [active, linesKey])
 
   return values
 }
+
+export { CHAR_DELAY_MS }
