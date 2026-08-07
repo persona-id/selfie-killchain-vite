@@ -3,13 +3,18 @@ import {
   clamp01,
   easeInOutCubic,
   easeOutCubic,
-  globeIntroZoomPhaseT,
   GLOBE_INTRO_CAMERA_START_FACTOR,
+  GLOBE_INTRO_CUTOUT_CLOSE_BY_ZOOM,
+  GLOBE_INTRO_LINE1_START,
   GLOBE_INTRO_LINE2_START,
-  GLOBE_INTRO_RING_LOAD_END,
-  introCenterPrefetchActive,
-  introRevealActive,
-  introRingLoadProgress,
+  GLOBE_INTRO_LINE3_START,
+  GLOBE_INTRO_LINE3_END,
+  GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD,
+  GLOBE_INTRO_ZOOM_DURATION_SCALE,
+  GLOBE_INTRO_ZOOM_END,
+  globeIntroLine1InProgress,
+  globeIntroLine2InProgress,
+  globeIntroLine3InProgress,
   introSharedHemisphereLoadCaps,
 } from '../utils/globeIntro'
 import {
@@ -26,49 +31,68 @@ export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 /** Hero mini-globe compresses during the final portion of zoom-out. */
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
-/** Smaller center share → more hero tiles visible during the text/ring phase. */
-export const CLUSTER_INTRO_CENTER_FRACTION = 0.04
+/** Ring tiles visible around the intro text during the typing phase. */
+export const CLUSTER_INTRO_RING_SIZE = 12
 
-/** Ring loads begin slightly before the standard intro ring phase. */
+/** Ring loads begin slightly before line 1 types in. */
 export const CLUSTER_INTRO_RING_START = 0.02
 
-export function clusterIntroCenterCount(loadTotal: number): number {
-  if (loadTotal <= 1) return 0
-  return Math.min(
-    loadTotal - 1,
-    Math.floor(loadTotal * CLUSTER_INTRO_CENTER_FRACTION),
+/** Zoom and center fill begin once line 3 has finished typing in. */
+export const CLUSTER_INTRO_REVEAL_START = GLOBE_INTRO_LINE3_END
+
+export function clusterIntroRevealActive(progress: number): boolean {
+  return progress >= CLUSTER_INTRO_REVEAL_START
+}
+
+export function clusterIntroTextPhaseActive(progress: number): boolean {
+  return (
+    progress >= CLUSTER_INTRO_RING_START && !clusterIntroRevealActive(progress)
   )
 }
 
+/** How many ring tiles may appear — 4 per intro line, synced to type-in progress. */
+export function clusterIntroTextSyncedRingAllowedCount(progress: number): number {
+  const perLine = CLUSTER_INTRO_RING_SIZE / 3
+  const line1 = globeIntroLine1InProgress(progress)
+  const line2 = globeIntroLine2InProgress(progress)
+  const line3 = globeIntroLine3InProgress(progress)
+
+  if (progress < GLOBE_INTRO_LINE1_START) return 0
+
+  let allowed = perLine * line1
+  if (progress >= GLOBE_INTRO_LINE2_START) {
+    allowed = perLine + perLine * line2
+  }
+  if (progress >= GLOBE_INTRO_LINE3_START) {
+    allowed = perLine * 2 + perLine * line3
+  }
+
+  return Math.min(
+    CLUSTER_INTRO_RING_SIZE,
+    Math.max(0, Math.ceil(allowed - 1e-6)),
+  )
+}
+
+function clusterIntroRingStartRank(loadTotal: number): number {
+  return Math.max(0, loadTotal - CLUSTER_INTRO_RING_SIZE)
+}
+
 function clusterIntroRingCount(loadTotal: number): number {
-  return Math.max(1, loadTotal - clusterIntroCenterCount(loadTotal))
+  return Math.min(CLUSTER_INTRO_RING_SIZE, loadTotal)
 }
 
 function clusterIntroIsRingMember(rank: number, loadTotal: number): boolean {
-  return rank >= clusterIntroCenterCount(loadTotal)
+  return rank >= clusterIntroRingStartRank(loadTotal)
 }
 
 function clusterIntroCenterFillRank(rank: number, loadTotal: number): number {
-  const centerCount = clusterIntroCenterCount(loadTotal)
-  return centerCount - 1 - rank
+  const ringStart = clusterIntroRingStartRank(loadTotal)
+  if (rank >= ringStart) return -1
+  return ringStart - 1 - rank
 }
 
 function clusterIntroCenterFillCount(loadTotal: number): number {
-  return Math.max(1, clusterIntroCenterCount(loadTotal))
-}
-
-/** Accelerated ring load curve for the smaller hero-only ring set. */
-export function clusterIntroRingLoadProgress(progress: number): number {
-  if (progress < CLUSTER_INTRO_RING_START) return 0
-  if (progress >= GLOBE_INTRO_RING_LOAD_END) return 1
-
-  const window = GLOBE_INTRO_RING_LOAD_END - CLUSTER_INTRO_RING_START
-  const elapsed = progress - CLUSTER_INTRO_RING_START
-  const t = clamp01(elapsed / Math.max(0.0001, window))
-  const eased = easeInOutCubic(t)
-  const earlyBoost = clamp01(elapsed / 0.07) * 0.32
-  const standard = introRingLoadProgress(progress)
-  return clamp01(Math.max(eased * 1.45 + earlyBoost, standard * 2.35))
+  return clusterIntroRingStartRank(loadTotal)
 }
 
 export function clusterIntroRingHemisphereLoadCaps(
@@ -76,26 +100,52 @@ export function clusterIntroRingHemisphereLoadCaps(
   frontTotal: number,
   backTotal: number,
 ): { frontCap: number; backCap: number } {
-  return introSharedHemisphereLoadCaps(
-    frontTotal,
-    backTotal,
-    clusterIntroRingLoadProgress(progress),
-  )
+  const ringTotal = frontTotal + backTotal
+  if (ringTotal <= 0) return { frontCap: 0, backCap: 0 }
+
+  const allowed = clusterIntroTextSyncedRingAllowedCount(progress)
+  if (allowed <= 0) return { frontCap: 0, backCap: 0 }
+  if (allowed >= ringTotal) {
+    return { frontCap: frontTotal, backCap: backTotal }
+  }
+
+  const loadP = allowed / ringTotal
+  return introSharedHemisphereLoadCaps(frontTotal, backTotal, loadP)
 }
 
-/** Prefetch center tiles during late ring phase so fill is seamless. */
+/** Prefetch inner hero tiles once the ring is complete and reveal begins. */
 export function clusterIntroEarlyCenterLoadCaps(
   progress: number,
   frontTotal: number,
   backTotal: number,
 ): { frontCap: number; backCap: number } {
-  if (progress < GLOBE_INTRO_LINE2_START) {
+  if (!clusterIntroRevealActive(progress)) {
     return { frontCap: 0, backCap: 0 }
   }
-  const ringP = clusterIntroRingLoadProgress(progress)
-  if (ringP < 0.1) return { frontCap: 0, backCap: 0 }
-  const prefetchP = clamp01(((ringP - 0.1) / 0.9) * 1.02)
-  return introSharedHemisphereLoadCaps(frontTotal, backTotal, prefetchP)
+  return introSharedHemisphereLoadCaps(
+    frontTotal,
+    backTotal,
+    clusterIntroCenterFillProgress(progress),
+  )
+}
+
+export function clusterIntroScreenCenterCutoutRad(progress: number): number {
+  if (
+    progress >= CLUSTER_INTRO_RING_START &&
+    progress < CLUSTER_INTRO_REVEAL_START
+  ) {
+    return GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD
+  }
+
+  if (clusterIntroRevealActive(progress)) {
+    const zoomT = clusterIntroPostRevealT(progress)
+    const cutoutP = easeInOutCubic(
+      clamp01(zoomT / GLOBE_INTRO_CUTOUT_CLOSE_BY_ZOOM),
+    )
+    return GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD * (1 - cutoutP)
+  }
+
+  return 0
 }
 
 export function clusterIntroHeroSphereRadius(separation: number): number {
@@ -300,13 +350,24 @@ export function configureClusterIntroParticipation(
 }
 
 function clusterIntroPostRevealT(progress: number): number {
-  if (!introRevealActive(progress)) return 0
-  return globeIntroZoomPhaseT(progress)
+  if (!clusterIntroRevealActive(progress)) return 0
+  const span = GLOBE_INTRO_ZOOM_END - CLUSTER_INTRO_REVEAL_START
+  const slowedSpan = span * GLOBE_INTRO_ZOOM_DURATION_SCALE
+  return clamp01((progress - CLUSTER_INTRO_REVEAL_START) / Math.max(0.0001, slowedSpan))
+}
+
+export function clusterIntroMotionEase(progress: number): number {
+  if (!clusterIntroRevealActive(progress)) return 0
+  return easeInOutCubic(clusterIntroPostRevealT(progress))
+}
+
+export function clusterIntroRotationHandoff(progress: number): number {
+  return clusterIntroMotionEase(progress)
 }
 
 /** 0→1 while the hero globe center-fills on the intro sphere; camera stays put. */
 export function clusterIntroCenterFillProgress(progress: number): number {
-  if (!introCenterPrefetchActive(progress)) return 0
+  if (!clusterIntroRevealActive(progress)) return 0
   const postRevealT = clusterIntroPostRevealT(progress)
   if (postRevealT <= 0) return 0
   if (postRevealT >= CLUSTER_INTRO_FILL_PHASE_SHARE) return 1
@@ -317,7 +378,7 @@ export function clusterIntroCenterFillProgress(progress: number): number {
 
 /** 0→1 during zoom-out after the hero globe has formed at center. */
 export function clusterIntroZoomProgress(progress: number): number {
-  if (!introRevealActive(progress)) return 0
+  if (!clusterIntroRevealActive(progress)) return 0
   const postRevealT = clusterIntroPostRevealT(progress)
   if (postRevealT <= CLUSTER_INTRO_FILL_PHASE_SHARE) return 0
   return easeInOutCubic(
@@ -397,4 +458,3 @@ export function clusterIntroOtherReveal(
   if (t <= threshold) return 0
   return easeOutCubic(clamp01((t - threshold) / Math.max(0.001, 1 - threshold)))
 }
-

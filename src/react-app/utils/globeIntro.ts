@@ -564,6 +564,16 @@ export function assignRingLoadSeqOuterFirst(
   sorted.forEach((item, seq) => item.setSeq(seq))
 }
 
+/** Assign load/reveal order evenly around the ring (azimuth on the XZ plane). */
+export function assignRingLoadSeqAzimuth(
+  items: Array<{ pos: THREE.Vector3; setSeq: (seq: number) => void }>,
+): void {
+  const sorted = [...items].sort(
+    (a, b) => Math.atan2(a.pos.x, a.pos.z) - Math.atan2(b.pos.x, b.pos.z),
+  )
+  sorted.forEach((item, seq) => item.setSeq(seq))
+}
+
 /** Per-tile fade after its load begins (blur → sharp). */
 export function introTileOpacity(
   loadStartedAt: number | undefined,
