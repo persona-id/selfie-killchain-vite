@@ -73,11 +73,15 @@
 .cluster-focus-plaque__title,
 .cluster-focus-plaque__count {
   font-family: var(--font-mono);
-  font-size: 5px;
+  font-size: 6px;
   font-weight: 300;
   line-height: 1;
   letter-spacing: 0;
   color: rgba(160, 160, 160, 0.88);
+}
+
+.cluster-focus-plaque__title {
+  text-transform: uppercase;
 }
 
 .cluster-focus-plaque__meta {

@@ -103,7 +103,7 @@ import {
   type ClusterHoverTarget,
   type ImageCluster,
 } from '../../lib/threads'
-import type { GalleryItem } from '../../types/gallery'
+import type { Complexity, GalleryItem } from '../../types/gallery'
 import {
   clusterElementPositions,
   CLUSTER_FOCUS_CAMERA_Z,
@@ -229,6 +229,7 @@ export function GlobeView({
   const [focusedClusterInfo, setFocusedClusterInfo] = useState<{
     label: string
     count: number
+    complexity: Complexity
   } | null>(null)
   const [focusedImageTitle, setFocusedImageTitle] = useState<string | null>(null)
   const [isConstellationFocused, setIsConstellationFocused] = useState(false)
@@ -504,10 +505,13 @@ export function GlobeView({
     focusZoomArmedRef.current = false
     setFocusedClusterInfo({
       label:
-        anchor?.subcategory?.replace(/_/g, ' ') ??
-        anchor?.category.replace(/_/g, ' ') ??
-        'Cluster',
+        toSentenceCase(
+          anchor?.subcategory?.replace(/_/g, ' ') ??
+            anchor?.category.replace(/_/g, ' ') ??
+            'Cluster',
+        ),
       count: items.length,
+      complexity: dominantClusterComplexity(items),
     })
 
     const linked = clusterMemberIds(cluster)
@@ -616,9 +620,18 @@ export function GlobeView({
     focusBlendRef.current = 1
     focusZoomArmedRef.current = false
     setIsConstellationFocused(true)
+    const clusterItems: GalleryItem[] = []
+    clusterGlobe.itemIds.forEach((itemId) => {
+      const item = objectByIdRef.current.get(itemId)?.userData.item as
+        | GalleryItem
+        | undefined
+      if (item) clusterItems.push(item)
+    })
+
     setFocusedClusterInfo({
       label: toSentenceCase(clusterGlobe.label),
       count: clusterGlobe.itemIds.size,
+      complexity: dominantClusterComplexity(clusterItems),
     })
     setClusterHover(null)
 
@@ -3188,8 +3201,8 @@ export function GlobeView({
         transition={reduceMotion ? { duration: 0 } : SETTINGS_MENU_ENTRANCE.transition}
       >
         <p className="text-black" style={{ fontSize: 'var(--killchain-chrome-hint-font-size)' }}>
-          {clusterFocusHintActive
-            ? 'Click any image to reveal its fraud path'
+          {clusterFocusHintActive && focusedClusterInfo
+            ? `${focusedClusterInfo.label} — ${toSentenceCase(focusedClusterInfo.complexity)}`
             : cameraControls.enabled
             ? 'Point to move · hand closer/farther to zoom · pinch to select · pinch twice to close'
             : globeArrangement === 'clusters'
