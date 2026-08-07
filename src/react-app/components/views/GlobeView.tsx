@@ -54,7 +54,8 @@ import {
   playClusterFocusPlaqueEntrance,
 } from '../../lib/clusterFocusPlaque'
 import {
-  applyClusterIntroRingSphereLayout,
+  applyClusterIntroGuestRingSphereLayout,
+  applyHeroClusterIntroSphereLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
   clusterIntroDeferredLoadActive,
@@ -64,7 +65,7 @@ import {
   clusterIntroHeroPosition,
   clusterIntroHeroStartCameraZ,
   clusterIntroOtherReveal,
-  clusterIntroRingGuestVisible,
+  clusterIntroRingGuestFade,
   clusterIntroZoomActive,
   clusterIntroZoomProgress,
   configureClusterIntroParticipation,
@@ -1383,7 +1384,12 @@ export function GlobeView({
           heroGlobe.id,
           displayItems.length,
         )
-        applyClusterIntroRingSphereLayout(
+        applyHeroClusterIntroSphereLayout(
+          objects,
+          heroGlobe.id,
+          categoryViewRef.current.clusterSpacing,
+        )
+        applyClusterIntroGuestRingSphereLayout(
           objects,
           categoryViewRef.current.clusterSpacing,
         )
@@ -2468,15 +2474,6 @@ export function GlobeView({
               }
             }
           } else if (isRingMember) {
-            if (
-              obj.userData.introIsIntroRingGuest &&
-              !clusterIntroRingGuestVisible(introVisualProgress)
-            ) {
-              if (el.style.opacity !== '0') el.style.opacity = '0'
-              el.style.pointerEvents = 'none'
-              continue
-            }
-
             const loadStartedAt = obj.userData.introLoadStartedAt as
               | number
               | undefined
@@ -2508,6 +2505,13 @@ export function GlobeView({
               )
             ) {
               introOpacity = 0
+            }
+
+            if (
+              obj.userData.introIsIntroRingGuest &&
+              clusterIntroActiveRef.current
+            ) {
+              introOpacity *= clusterIntroRingGuestFade(introVisualProgress)
             }
           } else if (
             isCenterMember &&

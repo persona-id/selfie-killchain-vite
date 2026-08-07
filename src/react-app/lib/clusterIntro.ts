@@ -20,10 +20,10 @@ import {
 } from './globe'
 import { miniGlobePositions, type ClusterGlobe } from './clusterLayout'
 
-/** Share of post-reveal timeline spent filling the hero globe before zoom-out. */
+/** Share of post-reveal timeline spent completing the hero globe before zoom-out. */
 export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 
-/** Hero stays as the central intro globe during most of the zoom; settles last. */
+/** Hero moves to its field slot during the final portion of zoom-out. */
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
 export function clusterIntroHeroSphereRadius(separation: number): number {
@@ -47,15 +47,46 @@ export function pickHeroClusterGlobe(
   )
 }
 
-export function applyClusterIntroRingSphereLayout(
+/** Every hero image shares one large intro sphere so ring → globe is seamless. */
+export function applyHeroClusterIntroSphereLayout(
+  objects: Array<{
+    userData: Record<string, unknown>
+    position: THREE.Vector3
+  }>,
+  heroClusterId: string,
+  separation: number,
+): void {
+  const heroObjects = objects
+    .filter((obj) => obj.userData.clusterId === heroClusterId)
+    .sort(
+      (a, b) =>
+        ((a.userData.introLoadRank as number) ?? 0) -
+        ((b.userData.introLoadRank as number) ?? 0),
+    )
+
+  const positions = miniGlobePositions(
+    heroObjects.length,
+    clusterIntroHeroSphereRadius(separation),
+  )
+
+  heroObjects.forEach((obj, index) => {
+    const introLocal = positions[index].clone()
+    obj.userData.introSphereLocal = introLocal
+    obj.position.copy(introLocal)
+    obj.userData.introHemisphereFront = introLocal.z >= 0
+  })
+}
+
+/** Decorative ring tiles from other clusters — same radius, fade out during globe fill. */
+export function applyClusterIntroGuestRingSphereLayout(
   objects: Array<{
     userData: Record<string, unknown>
     position: THREE.Vector3
   }>,
   separation: number,
 ): void {
-  const ringMembers = objects
-    .filter((obj) => obj.userData.introIsRingMember)
+  const guests = objects
+    .filter((obj) => obj.userData.introIsIntroRingGuest)
     .sort(
       (a, b) =>
         ((a.userData.introGlobalLoadRank as number) ??
@@ -67,11 +98,11 @@ export function applyClusterIntroRingSphereLayout(
     )
 
   const positions = miniGlobePositions(
-    ringMembers.length,
+    guests.length,
     clusterIntroHeroSphereRadius(separation),
   )
 
-  ringMembers.forEach((obj, index) => {
+  guests.forEach((obj, index) => {
     const introLocal = positions[index].clone()
     obj.userData.introSphereLocal = introLocal
     obj.position.copy(introLocal)
@@ -91,8 +122,7 @@ export function configureClusterIntroParticipation(
     .map((obj) => ({
       obj,
       centrality: viewAxisAngularDistance(
-        (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
-          (obj.userData.fieldLocal as THREE.Vector3),
+        (obj.userData.fieldLocal as THREE.Vector3) ?? new THREE.Vector3(),
       ),
     }))
     .sort((a, b) => a.centrality - b.centrality)
@@ -141,27 +171,12 @@ export function configureClusterIntroParticipation(
   }
 }
 
-export function clusterIntroHeroSettleBlend(progress: number): number {
-  const zoom = clusterIntroZoomProgress(progress)
-  if (zoom <= CLUSTER_INTRO_HERO_SETTLE_START) return 0
-  return easeInOutCubic(
-    clamp01(
-      (zoom - CLUSTER_INTRO_HERO_SETTLE_START) /
-        Math.max(0.001, 1 - CLUSTER_INTRO_HERO_SETTLE_START),
-    ),
-  )
-}
-
-export function clusterIntroHeroItemBlend(progress: number): number {
-  return clusterIntroHeroSettleBlend(progress)
-}
-
 function clusterIntroPostRevealT(progress: number): number {
   if (!introRevealActive(progress)) return 0
   return globeIntroZoomPhaseT(progress)
 }
 
-/** 0→1 while the hero globe center-fills; camera stays put. */
+/** 0→1 while the hero globe center-fills on the intro sphere; camera stays put. */
 export function clusterIntroCenterFillProgress(progress: number): number {
   if (!introCenterPrefetchActive(progress)) return 0
   const postRevealT = clusterIntroPostRevealT(progress)
@@ -172,7 +187,14 @@ export function clusterIntroCenterFillProgress(progress: number): number {
   )
 }
 
-/** 0→1 during zoom-out after the hero globe has filled in. */
+/** Ring guests fade out as the hero globe finishes forming. */
+export function clusterIntroRingGuestFade(progress: number): number {
+  const fillP = clusterIntroCenterFillProgress(progress)
+  if (fillP <= 0) return 1
+  return 1 - easeInOutCubic(clamp01(fillP / 0.55))
+}
+
+/** 0→1 during zoom-out after the hero globe has formed at center. */
 export function clusterIntroZoomProgress(progress: number): number {
   if (!introRevealActive(progress)) return 0
   const postRevealT = clusterIntroPostRevealT(progress)
@@ -191,6 +213,22 @@ export function clusterIntroZoomActive(progress: number): boolean {
 
 export function clusterIntroDeferredLoadActive(progress: number): boolean {
   return clusterIntroZoomActive(progress)
+}
+
+export function clusterIntroHeroSettleBlend(progress: number): number {
+  const zoom = clusterIntroZoomProgress(progress)
+  if (zoom <= CLUSTER_INTRO_HERO_SETTLE_START) return 0
+  return easeInOutCubic(
+    clamp01(
+      (zoom - CLUSTER_INTRO_HERO_SETTLE_START) /
+        Math.max(0.001, 1 - CLUSTER_INTRO_HERO_SETTLE_START),
+    ),
+  )
+}
+
+/** Hero compresses from intro sphere → field layout during late zoom-out. */
+export function clusterIntroHeroItemBlend(progress: number): number {
+  return clusterIntroHeroSettleBlend(progress)
 }
 
 export function clusterIntroCameraZ(
@@ -249,10 +287,4 @@ export function clusterIntroHeroPosition(
   out = new THREE.Vector3(),
 ): THREE.Vector3 {
   return out.lerpVectors(new THREE.Vector3(0, 0, 0), fieldCenter, blend)
-}
-
-export function clusterIntroRingGuestVisible(
-  progress: number,
-): boolean {
-  return !introCenterPrefetchActive(progress)
 }
