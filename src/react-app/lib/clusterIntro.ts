@@ -5,12 +5,11 @@ import {
   easeOutCubic,
   globeIntroZoomPhaseT,
   GLOBE_INTRO_CAMERA_START_FACTOR,
-  introCenterFillCount,
-  introCenterFillRank,
+  GLOBE_INTRO_LINE2_START,
   introCenterPrefetchActive,
-  introIsRingMember,
   introRevealActive,
-  introRingCount,
+  introRingLoadProgress,
+  introSharedHemisphereLoadCaps,
 } from '../utils/globeIntro'
 import {
   computeGlobeOverviewCameraZ,
@@ -18,17 +17,73 @@ import {
   GLOBE_RADIUS,
   viewAxisAngularDistance,
 } from './globe'
-import {
-  miniGlobePositions,
-  type ClusterGlobe,
-  type ClusterLayout,
-} from './clusterLayout'
+import { type ClusterGlobe, type ClusterLayout } from './clusterLayout'
 
 /** Share of post-reveal timeline spent completing the hero globe before zoom-out. */
 export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 
 /** Hero mini-globe compresses during the final portion of zoom-out. */
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
+
+/** Smaller center share → more hero tiles visible during the text/ring phase. */
+export const CLUSTER_INTRO_CENTER_FRACTION = 0.22
+
+export function clusterIntroCenterCount(loadTotal: number): number {
+  if (loadTotal <= 1) return 0
+  return Math.min(
+    loadTotal - 1,
+    Math.floor(loadTotal * CLUSTER_INTRO_CENTER_FRACTION),
+  )
+}
+
+function clusterIntroRingCount(loadTotal: number): number {
+  return Math.max(1, loadTotal - clusterIntroCenterCount(loadTotal))
+}
+
+function clusterIntroIsRingMember(rank: number, loadTotal: number): boolean {
+  return rank >= clusterIntroCenterCount(loadTotal)
+}
+
+function clusterIntroCenterFillRank(rank: number, loadTotal: number): number {
+  const centerCount = clusterIntroCenterCount(loadTotal)
+  return centerCount - 1 - rank
+}
+
+function clusterIntroCenterFillCount(loadTotal: number): number {
+  return Math.max(1, clusterIntroCenterCount(loadTotal))
+}
+
+/** Accelerated ring load curve for the smaller hero-only ring set. */
+export function clusterIntroRingLoadProgress(progress: number): number {
+  return clamp01(introRingLoadProgress(progress) * 1.45)
+}
+
+export function clusterIntroRingHemisphereLoadCaps(
+  progress: number,
+  frontTotal: number,
+  backTotal: number,
+): { frontCap: number; backCap: number } {
+  return introSharedHemisphereLoadCaps(
+    frontTotal,
+    backTotal,
+    clusterIntroRingLoadProgress(progress),
+  )
+}
+
+/** Prefetch center tiles during late ring phase so fill is seamless. */
+export function clusterIntroEarlyCenterLoadCaps(
+  progress: number,
+  frontTotal: number,
+  backTotal: number,
+): { frontCap: number; backCap: number } {
+  if (progress < GLOBE_INTRO_LINE2_START) {
+    return { frontCap: 0, backCap: 0 }
+  }
+  const ringP = clusterIntroRingLoadProgress(progress)
+  if (ringP < 0.42) return { frontCap: 0, backCap: 0 }
+  const prefetchP = clamp01(((ringP - 0.42) / 0.58) * 0.92)
+  return introSharedHemisphereLoadCaps(frontTotal, backTotal, prefetchP)
+}
 
 export function clusterIntroHeroSphereRadius(separation: number): number {
   return GLOBE_RADIUS * 0.82 * separation
@@ -46,12 +101,14 @@ export function pickHeroClusterGlobe(
   clusterGlobes: ClusterGlobe[],
 ): ClusterGlobe | null {
   if (clusterGlobes.length === 0) return null
-  return clusterGlobes.reduce((best, globe) =>
-    globe.itemIds.size > best.itemIds.size ? globe : best,
-  )
+  return clusterGlobes.reduce((best, globe) => {
+    if (globe.itemIds.size > best.itemIds.size) return globe
+    if (globe.itemIds.size < best.itemIds.size) return best
+    return globe.center.lengthSq() < best.center.lengthSq() ? globe : best
+  })
 }
 
-/** Every hero image shares one large intro sphere so ring → globe is seamless. */
+/** Scale the hero mini-globe layout onto the large intro sphere at the origin. */
 export function applyHeroClusterIntroSphereLayout(
   objects: Array<{
     userData: Record<string, unknown>
@@ -59,30 +116,44 @@ export function applyHeroClusterIntroSphereLayout(
   }>,
   heroClusterId: string,
   separation: number,
+  fieldMiniRadius: number,
 ): void {
-  const heroObjects = objects
-    .filter((obj) => obj.userData.clusterId === heroClusterId)
-    .sort(
-      (a, b) =>
-        ((a.userData.introLoadRank as number) ?? 0) -
-        ((b.userData.introLoadRank as number) ?? 0),
-    )
+  const introRadius = clusterIntroHeroSphereRadius(separation)
+  const scale = fieldMiniRadius > 1e-6 ? introRadius / fieldMiniRadius : 1
 
-  const positions = miniGlobePositions(
-    heroObjects.length,
-    clusterIntroHeroSphereRadius(separation),
-  )
-
-  heroObjects.forEach((obj, index) => {
-    const introLocal = positions[index].clone()
+  for (const obj of objects) {
+    if (obj.userData.clusterId !== heroClusterId) continue
+    const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
+    if (!fieldLocal) continue
+    const introLocal = fieldLocal.clone().multiplyScalar(scale)
     obj.userData.introSphereLocal = introLocal
     obj.position.copy(introLocal)
     obj.userData.introHemisphereFront = introLocal.z >= 0
-  })
+  }
 }
 
-/** Shift the field so the hero cluster sits at the origin. */
-export function recenterClusterLayoutAroundHero(
+/** Shift the constellation so its centroid sits at the origin (viewport center). */
+export function recenterClusterLayoutAtCentroid(layout: ClusterLayout): boolean {
+  if (layout.clusterGlobes.length === 0) return false
+
+  const centroid = new THREE.Vector3()
+  for (const globe of layout.clusterGlobes) {
+    centroid.add(globe.center)
+  }
+  centroid.multiplyScalar(1 / layout.clusterGlobes.length)
+  if (centroid.lengthSq() < 1e-6) return true
+
+  for (const globe of layout.clusterGlobes) {
+    globe.center.sub(centroid)
+  }
+  for (const position of layout.positions) {
+    position.sub(centroid)
+  }
+  return true
+}
+
+/** Nudge the field so the hero cluster globe center is exactly at the origin. */
+export function anchorHeroClusterAtOrigin(
   layout: ClusterLayout,
   heroId: string,
 ): boolean {
@@ -99,6 +170,14 @@ export function recenterClusterLayoutAroundHero(
     position.sub(offset)
   }
   return true
+}
+
+export function clusterIntroFieldBoundingRadius(layout: ClusterLayout): number {
+  let maxR = layout.fieldRadius
+  for (const globe of layout.clusterGlobes) {
+    maxR = Math.max(maxR, globe.center.length() + globe.radius)
+  }
+  return maxR
 }
 
 export function configureClusterIntroParticipation(
@@ -118,18 +197,18 @@ export function configureClusterIntroParticipation(
     .sort((a, b) => a.centrality - b.centrality)
 
   const heroLoadTotal = heroRanked.length
-  const heroRingCount = introRingCount(heroLoadTotal)
-  const heroCenterFillCount = introCenterFillCount(heroLoadTotal)
+  const heroRingCount = clusterIntroRingCount(heroLoadTotal)
+  const heroCenterFillCount = clusterIntroCenterFillCount(heroLoadTotal)
 
   heroRanked.forEach((entry, rank) => {
-    const isRingMember = introIsRingMember(rank, heroLoadTotal)
+    const isRingMember = clusterIntroIsRingMember(rank, heroLoadTotal)
     const isCenterMember = !isRingMember
     entry.obj.userData.introIsRingMember = isRingMember
     entry.obj.userData.introIsCenterMember = isCenterMember
     entry.obj.userData.introLoadRank = rank
     entry.obj.userData.introRingCount = heroRingCount
     entry.obj.userData.introCenterFillRank = isCenterMember
-      ? introCenterFillRank(rank, heroLoadTotal)
+      ? clusterIntroCenterFillRank(rank, heroLoadTotal)
       : -1
     entry.obj.userData.introCenterFillCount = heroCenterFillCount
     entry.obj.userData.introIsDeferredCluster = false

@@ -59,14 +59,18 @@ import {
   clusterIntroCenterFillProgress,
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
+  clusterIntroEarlyCenterLoadCaps,
+  clusterIntroFieldBoundingRadius,
   clusterIntroHeroItemBlend,
   clusterIntroHeroStartCameraZ,
   clusterIntroOtherReveal,
+  clusterIntroRingHemisphereLoadCaps,
   clusterIntroZoomActive,
   clusterIntroZoomProgress,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
-  recenterClusterLayoutAroundHero,
+  anchorHeroClusterAtOrigin,
+  recenterClusterLayoutAtCentroid,
 } from '../../lib/clusterIntro'
 import {
   focusOrbitDepthOpacity,
@@ -1172,9 +1176,10 @@ export function GlobeView({
       isClusters &&
       categoryViewRef.current.clusterIntroTest
     ) {
-      const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
-      if (heroGlobe) {
-        recenterClusterLayoutAroundHero(layout, heroGlobe.id)
+      recenterClusterLayoutAtCentroid(layout)
+      const introHero = pickHeroClusterGlobe(layout.clusterGlobes)
+      if (introHero) {
+        anchorHeroClusterAtOrigin(layout, introHero.id)
       }
     }
 
@@ -1392,6 +1397,7 @@ export function GlobeView({
             objects,
             heroGlobe.id,
             categoryViewRef.current.clusterSpacing,
+            heroGlobe.radius,
           )
           clusterGroups.forEach((group) => group.position.set(0, 0, 0))
           heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
@@ -1485,7 +1491,9 @@ export function GlobeView({
 
     const overviewBoundingRadius =
       isClusters && layout
-        ? layoutBoundingRadius(layout.positions, layout.fieldRadius)
+        ? categoryViewRef.current.clusterIntroTest
+          ? clusterIntroFieldBoundingRadius(layout)
+          : layoutBoundingRadius(layout.positions, layout.fieldRadius)
         : GLOBE_RADIUS
     const overviewCameraZ = computeGlobeOverviewCameraZ(
       overviewBoundingRadius,
@@ -1786,18 +1794,26 @@ export function GlobeView({
           (ringFrontQueue.length > 0 || ringBackQueue.length > 0) &&
           introProgress >= GLOBE_INTRO_RING_START
         ) {
-          const ringCaps = introRingHemisphereLoadCaps(
-            introProgress,
-            ringFrontQueue.length,
-            ringBackQueue.length,
-          )
+          const ringCaps = clusterIntroActiveRef.current
+            ? clusterIntroRingHemisphereLoadCaps(
+                introProgress,
+                ringFrontQueue.length,
+                ringBackQueue.length,
+              )
+            : introRingHemisphereLoadCaps(
+                introProgress,
+                ringFrontQueue.length,
+                ringBackQueue.length,
+              )
           drainHemispherePairBalanced(
             ringFrontQueue,
             ringFrontLoadIndexRef,
             ringBackQueue,
             ringBackLoadIndexRef,
             lastRingPairLoadAtRef,
-            GLOBE_INTRO_RING_PAIR_INTERVAL_MS,
+            clusterIntroActiveRef.current
+              ? GLOBE_INTRO_RING_PAIR_INTERVAL_MS * 0.72
+              : GLOBE_INTRO_RING_PAIR_INTERVAL_MS,
             true,
             ringCaps.frontCap,
             ringCaps.backCap,
@@ -1806,7 +1822,11 @@ export function GlobeView({
           )
         }
 
-        if (introCenterPrefetchActive(introProgress)) {
+        const clusterEarlyCenterPrefetch =
+          clusterIntroActiveRef.current &&
+          !introCenterPrefetchActive(introProgress)
+
+        if (introCenterPrefetchActive(introProgress) || clusterEarlyCenterPrefetch) {
           if (
             clusterIntroActiveRef.current &&
             clusterIntroDeferredLoadActive(introProgress)
@@ -1824,11 +1844,17 @@ export function GlobeView({
             }
           }
 
-          const centerCaps = introCenterHemisphereLoadCaps(
-            introProgress,
-            centerFrontQueue.length,
-            centerBackQueue.length,
-          )
+          const centerCaps = clusterEarlyCenterPrefetch
+            ? clusterIntroEarlyCenterLoadCaps(
+                introProgress,
+                centerFrontQueue.length,
+                centerBackQueue.length,
+              )
+            : introCenterHemisphereLoadCaps(
+                introProgress,
+                centerFrontQueue.length,
+                centerBackQueue.length,
+              )
           drainHemispherePairBalanced(
             centerFrontQueue,
             centerFrontLoadIndexRef,
