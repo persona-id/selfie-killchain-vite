@@ -70,7 +70,7 @@ import {
   pickHeroClusterGlobe,
   anchorHeroClusterAtOrigin,
   centerHeroClusterFieldPositions,
-  recenterClusterLayoutAtCentroid,
+  centerSurroundingClustersAtOrigin,
 } from '../../lib/clusterIntro'
 import {
   focusOrbitDepthOpacity,
@@ -1186,10 +1186,10 @@ export function GlobeView({
       isClusters &&
       categoryViewRef.current.clusterIntroTest
     ) {
-      recenterClusterLayoutAtCentroid(layout)
       const introHero = pickHeroClusterGlobe(layout.clusterGlobes)
       if (introHero) {
         anchorHeroClusterAtOrigin(layout, introHero.id)
+        centerSurroundingClustersAtOrigin(layout, introHero.id)
         centerHeroClusterFieldPositions(layout, introHero.id)
         clusterIntroHeroId = introHero.id
         displayItems.forEach((item, i) => {
@@ -2341,7 +2341,10 @@ export function GlobeView({
 
       let effectiveCameraZ = interactionState.cameraDistance
 
-      if (introLockedRef.current || introExitBlend > 0.01) {
+      if (
+        (introLockedRef.current || introExitBlend > 0.01) &&
+        !clusterFocusRef.current
+      ) {
         const introOverviewZ = overviewCameraZRef.current
         const cameraT = globeIntroCameraProgress(
           introLockedRef.current ? introProgressRef.current : 1,
@@ -2493,7 +2496,14 @@ export function GlobeView({
 
         if (!updateObjectVisibility(obj, camera, el, visibilityZ)) continue
 
-        if (introVisualActive) {
+        if (introVisualActive && constellationFocusId) {
+          const focusedClusterId = obj.userData.clusterId as string | undefined
+          if (focusedClusterId !== constellationFocusId) {
+            if (el.style.opacity !== '0') el.style.opacity = '0'
+            el.style.pointerEvents = 'none'
+            continue
+          }
+        } else if (introVisualActive) {
           const isRingMember = Boolean(obj.userData.introIsRingMember)
           const isCenterMember = Boolean(obj.userData.introIsCenterMember)
           const isBackHemisphere = !obj.userData.introHemisphereFront

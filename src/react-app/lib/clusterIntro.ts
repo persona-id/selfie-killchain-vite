@@ -162,6 +162,30 @@ export function recenterClusterLayoutAtCentroid(layout: ClusterLayout): boolean 
   return true
 }
 
+/** Shift non-hero clusters so their centroid sits on the hero at the origin. */
+export function centerSurroundingClustersAtOrigin(
+  layout: ClusterLayout,
+  heroId: string,
+): boolean {
+  const others = layout.clusterGlobes.filter((globe) => globe.id !== heroId)
+  if (others.length === 0) return true
+
+  const centroid = new THREE.Vector3()
+  for (const globe of others) {
+    centroid.add(globe.center)
+  }
+  centroid.multiplyScalar(1 / others.length)
+  if (centroid.lengthSq() < 1e-6) return true
+
+  for (const globe of others) {
+    globe.center.sub(centroid)
+  }
+  for (let i = 0; i < layout.positions.length; i++) {
+    layout.positions[i].sub(centroid)
+  }
+  return true
+}
+
 /** Nudge the field so the hero cluster globe center is exactly at the origin. */
 export function anchorHeroClusterAtOrigin(
   layout: ClusterLayout,
