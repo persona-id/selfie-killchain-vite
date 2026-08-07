@@ -141,7 +141,6 @@ import {
   introBackHemisphereMayShow,
   GLOBE_INTRO_RING_PAIR_INTERVAL_MS,
   GLOBE_INTRO_EXIT_BLEND_MS,
-  GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD,
   introInScreenCenterCutout,
   introIsRingMember,
   introRevealActive,
@@ -368,9 +367,11 @@ export function GlobeView({
     clusterGlobe: ClusterGlobe,
     spacing: number,
   ) => {
-    const itemIds = [...clusterGlobe.itemIds].sort()
-    const positions = orbitSphereFocusPositions(itemIds.length, spacing)
-    itemIds.forEach((itemId, index) => {
+    const displayedIds = [...clusterGlobe.itemIds]
+      .filter((itemId) => objectByIdRef.current.has(itemId))
+      .sort()
+    const positions = orbitSphereFocusPositions(displayedIds.length, spacing)
+    displayedIds.forEach((itemId, index) => {
       const obj = objectByIdRef.current.get(itemId)
       const position = positions[index]
       if (!obj || !position) return
@@ -403,7 +404,18 @@ export function GlobeView({
       const el = obj.userData.element as HTMLElement
       const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
       const sphereLocal = obj.userData.sphereLocal as THREE.Vector3 | undefined
-      if (fieldLocal) {
+      const introSphereLocal = obj.userData.introSphereLocal as
+        | THREE.Vector3
+        | undefined
+      const objClusterId = obj.userData.clusterId as string | undefined
+      if (
+        introLayoutActive &&
+        heroId &&
+        objClusterId === heroId &&
+        introSphereLocal
+      ) {
+        obj.position.copy(introSphereLocal)
+      } else if (fieldLocal) {
         obj.position.copy(fieldLocal)
       } else if (sphereLocal) {
         obj.position.copy(sphereLocal)
@@ -539,6 +551,10 @@ export function GlobeView({
     const container = containerRef.current
     if (!camera || !scene || !cssRenderer || !state) return
 
+    const hideUnfocused =
+      categoryViewRef.current.clusterFocusPresentation &&
+      Boolean(clusterFocusRef.current)
+
     resetGlobeRotationForFocus()
     globeGroupRef.current?.rotation.set(0, 0, 0)
     centerClusterObjects(clusterObjects)
@@ -547,11 +563,19 @@ export function GlobeView({
       const obj = objectsRef.current[i]
       const el = obj.userData.element as HTMLElement
       const inCluster = clusterObjects.includes(obj)
-      el.style.visibility = 'visible'
-      el.style.pointerEvents = inCluster ? 'auto' : 'none'
-      el.style.opacity = inCluster ? '1' : '0.08'
       if (inCluster) {
+        el.style.visibility = 'visible'
+        el.style.pointerEvents = 'auto'
+        el.style.opacity = '1'
         billboardTowardCamera(obj, camera)
+      } else if (hideUnfocused) {
+        el.style.visibility = 'hidden'
+        el.style.pointerEvents = 'none'
+        el.style.opacity = '0'
+      } else {
+        el.style.visibility = 'visible'
+        el.style.pointerEvents = 'none'
+        el.style.opacity = '0.08'
       }
     }
     globeGroupRef.current?.updateMatrixWorld(true)
@@ -589,15 +613,6 @@ export function GlobeView({
     })
     setClusterHover(null)
 
-    for (const obj of objectsRef.current) {
-      const objClusterId = obj.userData.clusterId as string | undefined
-      const el = obj.userData.element as HTMLElement | undefined
-      if (!el || !objClusterId || objClusterId === clusterId) continue
-      el.style.opacity = '0'
-      el.style.visibility = 'hidden'
-      el.style.pointerEvents = 'none'
-    }
-
     const group = clusterGroupsRef.current.get(clusterId)
     if (group) {
       group.position.set(0, 0, 0)
@@ -613,10 +628,16 @@ export function GlobeView({
     clusterGlobe.itemIds.forEach((itemId) => {
       const obj = objectByIdRef.current.get(itemId)
       const fieldLocal = clusterGlobe.fieldPositions.get(itemId)
-      if (obj && fieldLocal) {
-        obj.userData.focusLocal = fieldLocal.clone()
-        obj.position.copy(fieldLocal)
-      }
+      if (!obj || !fieldLocal) return
+
+      obj.userData.introIsRingMember = false
+      obj.userData.introIsCenterMember = false
+      delete obj.userData.introLoadStartedAt
+
+      const focusFromLayout =
+        clusterGlobe.focusPositions.get(itemId)?.clone() ?? fieldLocal.clone()
+      obj.userData.focusLocal = focusFromLayout
+      obj.position.copy(focusFromLayout)
     })
 
     if (presentation && categoryViewRef.current.clusterFocusOrbitSphere) {
@@ -635,6 +656,9 @@ export function GlobeView({
       }
     })
 
+    resetGlobeRotationForFocus()
+    applyClusterViewportFit(clusterObjects)
+
     if (presentation) {
       attachClusterFocusPlaque(
         clusterId,
@@ -642,9 +666,6 @@ export function GlobeView({
         clusterGlobe.itemIds.size,
       )
     }
-
-    resetGlobeRotationForFocus()
-    applyClusterViewportFit(clusterObjects)
   }
 
   const displayItems = useMemo(
@@ -2741,6 +2762,11 @@ export function GlobeView({
             : focusPresentationActive
               ? 0
               : categoryViewRef.current.unfocusedClusterOpacity
+          if (!inFocus && focusPresentationActive) {
+            if (el.style.visibility !== 'hidden') el.style.visibility = 'hidden'
+          } else if (el.style.visibility !== 'visible') {
+            el.style.visibility = 'visible'
+          }
           zIndex = inFocus
             ? String(180 + Math.round(focusBlendRef.current * 40))
             : '1'
@@ -2777,20 +2803,11 @@ export function GlobeView({
             categoryViewRef.current.clusterFocusPresentation
           const focusOrbit = categoryViewRef.current.clusterFocusOrbitSphere
           if (focusPresentation) {
-            worldPos.setFromMatrixPosition(obj.matrixWorld)
             if (focusOrbit) {
+              worldPos.setFromMatrixPosition(obj.matrixWorld)
               opacity = focusOrbitDepthOpacity(worldPos, camera)
             } else {
               opacity = 1
-            }
-            if (
-              introInScreenCenterCutout(
-                worldPos,
-                camera,
-                GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD * 0.45,
-              )
-            ) {
-              opacity = 0
             }
             zIndex = String(focusPresentationZIndex(obj, camera))
             if (el.style.zIndex !== zIndex) el.style.zIndex = zIndex
