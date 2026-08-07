@@ -27,7 +27,7 @@ export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.3
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.55
 
 /** Smaller center share → more hero tiles visible during the text/ring phase. */
-export const CLUSTER_INTRO_CENTER_FRACTION = 0
+export const CLUSTER_INTRO_CENTER_FRACTION = 0.08
 
 export function clusterIntroCenterCount(loadTotal: number): number {
   if (loadTotal <= 1) return 0
@@ -51,7 +51,8 @@ function clusterIntroCenterFillRank(rank: number, loadTotal: number): number {
 }
 
 function clusterIntroCenterFillCount(loadTotal: number): number {
-  return Math.max(1, clusterIntroCenterCount(loadTotal))
+  const centerCount = clusterIntroCenterCount(loadTotal)
+  return centerCount > 0 ? centerCount : 0
 }
 
 /** Accelerated ring load curve for the hero-only ring set. */
@@ -61,8 +62,8 @@ export function clusterIntroRingLoadProgress(progress: number): number {
   const elapsed = progress - GLOBE_INTRO_RING_START
   const t = clamp01(elapsed / Math.max(0.0001, window))
   const eased = easeInOutCubic(t)
-  const earlyBoost = clamp01((progress - GLOBE_INTRO_RING_START) / 0.1) * 0.22
-  return clamp01(eased * 1.35 + earlyBoost)
+  const earlyBoost = clamp01((progress - GLOBE_INTRO_RING_START) / 0.12) * 0.18
+  return clamp01(eased * 1.22 + earlyBoost)
 }
 
 export function clusterIntroRingHemisphereLoadCaps(
@@ -341,22 +342,16 @@ export function clusterIntroHeroSettleBlend(progress: number): number {
   )
 }
 
-/** Morph hero tiles from intro sphere → field layout during fill and zoom. */
+/** Morph hero tiles from intro sphere → field layout during zoom-out. */
 export function clusterIntroHeroItemBlend(progress: number): number {
-  const fillP = clusterIntroCenterFillProgress(progress)
   const zoomP = clusterIntroZoomProgress(progress)
+  if (zoomP > 0.001) {
+    return easeInOutCubic(zoomP)
+  }
 
-  const fillBlend =
-    fillP <= 0.15
-      ? 0
-      : easeInOutCubic(clamp01((fillP - 0.15) / 0.85)) * 0.58
-
-  const zoomBlend = easeInOutCubic(zoomP)
-  const settleBlend = clusterIntroHeroSettleBlend(progress)
-
-  const base =
-    fillBlend > 0 ? fillBlend + (1 - fillBlend) * zoomBlend : zoomBlend
-  return clamp01(base * 0.82 + settleBlend * 0.18)
+  const fillP = clusterIntroCenterFillProgress(progress)
+  if (fillP <= 0.88) return 0
+  return easeInOutCubic(clamp01((fillP - 0.88) / 0.12)) * 0.1
 }
 
 export function clusterIntroCameraZ(
@@ -364,14 +359,11 @@ export function clusterIntroCameraZ(
   heroStartZ: number,
   overviewZ: number,
 ): number {
-  const fillP = clusterIntroCenterFillProgress(progress)
   const zoomP = clusterIntroZoomProgress(progress)
-  const fillCamera =
-    fillP <= 0.55
-      ? 0
-      : easeInOutCubic(clamp01((fillP - 0.55) / 0.45)) * 0.14
-  const zoomCamera = easeInOutCubic(zoomP)
-  const t = clamp01(fillCamera + (1 - fillCamera) * zoomCamera)
+  const fillP = clusterIntroCenterFillProgress(progress)
+  const preZoom =
+    fillP > 0.9 ? easeInOutCubic(clamp01((fillP - 0.9) / 0.1)) * 0.06 : 0
+  const t = clamp01(preZoom + (1 - preZoom) * easeInOutCubic(zoomP))
   return heroStartZ + (overviewZ - heroStartZ) * t
 }
 

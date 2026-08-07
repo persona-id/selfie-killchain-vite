@@ -1905,13 +1905,13 @@ export function GlobeView({
             ringBackLoadIndexRef,
             lastRingPairLoadAtRef,
             clusterIntroActiveRef.current
-              ? GLOBE_INTRO_RING_PAIR_INTERVAL_MS * 0.28
+              ? GLOBE_INTRO_RING_PAIR_INTERVAL_MS * 0.32
               : GLOBE_INTRO_RING_PAIR_INTERVAL_MS,
             true,
             ringCaps.frontCap,
             ringCaps.backCap,
             loadBehind,
-            clusterIntroActiveRef.current ? (loadBehind ? 18 : 10) : loadBehind ? 7 : 2,
+            clusterIntroActiveRef.current ? (loadBehind ? 16 : 8) : loadBehind ? 7 : 2,
           )
         }
 
@@ -2557,6 +2557,114 @@ export function GlobeView({
           const img = obj.userData.img as HTMLImageElement | undefined
           const imageLoaded = Boolean(img?.src && img.complete)
           let introOpacity = 0
+          const clusterIntroHeroId =
+            clusterIntroActiveRef.current && heroClusterIdRef.current
+              ? heroClusterIdRef.current
+              : null
+          const isClusterIntroHero =
+            Boolean(clusterIntroHeroId) &&
+            obj.userData.clusterId === clusterIntroHeroId &&
+            !obj.userData.introIsDeferredCluster
+
+          if (isClusterIntroHero && introRevealOn) {
+            let loadStartedAt = obj.userData.introLoadStartedAt as
+              | number
+              | undefined
+
+            if (!img?.src) {
+              if (el.style.opacity !== '0') el.style.opacity = '0'
+              el.style.pointerEvents = 'none'
+              continue
+            }
+
+            if (!loadStartedAt) {
+              loadStartedAt = now
+              obj.userData.introLoadStartedAt = loadStartedAt
+            }
+
+            introOpacity = introTileOpacity(loadStartedAt, now, imageLoaded)
+
+            if (isCenterMember) {
+              const centerFillRank =
+                (obj.userData.introCenterFillRank as number) ?? -1
+              const centerFillCount =
+                (obj.userData.introCenterFillCount as number) ?? 1
+              const stagger = introCenterItemReveal(
+                introFillP,
+                centerFillRank,
+                centerFillCount,
+                isBackHemisphere,
+              )
+              if (stagger > 0.001) {
+                introOpacity = Math.max(
+                  introOpacity,
+                  introCenterTileOpacity(loadStartedAt, now, imageLoaded) *
+                    stagger,
+                )
+              }
+            }
+
+            if (
+              isBackHemisphere &&
+              !introBackHemisphereMayShow(
+                true,
+                Math.max(ringFrontLoaded, centerFrontLoaded),
+                Math.max(ringFrontQueue.length, centerFrontQueue.length),
+                Math.max(ringBackLoaded, centerBackLoaded),
+                Math.max(ringBackQueue.length, centerBackQueue.length),
+              )
+            ) {
+              introOpacity = 0
+            }
+
+            if (introOpacity <= 0) {
+              if (el.style.opacity !== '0') el.style.opacity = '0'
+              el.style.pointerEvents = 'none'
+              continue
+            }
+
+            billboardTowardCamera(obj, camera)
+
+            if (introDepthFadeP > 0.001) {
+              worldPos.setFromMatrixPosition(obj.matrixWorld)
+              const dist = worldPos.distanceTo(camera.position)
+              const fieldRadius = layoutFieldRadiusRef.current
+              const t = depthFadeDistanceT(
+                dist,
+                effectiveCameraZ,
+                fieldRadius,
+                depthFadeRange,
+              )
+              introOpacity *= introDepthOpacityAtDistance(introDepthFadeP, t)
+            }
+
+            if (!introLockedNow && introExitBlend < 0.999) {
+              let settledOpacity = 0.94
+              if (depthFade > 0) {
+                worldPos.setFromMatrixPosition(obj.matrixWorld)
+                const dist = worldPos.distanceTo(camera.position)
+                const fieldRadius = layoutFieldRadiusRef.current
+                const t = depthFadeDistanceT(
+                  dist,
+                  effectiveCameraZ,
+                  fieldRadius,
+                  depthFadeRange,
+                )
+                settledOpacity *= introDepthOpacityAtDistance(depthFade, t)
+              }
+              introOpacity =
+                introOpacity * introExitBlend +
+                settledOpacity * (1 - introExitBlend)
+            }
+
+            const introOpacityStr = String(introOpacity)
+            if (el.style.opacity !== introOpacityStr) {
+              el.style.opacity = introOpacityStr
+            }
+            el.style.pointerEvents =
+              introInteractionBlocked || introOpacity <= 0.05 ? 'none' : 'auto'
+            continue
+          }
 
           if (obj.userData.introIsDeferredCluster) {
             if (
