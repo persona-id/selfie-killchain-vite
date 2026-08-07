@@ -195,3 +195,15 @@ export function fraudMediumForItem(
 export function formatTag(tag: string): string {
   return tag
 }
+
+export function toSentenceCase(value: string): string {
+  const normalized = value.replace(/_/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase()
+  if (!normalized) return ''
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+}
+
+export function galleryItemTitle(
+  item: Pick<GalleryItem, 'category' | 'subcategory'>,
+): string {
+  return toSentenceCase(itemFilterKey(item))
+}

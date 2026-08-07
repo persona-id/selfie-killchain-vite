@@ -5,10 +5,11 @@ import {
   easeOutCubic,
   globeIntroZoomPhaseT,
   GLOBE_INTRO_CAMERA_START_FACTOR,
-  GLOBE_INTRO_LINE3_START,
+  GLOBE_INTRO_LINE2_START,
+  GLOBE_INTRO_RING_LOAD_END,
+  GLOBE_INTRO_RING_START,
   introCenterPrefetchActive,
   introRevealActive,
-  introRingLoadProgress,
   introSharedHemisphereLoadCaps,
 } from '../utils/globeIntro'
 import {
@@ -20,13 +21,13 @@ import {
 import { type ClusterGlobe, type ClusterLayout } from './clusterLayout'
 
 /** Share of post-reveal timeline spent completing the hero globe before zoom-out. */
-export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
+export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.3
 
 /** Hero mini-globe compresses during the final portion of zoom-out. */
-export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
+export const CLUSTER_INTRO_HERO_SETTLE_START = 0.55
 
 /** Smaller center share → more hero tiles visible during the text/ring phase. */
-export const CLUSTER_INTRO_CENTER_FRACTION = 0.06
+export const CLUSTER_INTRO_CENTER_FRACTION = 0
 
 export function clusterIntroCenterCount(loadTotal: number): number {
   if (loadTotal <= 1) return 0
@@ -53,9 +54,15 @@ function clusterIntroCenterFillCount(loadTotal: number): number {
   return Math.max(1, clusterIntroCenterCount(loadTotal))
 }
 
-/** Accelerated ring load curve for the smaller hero-only ring set. */
+/** Accelerated ring load curve for the hero-only ring set. */
 export function clusterIntroRingLoadProgress(progress: number): number {
-  return clamp01(introRingLoadProgress(progress) * 2.1)
+  if (progress < GLOBE_INTRO_RING_START) return 0
+  const window = GLOBE_INTRO_RING_LOAD_END - GLOBE_INTRO_RING_START
+  const elapsed = progress - GLOBE_INTRO_RING_START
+  const t = clamp01(elapsed / Math.max(0.0001, window))
+  const eased = easeInOutCubic(t)
+  const earlyBoost = clamp01((progress - GLOBE_INTRO_RING_START) / 0.1) * 0.22
+  return clamp01(eased * 1.35 + earlyBoost)
 }
 
 export function clusterIntroRingHemisphereLoadCaps(
@@ -76,12 +83,12 @@ export function clusterIntroEarlyCenterLoadCaps(
   frontTotal: number,
   backTotal: number,
 ): { frontCap: number; backCap: number } {
-  if (progress < GLOBE_INTRO_LINE3_START) {
+  if (progress < GLOBE_INTRO_LINE2_START) {
     return { frontCap: 0, backCap: 0 }
   }
   const ringP = clusterIntroRingLoadProgress(progress)
-  if (ringP < 0.28) return { frontCap: 0, backCap: 0 }
-  const prefetchP = clamp01(((ringP - 0.28) / 0.72) * 0.96)
+  if (ringP < 0.12) return { frontCap: 0, backCap: 0 }
+  const prefetchP = clamp01(((ringP - 0.12) / 0.88) * 1.05)
   return introSharedHemisphereLoadCaps(frontTotal, backTotal, prefetchP)
 }
 
@@ -334,9 +341,22 @@ export function clusterIntroHeroSettleBlend(progress: number): number {
   )
 }
 
-/** Hero compresses from intro sphere → field layout during late zoom-out. */
+/** Morph hero tiles from intro sphere → field layout during fill and zoom. */
 export function clusterIntroHeroItemBlend(progress: number): number {
-  return clusterIntroHeroSettleBlend(progress)
+  const fillP = clusterIntroCenterFillProgress(progress)
+  const zoomP = clusterIntroZoomProgress(progress)
+
+  const fillBlend =
+    fillP <= 0.15
+      ? 0
+      : easeInOutCubic(clamp01((fillP - 0.15) / 0.85)) * 0.58
+
+  const zoomBlend = easeInOutCubic(zoomP)
+  const settleBlend = clusterIntroHeroSettleBlend(progress)
+
+  const base =
+    fillBlend > 0 ? fillBlend + (1 - fillBlend) * zoomBlend : zoomBlend
+  return clamp01(base * 0.82 + settleBlend * 0.18)
 }
 
 export function clusterIntroCameraZ(
@@ -344,7 +364,14 @@ export function clusterIntroCameraZ(
   heroStartZ: number,
   overviewZ: number,
 ): number {
-  const t = clusterIntroZoomProgress(progress)
+  const fillP = clusterIntroCenterFillProgress(progress)
+  const zoomP = clusterIntroZoomProgress(progress)
+  const fillCamera =
+    fillP <= 0.55
+      ? 0
+      : easeInOutCubic(clamp01((fillP - 0.55) / 0.45)) * 0.14
+  const zoomCamera = easeInOutCubic(zoomP)
+  const t = clamp01(fillCamera + (1 - fillCamera) * zoomCamera)
   return heroStartZ + (overviewZ - heroStartZ) * t
 }
 

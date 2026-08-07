@@ -1,6 +1,7 @@
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 
 import { runSequentialTypewriter } from './sequentialTypewriter'
+import { toSentenceCase } from './taxonomy'
 
 export type ClusterFocusPlaqueEntranceOptions = {
   blur?: boolean
@@ -8,14 +9,15 @@ export type ClusterFocusPlaqueEntranceOptions = {
 }
 
 export function createClusterFocusPlaque(label: string, count: number): CSS3DObject {
+  const displayLabel = toSentenceCase(label)
   const el = document.createElement('div')
   el.className = 'cluster-focus-plaque'
   el.setAttribute('aria-hidden', 'true')
-  el.dataset.plaqueLabel = label.toUpperCase()
+  el.dataset.plaqueLabel = displayLabel
 
   const title = document.createElement('span')
   title.className = 'cluster-focus-plaque__title'
-  title.textContent = label.toUpperCase()
+  title.textContent = displayLabel
 
   const meta = document.createElement('span')
   meta.className = 'cluster-focus-plaque__meta'
@@ -142,9 +144,9 @@ export function updateClusterFocusPlaque(
   count: number,
 ): void {
   const el = plaque.element as HTMLDivElement
-  el.dataset.plaqueLabel = label.toUpperCase()
+  el.dataset.plaqueLabel = toSentenceCase(label)
   const title = el.querySelector('.cluster-focus-plaque__title')
   const countEl = el.querySelector('.cluster-focus-plaque__count')
-  if (title) title.textContent = label.toUpperCase()
+  if (title) title.textContent = toSentenceCase(label)
   if (countEl) countEl.textContent = String(count)
 }
