@@ -5,11 +5,10 @@ import {
   easeOutCubic,
   globeIntroZoomPhaseT,
   GLOBE_INTRO_CAMERA_START_FACTOR,
-  GLOBE_INTRO_LINE2_START,
-  GLOBE_INTRO_RING_LOAD_END,
-  GLOBE_INTRO_RING_START,
+  GLOBE_INTRO_LINE3_START,
   introCenterPrefetchActive,
   introRevealActive,
+  introRingLoadProgress,
   introSharedHemisphereLoadCaps,
 } from '../utils/globeIntro'
 import {
@@ -21,13 +20,13 @@ import {
 import { type ClusterGlobe, type ClusterLayout } from './clusterLayout'
 
 /** Share of post-reveal timeline spent completing the hero globe before zoom-out. */
-export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.3
+export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 
 /** Hero mini-globe compresses during the final portion of zoom-out. */
-export const CLUSTER_INTRO_HERO_SETTLE_START = 0.55
+export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
 /** Smaller center share → more hero tiles visible during the text/ring phase. */
-export const CLUSTER_INTRO_CENTER_FRACTION = 0.08
+export const CLUSTER_INTRO_CENTER_FRACTION = 0.06
 
 export function clusterIntroCenterCount(loadTotal: number): number {
   if (loadTotal <= 1) return 0
@@ -51,19 +50,12 @@ function clusterIntroCenterFillRank(rank: number, loadTotal: number): number {
 }
 
 function clusterIntroCenterFillCount(loadTotal: number): number {
-  const centerCount = clusterIntroCenterCount(loadTotal)
-  return centerCount > 0 ? centerCount : 0
+  return Math.max(1, clusterIntroCenterCount(loadTotal))
 }
 
-/** Accelerated ring load curve for the hero-only ring set. */
+/** Accelerated ring load curve for the smaller hero-only ring set. */
 export function clusterIntroRingLoadProgress(progress: number): number {
-  if (progress < GLOBE_INTRO_RING_START) return 0
-  const window = GLOBE_INTRO_RING_LOAD_END - GLOBE_INTRO_RING_START
-  const elapsed = progress - GLOBE_INTRO_RING_START
-  const t = clamp01(elapsed / Math.max(0.0001, window))
-  const eased = easeInOutCubic(t)
-  const earlyBoost = clamp01((progress - GLOBE_INTRO_RING_START) / 0.12) * 0.18
-  return clamp01(eased * 1.22 + earlyBoost)
+  return clamp01(introRingLoadProgress(progress) * 2.1)
 }
 
 export function clusterIntroRingHemisphereLoadCaps(
@@ -84,12 +76,12 @@ export function clusterIntroEarlyCenterLoadCaps(
   frontTotal: number,
   backTotal: number,
 ): { frontCap: number; backCap: number } {
-  if (progress < GLOBE_INTRO_LINE2_START) {
+  if (progress < GLOBE_INTRO_LINE3_START) {
     return { frontCap: 0, backCap: 0 }
   }
   const ringP = clusterIntroRingLoadProgress(progress)
-  if (ringP < 0.12) return { frontCap: 0, backCap: 0 }
-  const prefetchP = clamp01(((ringP - 0.12) / 0.88) * 1.05)
+  if (ringP < 0.28) return { frontCap: 0, backCap: 0 }
+  const prefetchP = clamp01(((ringP - 0.28) / 0.72) * 0.96)
   return introSharedHemisphereLoadCaps(frontTotal, backTotal, prefetchP)
 }
 
@@ -342,16 +334,9 @@ export function clusterIntroHeroSettleBlend(progress: number): number {
   )
 }
 
-/** Morph hero tiles from intro sphere → field layout during zoom-out. */
+/** Hero compresses from intro sphere → field layout during late zoom-out. */
 export function clusterIntroHeroItemBlend(progress: number): number {
-  const zoomP = clusterIntroZoomProgress(progress)
-  if (zoomP > 0.001) {
-    return easeInOutCubic(zoomP)
-  }
-
-  const fillP = clusterIntroCenterFillProgress(progress)
-  if (fillP <= 0.88) return 0
-  return easeInOutCubic(clamp01((fillP - 0.88) / 0.12)) * 0.1
+  return clusterIntroHeroSettleBlend(progress)
 }
 
 export function clusterIntroCameraZ(
@@ -359,11 +344,7 @@ export function clusterIntroCameraZ(
   heroStartZ: number,
   overviewZ: number,
 ): number {
-  const zoomP = clusterIntroZoomProgress(progress)
-  const fillP = clusterIntroCenterFillProgress(progress)
-  const preZoom =
-    fillP > 0.9 ? easeInOutCubic(clamp01((fillP - 0.9) / 0.1)) * 0.06 : 0
-  const t = clamp01(preZoom + (1 - preZoom) * easeInOutCubic(zoomP))
+  const t = clusterIntroZoomProgress(progress)
   return heroStartZ + (overviewZ - heroStartZ) * t
 }
 

@@ -599,7 +599,7 @@ export function sampleClusterIntroDisplayItems(
   )
   const heroBudget = Math.min(
     heroGroup.length,
-    Math.max(Math.floor(max * 0.92), max - groups.length + 1),
+    Math.max(Math.floor(max * 0.84), max - groups.length + 1),
   )
   const heroStep = heroGroup.length / heroBudget
   const heroItems: GalleryItem[] = []
