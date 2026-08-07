@@ -3024,6 +3024,16 @@ export function GlobeView({
     )
   }
 
+  const clusterFocusHintActive =
+    globeArrangement === 'clusters' &&
+    isConstellationFocused &&
+    categoryView.clusterFocusPresentation
+  const showBottomHint =
+    entranceReady &&
+    (clusterFocusHintActive ||
+      (showInteractionHint &&
+        !(globeArrangement === 'clusters' && isConstellationFocused)))
+
   return (
     <div className="globe-view relative h-full w-full overflow-hidden">
       {focusedClusterInfo && globeArrangement !== 'clusters' && (
@@ -3085,22 +3095,17 @@ export function GlobeView({
         style={{ bottom: 'var(--killchain-bottom-chrome-midline)' }}
         initial={reduceMotion ? false : { opacity: 0 }}
         animate={{
-          opacity:
-            entranceReady &&
-            showInteractionHint &&
-            !(globeArrangement === 'clusters' && isConstellationFocused)
-              ? 1
-              : 0,
+          opacity: showBottomHint ? 1 : 0,
         }}
         transition={reduceMotion ? { duration: 0 } : SETTINGS_MENU_ENTRANCE.transition}
       >
         <p className="text-black" style={{ fontSize: 'var(--killchain-chrome-hint-font-size)' }}>
-          {cameraControls.enabled
+          {clusterFocusHintActive
+            ? 'Click any image to reveal its fraud path'
+            : cameraControls.enabled
             ? 'Point to move · hand closer/farther to zoom · pinch to select · pinch twice to close'
             : globeArrangement === 'clusters'
-              ? isConstellationFocused && focusedClusterInfo
-                ? `${focusedClusterInfo.label} · ${focusedClusterInfo.count} images · click image for detail · background to return`
-                : 'Click a cluster or image to zoom in · drag to explore'
+              ? 'Click a cluster or image to zoom in · drag to explore'
               : linkCluster.enabled
               ? focusedClusterInfo
                 ? `${focusedClusterInfo.label} · ${focusedClusterInfo.count} images · click image for detail · background to return`
