@@ -55,14 +55,9 @@ import {
 } from '../../lib/clusterFocusPlaque'
 import {
   applyHeroClusterIntroSphereLayout,
-  applyClusterIntroDecoySphereLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
-  clusterIntroClusterSpreadProgress,
   clusterIntroDeferredLoadActive,
-  clusterIntroDecoyHemisphereLoadCaps,
-  clusterIntroDecoyRevealCap,
-  clusterIntroDecoyVisibility,
   clusterIntroDistanceNorm,
   clusterIntroEarlyCenterLoadCaps,
   clusterIntroFieldBoundingRadius,
@@ -80,6 +75,7 @@ import {
   clusterIntroZoomProgress,
   CLUSTER_INTRO_RING_START,
   configureClusterIntroParticipation,
+  layoutClusterIntroRingCircle,
   pickHeroClusterGlobe,
   anchorHeroClusterAtOrigin,
   centerHeroClusterFieldPositions,
@@ -147,7 +143,7 @@ import {
   introLoadBehindSchedule,
   introGlobeSequenceComplete,
   assignParallelHemisphereRanks,
-  assignRingLoadSeqAzimuth,
+  assignRingLoadSeqOuterFirst,
   assignRingLoadSeqShuffled,
   introRingHemisphereLoadCaps,
   introCenterHemisphereLoadCaps,
@@ -220,11 +216,6 @@ export function GlobeView({
   const ringBackLoadQueueRef = useRef<CSS3DObject[]>([])
   const ringFrontLoadIndexRef = useRef(0)
   const ringBackLoadIndexRef = useRef(0)
-  const decoyFrontLoadQueueRef = useRef<CSS3DObject[]>([])
-  const decoyBackLoadQueueRef = useRef<CSS3DObject[]>([])
-  const decoyFrontLoadIndexRef = useRef(0)
-  const decoyBackLoadIndexRef = useRef(0)
-  const lastDecoyLoadAtRef = useRef(0)
   const centerFrontLoadQueueRef = useRef<CSS3DObject[]>([])
   const centerBackLoadQueueRef = useRef<CSS3DObject[]>([])
   const centerFrontLoadIndexRef = useRef(0)
@@ -410,11 +401,11 @@ export function GlobeView({
     const introLayoutActive =
       clusterIntroActiveRef.current && Boolean(heroId)
 
-    clusterGroupsRef.current.forEach((group) => {
-      if (introLayoutActive) {
+    clusterGroupsRef.current.forEach((group, clusterId) => {
+      const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+      if (introLayoutActive && heroId && clusterId === heroId) {
         group.position.set(0, 0, 0)
       } else {
-        const fieldCenter = group.userData.fieldCenter as THREE.Vector3
         group.position.copy(fieldCenter)
       }
       group.rotation.set(0, 0, 0)
@@ -429,7 +420,13 @@ export function GlobeView({
       const introSphereLocal = obj.userData.introSphereLocal as
         | THREE.Vector3
         | undefined
-      if (introLayoutActive && introSphereLocal) {
+      const objClusterId = obj.userData.clusterId as string | undefined
+      if (
+        introLayoutActive &&
+        heroId &&
+        objClusterId === heroId &&
+        introSphereLocal
+      ) {
         obj.position.copy(introSphereLocal)
       } else if (fieldLocal) {
         obj.position.copy(fieldLocal)
@@ -1255,11 +1252,6 @@ export function GlobeView({
     centerBackLoadIndexRef.current = 0
     ringFrontLoadQueueRef.current = []
     ringBackLoadQueueRef.current = []
-    decoyFrontLoadQueueRef.current = []
-    decoyBackLoadQueueRef.current = []
-    decoyFrontLoadIndexRef.current = 0
-    decoyBackLoadIndexRef.current = 0
-    lastDecoyLoadAtRef.current = 0
     introSceneStartedAtRef.current = performance.now()
     setFocusedClusterInfo(null)
 
@@ -1518,20 +1510,24 @@ export function GlobeView({
       if (heroGlobe) {
         heroClusterIdRef.current = heroGlobe.id
         if (introLockedRef.current) {
+          const introRadius = clusterIntroHeroSphereRadius(
+            categoryViewRef.current.clusterSpacing,
+          )
           applyHeroClusterIntroSphereLayout(
             objects,
             heroGlobe.id,
             categoryViewRef.current.clusterSpacing,
             heroGlobe.radius,
           )
-          applyClusterIntroDecoySphereLayout(
-            objects,
-            heroGlobe.id,
-            clusterIntroHeroSphereRadius(categoryViewRef.current.clusterSpacing),
-          )
           configureClusterIntroParticipation(objects, heroGlobe.id)
-          clusterGroups.forEach((group) => {
-            group.position.set(0, 0, 0)
+          layoutClusterIntroRingCircle(objects, heroGlobe.id, introRadius)
+          clusterGroups.forEach((group, clusterId) => {
+            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+            if (clusterId === heroGlobe.id) {
+              group.position.set(0, 0, 0)
+            } else {
+              group.position.copy(fieldCenter)
+            }
           })
           for (const obj of objects) {
             const el = obj.userData.element as HTMLElement | undefined
@@ -1563,15 +1559,14 @@ export function GlobeView({
       (obj) => !obj.userData.introHemisphereFront,
     )
     const assignRingSeq = clusterIntroActive
-      ? assignRingLoadSeqAzimuth
+      ? assignRingLoadSeqOuterFirst
       : assignRingLoadSeqShuffled
     if (clusterIntroActive) {
-      assignRingLoadSeqAzimuth(
+      assignRingLoadSeqOuterFirst(
         ringMembers.map((obj) => ({
           pos:
             (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
             (obj.userData.fieldLocal as THREE.Vector3) ??
-            (obj.userData.sphereLocal as THREE.Vector3) ??
             new THREE.Vector3(),
           setSeq: (seq) => {
             obj.userData.introRingRevealIndex = seq
@@ -1644,34 +1639,6 @@ export function GlobeView({
           ((b.obj.userData.introLoadRank as number) ?? 0),
       )
       .map((entry) => entry.obj)
-
-    const decoyMembers = objects.filter((obj) => obj.userData.introIsDecoyTile)
-    if (clusterIntroActive && decoyMembers.length > 0) {
-      assignRingLoadSeqAzimuth(
-        decoyMembers.map((obj) => ({
-          pos:
-            (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
-            new THREE.Vector3(),
-          setSeq: (seq) => {
-            obj.userData.introDecoyRevealIndex = seq
-          },
-        })),
-      )
-    }
-    const sortDecoyBySeq = (a: CSS3DObject, b: CSS3DObject) =>
-      ((a.userData.introDecoyRevealIndex as number) ?? 0) -
-      ((b.userData.introDecoyRevealIndex as number) ?? 0)
-    const decoyFrontMembers = decoyMembers.filter(
-      (obj) => obj.userData.introHemisphereFront,
-    )
-    const decoyBackMembers = decoyMembers.filter(
-      (obj) => !obj.userData.introHemisphereFront,
-    )
-    decoyFrontLoadQueueRef.current = [...decoyFrontMembers].sort(sortDecoyBySeq)
-    decoyBackLoadQueueRef.current = [...decoyBackMembers].sort(sortDecoyBySeq)
-    decoyFrontLoadIndexRef.current = 0
-    decoyBackLoadIndexRef.current = 0
-    lastDecoyLoadAtRef.current = 0
 
     startFilterFocusAnimation()
     applyFilterSelectionCameraTarget()
@@ -1913,16 +1880,12 @@ export function GlobeView({
         const ringBackQueue = ringBackLoadQueueRef.current
         const centerFrontQueue = centerFrontLoadQueueRef.current
         const centerBackQueue = centerBackLoadQueueRef.current
-        const decoyFrontQueue = decoyFrontLoadQueueRef.current
-        const decoyBackQueue = decoyBackLoadQueueRef.current
         const sceneObjects = objectsRef.current
         let introImageTotal =
           ringFrontQueue.length +
           ringBackQueue.length +
           centerFrontQueue.length +
-          centerBackQueue.length +
-          decoyFrontQueue.length +
-          decoyBackQueue.length
+          centerBackQueue.length
         let introImagesLoaded = 0
         for (const obj of sceneObjects) {
           const img = obj.userData.img as HTMLImageElement | undefined
@@ -1937,17 +1900,13 @@ export function GlobeView({
             ringFrontQueue.length +
             ringBackQueue.length +
             centerFrontQueue.length +
-            centerBackQueue.length +
-            decoyFrontQueue.length +
-            decoyBackQueue.length
+            centerBackQueue.length
           introImagesLoaded = 0
           const introParticipantIds = new Set([
             ...ringFrontQueue,
             ...ringBackQueue,
             ...centerFrontQueue,
             ...centerBackQueue,
-            ...decoyFrontQueue,
-            ...decoyBackQueue,
           ])
           for (const obj of sceneObjects) {
             if (!introParticipantIds.has(obj)) continue
@@ -2017,31 +1976,6 @@ export function GlobeView({
             ringCaps.backCap,
             loadBehind,
             clusterIntroActiveRef.current ? (loadBehind ? 20 : 10) : loadBehind ? 7 : 2,
-          )
-        }
-
-        if (
-          clusterIntroActiveRef.current &&
-          (decoyFrontQueue.length > 0 || decoyBackQueue.length > 0) &&
-          introProgress >= CLUSTER_INTRO_RING_START
-        ) {
-          const decoyCaps = clusterIntroDecoyHemisphereLoadCaps(
-            introProgress,
-            decoyFrontQueue.length,
-            decoyBackQueue.length,
-          )
-          drainHemispherePairBalanced(
-            decoyFrontQueue,
-            decoyFrontLoadIndexRef,
-            decoyBackQueue,
-            decoyBackLoadIndexRef,
-            lastDecoyLoadAtRef,
-            GLOBE_INTRO_RING_PAIR_INTERVAL_MS * 0.22,
-            true,
-            decoyCaps.frontCap,
-            decoyCaps.backCap,
-            loadBehind,
-            loadBehind ? 24 : 12,
           )
         }
 
@@ -2322,14 +2256,10 @@ export function GlobeView({
           } else if (
             !focusId &&
             clusterIntroActiveRef.current &&
-            heroClusterIdRef.current
+            heroClusterIdRef.current &&
+            clusterId === heroClusterIdRef.current
           ) {
-            const spreadP = clusterIntroClusterSpreadProgress(introProgress)
-            if (clusterId === heroClusterIdRef.current || spreadP <= 0.001) {
-              group.position.set(0, 0, 0)
-            } else {
-              group.position.copy(fieldCenter).multiplyScalar(spreadP)
-            }
+            group.position.set(0, 0, 0)
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(1)
           } else {
@@ -2409,23 +2339,6 @@ export function GlobeView({
                 obj.position.copy(animated)
               } else {
                 obj.position.copy(clusterIntroBlendPos)
-              }
-              continue
-            }
-
-            if (
-              clusterIntroActiveNow &&
-              obj.userData.introIsDecoyTile &&
-              introSphereLocal
-            ) {
-              const decoyVis = clusterIntroDecoyVisibility(introProgress)
-              const spreadP = clusterIntroClusterSpreadProgress(introProgress)
-              if (decoyVis > 0.01) {
-                obj.position.copy(introSphereLocal)
-              } else if (spreadP > 0.001 && fieldLocal) {
-                obj.position.copy(fieldLocal)
-              } else if (fieldLocal) {
-                obj.position.copy(fieldLocal)
               }
               continue
             }
@@ -2715,23 +2628,6 @@ export function GlobeView({
       const centerBackLoaded = introVisualActive
         ? countIntroQueueLoaded(centerBackQueue)
         : 0
-      const decoyFrontQueue = decoyFrontLoadQueueRef.current
-      const decoyBackQueue = decoyBackLoadQueueRef.current
-      const decoyFrontLoaded = introVisualActive
-        ? countIntroQueueLoaded(decoyFrontQueue)
-        : 0
-      const decoyBackLoaded = introVisualActive
-        ? countIntroQueueLoaded(decoyBackQueue)
-        : 0
-      const decoyRevealCap = clusterIntroActiveRef.current
-        ? clusterIntroDecoyRevealCap(
-            introVisualProgress,
-            decoyFrontQueue.length + decoyBackQueue.length,
-          )
-        : 0
-      const decoyVisibility = clusterIntroActiveRef.current
-        ? clusterIntroDecoyVisibility(introVisualProgress)
-        : 0
 
       for (let i = 0; i < objects.length; i++) {
         const obj = objects[i]
@@ -2750,59 +2646,9 @@ export function GlobeView({
           const imageLoaded = Boolean(img?.src && img.complete)
           let introOpacity = 0
 
-          if (
-            obj.userData.introIsDecoyTile &&
-            clusterIntroActiveRef.current &&
-            decoyVisibility > 0.001
-          ) {
-            const revealIndex =
-              (obj.userData.introDecoyRevealIndex as number) ?? 0
-            if (revealIndex >= decoyRevealCap) {
-              if (el.style.opacity !== '0') el.style.opacity = '0'
-              el.style.pointerEvents = 'none'
-              continue
-            }
-
-            if (introCutoutRad > 0.001) {
-              worldPos.setFromMatrixPosition(obj.matrixWorld)
-              if (introInScreenCenterCutout(worldPos, camera, introCutoutRad)) {
-                if (el.style.opacity !== '0') el.style.opacity = '0'
-                el.style.pointerEvents = 'none'
-                continue
-              }
-            }
-
-            let loadStartedAt = obj.userData.introLoadStartedAt as
-              | number
-              | undefined
-            if (!img?.src) {
-              if (el.style.opacity !== '0') el.style.opacity = '0'
-              el.style.pointerEvents = 'none'
-              continue
-            }
-            if (!loadStartedAt) {
-              loadStartedAt = now
-              obj.userData.introLoadStartedAt = loadStartedAt
-            }
-
-            introOpacity =
-              introTileOpacity(loadStartedAt, now, imageLoaded) * decoyVisibility
-            if (
-              isBackHemisphere &&
-              !introBackHemisphereMayShow(
-                true,
-                decoyFrontLoaded,
-                decoyFrontQueue.length,
-                decoyBackLoaded,
-                decoyBackQueue.length,
-              )
-            ) {
-              introOpacity = 0
-            }
-          } else if (obj.userData.introIsDeferredCluster) {
+          if (obj.userData.introIsDeferredCluster) {
             if (
               introRevealOn &&
-              decoyVisibility <= 0.02 &&
               heroClusterIdRef.current &&
               obj.userData.clusterId
             ) {

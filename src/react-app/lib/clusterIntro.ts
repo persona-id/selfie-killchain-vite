@@ -15,6 +15,7 @@ import {
   globeIntroLine1InProgress,
   globeIntroLine2InProgress,
   globeIntroLine3InProgress,
+  introRingLoadProgress,
   introSharedHemisphereLoadCaps,
 } from '../utils/globeIntro'
 import {
@@ -31,11 +32,8 @@ export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 /** Hero mini-globe compresses during the final portion of zoom-out. */
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
-/** Outer shell for temporary non-hero tiles during the text phase. */
-export const CLUSTER_INTRO_DECOY_SHELL_SCALE = 1.14
-
-/** Ring tiles visible around the intro text during the typing phase. */
-export const CLUSTER_INTRO_RING_SIZE = 12
+/** Ring tiles in a circle around the intro text during the typing phase. */
+export const CLUSTER_INTRO_RING_SIZE = 15
 
 /** Ring loads begin slightly before line 1 types in. */
 export const CLUSTER_INTRO_RING_START = 0.02
@@ -76,71 +74,17 @@ export function clusterIntroTextSyncedRingAllowedCount(progress: number): number
   )
 }
 
-/** How many decoy tiles may appear during the text phase (ramps to all by line 3). */
-export function clusterIntroDecoyRevealCap(
-  progress: number,
-  total: number,
-): number {
-  if (total <= 0) return 0
-  if (progress >= GLOBE_INTRO_LINE3_END) return total
-  if (progress < GLOBE_INTRO_LINE1_START) return 0
-
-  const span = GLOBE_INTRO_LINE3_END - GLOBE_INTRO_LINE1_START
-  const t = clamp01((progress - GLOBE_INTRO_LINE1_START) / Math.max(0.0001, span))
-  return Math.ceil(total * easeInOutCubic(t))
-}
-
-/** 0→1 decoy image load budget during the text phase. */
-export function clusterIntroDecoyLoadProgress(progress: number): number {
+/** 0→1 ring load budget — all ring tiles prefetch by line 3. */
+export function clusterIntroRingLoadProgress(progress: number): number {
   if (progress < CLUSTER_INTRO_RING_START) return 0
   if (progress >= GLOBE_INTRO_LINE3_END) return 1
 
   const span = GLOBE_INTRO_LINE3_END - CLUSTER_INTRO_RING_START
   const elapsed = progress - CLUSTER_INTRO_RING_START
   const t = clamp01(elapsed / Math.max(0.0001, span))
+  const standard = introRingLoadProgress(progress)
   const line3 = globeIntroLine3InProgress(progress)
-  const early = clamp01(elapsed / 0.08) * 0.28
-  return clamp01(easeInOutCubic(t) * 0.82 + line3 * 0.18 + early)
-}
-
-export function clusterIntroDecoyHemisphereLoadCaps(
-  progress: number,
-  frontTotal: number,
-  backTotal: number,
-): { frontCap: number; backCap: number } {
-  return introSharedHemisphereLoadCaps(
-    frontTotal,
-    backTotal,
-    clusterIntroDecoyLoadProgress(progress),
-  )
-}
-
-/** 1 during text; fades out through center fill and early zoom. */
-export function clusterIntroDecoyVisibility(progress: number): number {
-  if (progress < CLUSTER_INTRO_RING_START) return 0
-  if (clusterIntroTextPhaseActive(progress)) return 1
-  if (!clusterIntroRevealActive(progress)) return 0
-
-  const postRevealT = clusterIntroPostRevealT(progress)
-  const fadeStart = 0.04
-  const fadeEnd = CLUSTER_INTRO_FILL_PHASE_SHARE + 0.12
-  if (postRevealT <= fadeStart) return 1
-  if (postRevealT >= fadeEnd) return 0
-  return (
-    1 -
-    easeInOutCubic(clamp01((postRevealT - fadeStart) / Math.max(0.001, fadeEnd - fadeStart)))
-  )
-}
-
-/** 0→1 as non-hero cluster groups spread from the hero to field positions. */
-export function clusterIntroClusterSpreadProgress(progress: number): number {
-  if (!clusterIntroRevealActive(progress)) return 0
-  const postRevealT = clusterIntroPostRevealT(progress)
-  const start = CLUSTER_INTRO_FILL_PHASE_SHARE * 0.5
-  if (postRevealT <= start) return 0
-  return easeInOutCubic(
-    clamp01((postRevealT - start) / Math.max(0.001, 1 - start)),
-  )
+  return clamp01(Math.max(standard * 1.2, easeInOutCubic(t) * 0.85 + line3 * 0.15))
 }
 
 function clusterIntroRingStartRank(loadTotal: number): number {
@@ -170,22 +114,11 @@ export function clusterIntroRingHemisphereLoadCaps(
   frontTotal: number,
   backTotal: number,
 ): { frontCap: number; backCap: number } {
-  const ringTotal = frontTotal + backTotal
-  if (ringTotal <= 0) return { frontCap: 0, backCap: 0 }
-
-  const allowed = clusterIntroTextSyncedRingAllowedCount(progress)
-  if (allowed <= 0 && clusterIntroDecoyLoadProgress(progress) <= 0) {
-    return { frontCap: 0, backCap: 0 }
-  }
-  if (allowed >= ringTotal) {
-    return { frontCap: frontTotal, backCap: backTotal }
-  }
-
-  const loadP = Math.max(
-    allowed / Math.max(1, ringTotal),
-    clusterIntroDecoyLoadProgress(progress),
+  return introSharedHemisphereLoadCaps(
+    frontTotal,
+    backTotal,
+    clusterIntroRingLoadProgress(progress),
   )
-  return introSharedHemisphereLoadCaps(frontTotal, backTotal, loadP)
 }
 
 /** Prefetch inner hero tiles once the ring is complete and reveal begins. */
@@ -280,33 +213,30 @@ export function applyHeroClusterIntroSphereLayout(
   }
 }
 
-/** Place non-hero tiles on an outer intro shell for the dense text-phase ring. */
-export function applyClusterIntroDecoySphereLayout(
+/** Lay hero ring tiles on an equatorial circle like the standard globe intro. */
+export function layoutClusterIntroRingCircle(
   objects: Array<{
     userData: Record<string, unknown>
     position: THREE.Vector3
   }>,
   heroClusterId: string,
-  heroIntroRadius: number,
+  introRadius: number,
 ): void {
-  const decoyRadius = heroIntroRadius * CLUSTER_INTRO_DECOY_SHELL_SCALE
-  const decoys = objects.filter((obj) => obj.userData.clusterId !== heroClusterId)
-  if (decoys.length === 0) return
+  const ring = objects.filter(
+    (obj) =>
+      obj.userData.clusterId === heroClusterId &&
+      obj.userData.introIsRingMember,
+  )
+  if (ring.length === 0) return
 
-  const phi = Math.PI * (3 - Math.sqrt(5))
-  decoys.forEach((obj, index) => {
-    const i = index + 0.5
-    const y = 1 - (2 * i) / decoys.length
-    const ring = Math.sqrt(Math.max(0, 1 - y * y))
-    const theta = phi * index
+  ring.forEach((obj, index) => {
+    const theta = (index / ring.length) * Math.PI * 2 - Math.PI / 2
     const introLocal = new THREE.Vector3(
-      Math.cos(theta) * ring * decoyRadius,
-      y * decoyRadius * 0.62,
-      Math.sin(theta) * ring * decoyRadius,
+      Math.cos(theta) * introRadius,
+      0,
+      Math.sin(theta) * introRadius,
     )
     obj.userData.introSphereLocal = introLocal
-    obj.userData.introIsDecoyTile = true
-    obj.userData.introDecoyRevealIndex = index
     obj.position.copy(introLocal)
     obj.userData.introHemisphereFront = introLocal.z >= 0
   })
@@ -452,6 +382,7 @@ export function configureClusterIntroParticipation(
     obj.userData.introIsRingMember = false
     obj.userData.introIsCenterMember = false
     obj.userData.introIsDeferredCluster = true
+    delete obj.userData.introSphereLocal
   }
 }
 
@@ -500,10 +431,7 @@ export function clusterIntroZoomActive(progress: number): boolean {
 }
 
 export function clusterIntroDeferredLoadActive(progress: number): boolean {
-  return (
-    clusterIntroClusterSpreadProgress(progress) > 0.08 ||
-    clusterIntroDecoyVisibility(progress) <= 0.05
-  )
+  return clusterIntroZoomActive(progress)
 }
 
 export function clusterIntroHeroSettleBlend(progress: number): number {
