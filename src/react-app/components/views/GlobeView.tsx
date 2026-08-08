@@ -58,24 +58,23 @@ import {
   applyHeroClusterIntroSphereLayout,
   applyHeroClusterIntroRingLayout,
   clusterIntroCameraZ,
+  clusterIntroHeroFormProgress,
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
   clusterIntroCenterLoadCaps,
   clusterIntroFieldBoundingRadius,
   clusterIntroHeroItemBlend,
-  clusterIntroHeroFormProgress,
-  clusterIntroImagesLoadActive,
   clusterIntroHeroStartCameraZ,
   clusterIntroMotionEase,
   clusterIntroOtherOpacity,
   clusterIntroRevealActive,
   clusterIntroRingHemisphereLoadCaps,
   clusterIntroRotationHandoff,
-  clusterIntroSpinYScale,
   clusterIntroScreenCenterCutoutRad,
   clusterIntroTextPhaseActive,
+  clusterIntroTextSyncedRingAllowedCount,
   clusterIntroZoomProgress,
-  CLUSTER_INTRO_REVEAL_START,
+  CLUSTER_INTRO_RING_START,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
   anchorHeroClusterAtOrigin,
@@ -819,7 +818,7 @@ export function GlobeView({
         state.velocityY = 0
       }
       introProgressRef.current = 1
-      introRotationHandoffRef.current = clusterIntroActiveRef.current ? 0 : 1
+      introRotationHandoffRef.current = 1
 
       for (const obj of objectsRef.current) {
         const el = obj.userData.element as HTMLElement | undefined
@@ -1903,7 +1902,7 @@ export function GlobeView({
         if (
           clusterIntroActiveRef.current &&
           heroClusterIdRef.current &&
-          !clusterIntroImagesLoadActive(introProgress)
+          !clusterIntroRevealActive(introProgress)
         ) {
           introImageTotal =
             ringFrontQueue.length +
@@ -1957,7 +1956,7 @@ export function GlobeView({
           (ringFrontQueue.length > 0 || ringBackQueue.length > 0) &&
           introProgress >=
             (clusterIntroActiveRef.current
-              ? CLUSTER_INTRO_REVEAL_START
+              ? CLUSTER_INTRO_RING_START
               : GLOBE_INTRO_RING_START)
         ) {
           const ringCaps = clusterIntroActiveRef.current
@@ -1989,7 +1988,7 @@ export function GlobeView({
         }
 
         const centerPrefetchOn = clusterIntroActiveRef.current
-          ? clusterIntroImagesLoadActive(introProgress)
+          ? clusterIntroRevealActive(introProgress)
           : introCenterPrefetchActive(introProgress)
 
         if (centerPrefetchOn) {
@@ -2114,64 +2113,48 @@ export function GlobeView({
 
           const revealSpin =
             introLockedRef.current &&
-            !clusterIntroNow &&
-            introRevealActive(introProgress)
+            (clusterIntroNow
+              ? clusterIntroRevealActive(introProgress)
+              : introRevealActive(introProgress))
           const clusterIntroTextSpin =
             clusterIntroNow &&
             introLockedRef.current &&
             clusterIntroTextPhaseActive(introProgress)
-          const ySpinScale =
-            clusterIntroNow &&
-            (introLockedRef.current || introExitBlend > 0.01)
-              ? introLockedRef.current
-                ? clusterIntroSpinYScale(introProgress)
-                : 0.55 * introExitBlend + (1 - introExitBlend)
-              : revealSpin
-                ? introMotionP
-                : clusterIntroTextSpin
-                  ? 0.55
-                  : introLockedRef.current
-                    ? 0
-                    : 1
-
-          const clusterIntroZDrift =
-            clusterIntroNow &&
-            introLockedRef.current &&
-            clusterIntroTextPhaseActive(introProgress)
-
-          const clusterIntroRotationLocked =
-            clusterIntroNow &&
-            (introLockedRef.current || introExitBlend > 0.01)
+          const ySpinScale = revealSpin
+            ? introMotionP
+            : clusterIntroTextSpin
+              ? 0.42
+              : introLockedRef.current
+                ? 0
+                : 1
 
           if (introRotationHandoff < 1) {
             const handoffEased = easeInOutCubic(introRotationHandoff)
-            if (!clusterIntroRotationLocked) {
-              const xyDamp = Math.pow(
-                0.92 + 0.08 * handoffEased,
-                timeScale,
-              )
-              interactionState.rotationX *= xyDamp
-              interactionState.rotationY *= xyDamp
-            }
-            if (handoffEased < 0.82 && clusterIntroZDrift) {
+            const xyDamp = Math.pow(
+              0.92 + 0.08 * handoffEased,
+              timeScale,
+            )
+            interactionState.rotationX *= xyDamp
+            interactionState.rotationY *= xyDamp
+            if (handoffEased < 0.82) {
               interactionState.rotationZ +=
                 GLOBE_INTRO_RING_DRIFT_Z *
-                2.8 *
+                (clusterIntroTextSpin ? 2.8 : 1) *
                 (1 - handoffEased) *
                 timeScale
             }
           }
 
-          if (!clusterIntroRotationLocked) {
-            const zDecay =
-              introRotationHandoff > 0.75
-                ? 0.72
-                : 0.84 + 0.16 * (1 - introRotationHandoff)
-            interactionState.rotationZ *= Math.pow(zDecay, timeScale)
+          if (clusterIntroTextSpin) {
+            interactionState.rotationY +=
+              preset.autoRotateY * 0.55 * timeScale
           }
 
+          const zDecay =
+            introRotationHandoff > 0.75 ? 0.72 : 0.84 + 0.16 * (1 - introRotationHandoff)
+          interactionState.rotationZ *= Math.pow(zDecay, timeScale)
+
           if (
-            !clusterIntroNow &&
             introRotationHandoff > 0.05 &&
             introRotationHandoff < 0.72 &&
             Math.abs(interactionState.rotationZ) > 0.0005
@@ -2192,12 +2175,9 @@ export function GlobeView({
           if (preset.wobble) {
             const amp = preset.wobbleAmplitude ?? 0.15
             const speed = preset.wobbleSpeed ?? 0.001
-            const wobbleP =
-              introLockedRef.current && clusterIntroNow
-                ? 0
-                : introLockedRef.current
-                  ? Math.max(introRotationHandoff, introMotionP)
-                  : 1
+            const wobbleP = introLockedRef.current
+              ? Math.max(introRotationHandoff, introMotionP)
+              : 1
             interactionState.rotationX +=
               Math.sin(time * speed) * amp * 0.02 * timeScale * wobbleP
             interactionState.rotationY +=
@@ -2205,11 +2185,9 @@ export function GlobeView({
           } else {
             const xSpinScale = revealSpin
               ? introMotionP
-              : clusterIntroNow && introLockedRef.current
-                ? 0
-                : introLockedRef.current
-                  ? introRotationHandoff
-                  : 1
+              : introLockedRef.current
+                ? introRotationHandoff
+                : 1
             interactionState.rotationX += preset.autoRotateX * timeScale * xSpinScale
           }
         }
@@ -2673,15 +2651,6 @@ export function GlobeView({
         if (!updateObjectVisibility(obj, camera, el, visibilityZ)) continue
 
         if (introVisualActive) {
-          if (
-            clusterIntroActiveRef.current &&
-            !clusterIntroImagesLoadActive(introVisualProgress)
-          ) {
-            if (el.style.opacity !== '0') el.style.opacity = '0'
-            el.style.pointerEvents = 'none'
-            continue
-          }
-
           const isRingMember = Boolean(obj.userData.introIsRingMember)
           const isCenterMember = Boolean(obj.userData.introIsCenterMember)
           const isBackHemisphere = !obj.userData.introHemisphereFront
@@ -2725,11 +2694,26 @@ export function GlobeView({
 
             if (
               clusterIntroActiveRef.current &&
-              img?.src &&
-              obj.userData.introRingVisualStartedAt == null
+              !introRevealOn
             ) {
-              obj.userData.introRingVisualStartedAt = now
-              restartIntroBlurReveal(el)
+              const revealIndex =
+                (obj.userData.introRingRevealIndex as number) ??
+                (obj.userData.introRingLoadSeq as number) ??
+                0
+              const allowed =
+                clusterIntroTextSyncedRingAllowedCount(introVisualProgress)
+              if (revealIndex >= allowed) {
+                if (el.style.opacity !== '0') el.style.opacity = '0'
+                el.style.pointerEvents = 'none'
+                continue
+              }
+              if (
+                img?.src &&
+                obj.userData.introRingVisualStartedAt == null
+              ) {
+                obj.userData.introRingVisualStartedAt = now
+                restartIntroBlurReveal(el)
+              }
             }
 
             if (
@@ -2772,16 +2756,12 @@ export function GlobeView({
             ) {
               introOpacity = 0
             }
-          } else if (isCenterMember && introRevealOn) {
-            if (clusterIntroActiveRef.current) {
-              const formP = clusterIntroHeroFormProgress(introVisualProgress)
-              if (formP <= 0.001) {
-                if (el.style.opacity !== '0') el.style.opacity = '0'
-                el.style.pointerEvents = 'none'
-                continue
-              }
-            }
-
+          } else if (
+            isCenterMember &&
+            introRevealOn &&
+            (!clusterIntroActiveRef.current ||
+              clusterIntroHeroFormProgress(introVisualProgress) > 0.1)
+          ) {
             const centerFillRank =
               (obj.userData.introCenterFillRank as number) ?? -1
             const centerFillCount =
