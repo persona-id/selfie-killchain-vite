@@ -5,11 +5,11 @@ import {
   easeOutCubic,
   GLOBE_INTRO_CAMERA_START_FACTOR,
   GLOBE_INTRO_CUTOUT_CLOSE_BY_ZOOM,
-  GLOBE_INTRO_LINE3_END,
+  GLOBE_INTRO_REVEAL_START,
+  GLOBE_INTRO_RING_START,
   GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD,
   GLOBE_INTRO_ZOOM_DURATION_SCALE,
   GLOBE_INTRO_ZOOM_END,
-  globeIntroLine3InProgress,
   introRingLoadProgress,
   introSharedHemisphereLoadCaps,
 } from '../utils/globeIntro'
@@ -24,17 +24,20 @@ import { type ClusterGlobe, type ClusterLayout } from './clusterLayout'
 /** Share of post-reveal timeline spent completing the hero globe before zoom-out. */
 export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.36
 
-/** Hero mini-globe compresses during the final portion of zoom-out. */
+/** Hero mini-globe compresses during the final portion of constellation zoom-out. */
 export const CLUSTER_INTRO_HERO_SETTLE_START = 0.72
 
-/** Ring tiles in a circle around the intro text during the typing phase. */
+/** Share of zoom-out spent framing the hero globe before revealing the constellation. */
+export const CLUSTER_INTRO_HERO_ZOOM_SHARE = 0.44
+
+/** Ring tiles on the hero intro sphere (matches single-globe outer band). */
 export const CLUSTER_INTRO_RING_SIZE = 15
 
-/** Ring loads begin slightly before line 1 types in. */
-export const CLUSTER_INTRO_RING_START = 0.02
+/** Ring loads use the same start as the standard globe intro. */
+export const CLUSTER_INTRO_RING_START = GLOBE_INTRO_RING_START
 
-/** Zoom and center fill begin once line 3 has finished typing in. */
-export const CLUSTER_INTRO_REVEAL_START = GLOBE_INTRO_LINE3_END
+/** Center fill and zoom begin with the standard globe reveal window. */
+export const CLUSTER_INTRO_REVEAL_START = GLOBE_INTRO_REVEAL_START
 
 export function clusterIntroRevealActive(progress: number): boolean {
   return progress >= CLUSTER_INTRO_REVEAL_START
@@ -46,30 +49,9 @@ export function clusterIntroTextPhaseActive(progress: number): boolean {
   )
 }
 
-/** How many ring tiles may appear — one at a time across the intro text phase. */
-export function clusterIntroTextSyncedRingAllowedCount(progress: number): number {
-  if (progress < CLUSTER_INTRO_RING_START) return 0
-  if (clusterIntroRevealActive(progress)) return CLUSTER_INTRO_RING_SIZE
-
-  const span = CLUSTER_INTRO_REVEAL_START - CLUSTER_INTRO_RING_START
-  const t = clamp01((progress - CLUSTER_INTRO_RING_START) / Math.max(0.0001, span))
-  return Math.min(
-    CLUSTER_INTRO_RING_SIZE,
-    Math.max(0, Math.ceil(easeOutCubic(t) * CLUSTER_INTRO_RING_SIZE - 1e-6)),
-  )
-}
-
-/** 0→1 ring load budget — all ring tiles prefetch by line 3. */
+/** 0→1 ring load budget — aligned with the standard globe intro. */
 export function clusterIntroRingLoadProgress(progress: number): number {
-  if (progress < CLUSTER_INTRO_RING_START) return 0
-  if (progress >= GLOBE_INTRO_LINE3_END) return 1
-
-  const span = GLOBE_INTRO_LINE3_END - CLUSTER_INTRO_RING_START
-  const elapsed = progress - CLUSTER_INTRO_RING_START
-  const t = clamp01(elapsed / Math.max(0.0001, span))
-  const standard = introRingLoadProgress(progress)
-  const line3 = globeIntroLine3InProgress(progress)
-  return clamp01(Math.max(standard * 1.2, easeInOutCubic(t) * 0.85 + line3 * 0.15))
+  return introRingLoadProgress(progress)
 }
 
 function clusterIntroRingStartRank(loadTotal: number): number {
@@ -145,12 +127,17 @@ export function clusterIntroHeroSphereRadius(separation: number): number {
   return GLOBE_RADIUS * 0.82 * separation
 }
 
-export function clusterIntroHeroStartCameraZ(separation: number): number {
-  const overviewZ = computeGlobeOverviewCameraZ(
+export function clusterIntroHeroOverviewCameraZ(separation: number): number {
+  return computeGlobeOverviewCameraZ(
     clusterIntroHeroSphereRadius(separation),
     GLOBE_CAMERA_FOV,
   )
-  return overviewZ * GLOBE_INTRO_CAMERA_START_FACTOR
+}
+
+export function clusterIntroHeroStartCameraZ(separation: number): number {
+  return (
+    clusterIntroHeroOverviewCameraZ(separation) * GLOBE_INTRO_CAMERA_START_FACTOR
+  )
 }
 
 export function pickHeroClusterGlobe(
@@ -174,7 +161,7 @@ export function pickHeroClusterGlobe(
   })
 }
 
-/** Scale the hero mini-globe layout onto the large intro sphere at the origin. */
+/** Scale the hero mini-globe onto the intro sphere — same outer-band ring as single globe. */
 export function applyHeroClusterIntroSphereLayout(
   objects: Array<{
     userData: Record<string, unknown>
@@ -189,7 +176,6 @@ export function applyHeroClusterIntroSphereLayout(
 
   for (const obj of objects) {
     if (obj.userData.clusterId !== heroClusterId) continue
-    if (obj.userData.introIsRingMember) continue
     const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
     if (!fieldLocal) continue
     const introLocal = fieldLocal.clone().multiplyScalar(scale)
@@ -197,35 +183,6 @@ export function applyHeroClusterIntroSphereLayout(
     obj.position.copy(introLocal)
     obj.userData.introHemisphereFront = introLocal.z >= 0
   }
-}
-
-/** Lay hero ring tiles on a vertical circle in the YZ plane (rotates around X). */
-export function layoutClusterIntroRingCircle(
-  objects: Array<{
-    userData: Record<string, unknown>
-    position: THREE.Vector3
-  }>,
-  heroClusterId: string,
-  introRadius: number,
-): void {
-  const ring = objects.filter(
-    (obj) =>
-      obj.userData.clusterId === heroClusterId &&
-      obj.userData.introIsRingMember,
-  )
-  if (ring.length === 0) return
-
-  ring.forEach((obj, index) => {
-    const theta = (index / ring.length) * Math.PI * 2 - Math.PI / 2
-    const introLocal = new THREE.Vector3(
-      0,
-      Math.cos(theta) * introRadius,
-      Math.sin(theta) * introRadius,
-    )
-    obj.userData.introSphereLocal = introLocal
-    obj.position.copy(introLocal)
-    obj.userData.introHemisphereFront = introLocal.y >= 0
-  })
 }
 
 /** Shift the constellation so its centroid sits at the origin (viewport center). */
@@ -244,30 +201,6 @@ export function recenterClusterLayoutAtCentroid(layout: ClusterLayout): boolean 
   }
   for (const position of layout.positions) {
     position.sub(centroid)
-  }
-  return true
-}
-
-/** Shift non-hero clusters so their centroid sits on the hero at the origin. */
-export function centerSurroundingClustersAtOrigin(
-  layout: ClusterLayout,
-  heroId: string,
-): boolean {
-  const others = layout.clusterGlobes.filter((globe) => globe.id !== heroId)
-  if (others.length === 0) return true
-
-  const centroid = new THREE.Vector3()
-  for (const globe of others) {
-    centroid.add(globe.center)
-  }
-  centroid.multiplyScalar(1 / others.length)
-  if (centroid.lengthSq() < 1e-6) return true
-
-  for (const globe of others) {
-    globe.center.sub(centroid)
-  }
-  for (let i = 0; i < layout.positions.length; i++) {
-    layout.positions[i].sub(centroid)
   }
   return true
 }
@@ -379,6 +312,14 @@ function clusterIntroPostRevealT(progress: number): number {
   return clamp01((progress - CLUSTER_INTRO_REVEAL_START) / Math.max(0.0001, slowedSpan))
 }
 
+function clusterIntroZoomWindowT(progress: number): number {
+  if (!clusterIntroRevealActive(progress)) return 0
+  const postRevealT = clusterIntroPostRevealT(progress)
+  if (postRevealT <= CLUSTER_INTRO_FILL_PHASE_SHARE) return 0
+  const zoomSpan = 1 - CLUSTER_INTRO_FILL_PHASE_SHARE
+  return clamp01((postRevealT - CLUSTER_INTRO_FILL_PHASE_SHARE) / Math.max(0.001, zoomSpan))
+}
+
 export function clusterIntroMotionEase(progress: number): number {
   if (!clusterIntroRevealActive(progress)) return 0
   return easeInOutCubic(clusterIntroPostRevealT(progress))
@@ -399,29 +340,43 @@ export function clusterIntroCenterFillProgress(progress: number): number {
   )
 }
 
-/** 0→1 during zoom-out after the hero globe has formed at center. */
-export function clusterIntroZoomProgress(progress: number): number {
-  if (!clusterIntroRevealActive(progress)) return 0
-  const postRevealT = clusterIntroPostRevealT(progress)
-  if (postRevealT <= CLUSTER_INTRO_FILL_PHASE_SHARE) return 0
+/** 0→1 while the camera zooms out to frame the completed hero globe. */
+export function clusterIntroHeroZoomProgress(progress: number): number {
+  const zoomT = clusterIntroZoomWindowT(progress)
+  if (zoomT <= 0) return 0
+  if (zoomT >= CLUSTER_INTRO_HERO_ZOOM_SHARE) return 1
+  return easeInOutCubic(
+    clamp01(zoomT / Math.max(0.001, CLUSTER_INTRO_HERO_ZOOM_SHARE)),
+  )
+}
+
+/** 0→1 while the camera zooms out to reveal the full constellation. */
+export function clusterIntroConstellationZoomProgress(progress: number): number {
+  const zoomT = clusterIntroZoomWindowT(progress)
+  if (zoomT <= CLUSTER_INTRO_HERO_ZOOM_SHARE) return 0
   return easeInOutCubic(
     clamp01(
-      (postRevealT - CLUSTER_INTRO_FILL_PHASE_SHARE) /
-        Math.max(0.001, 1 - CLUSTER_INTRO_FILL_PHASE_SHARE),
+      (zoomT - CLUSTER_INTRO_HERO_ZOOM_SHARE) /
+        Math.max(0.001, 1 - CLUSTER_INTRO_HERO_ZOOM_SHARE),
     ),
   )
 }
 
+/** Combined zoom for deferred-cluster reveal and completion checks. */
+export function clusterIntroZoomProgress(progress: number): number {
+  return clusterIntroConstellationZoomProgress(progress)
+}
+
 export function clusterIntroZoomActive(progress: number): boolean {
-  return clusterIntroZoomProgress(progress) > 0.001
+  return clusterIntroZoomWindowT(progress) > 0.001
 }
 
 export function clusterIntroDeferredLoadActive(progress: number): boolean {
-  return clusterIntroZoomActive(progress)
+  return clusterIntroConstellationZoomProgress(progress) > 0.001
 }
 
 export function clusterIntroHeroSettleBlend(progress: number): number {
-  const zoom = clusterIntroZoomProgress(progress)
+  const zoom = clusterIntroConstellationZoomProgress(progress)
   if (zoom <= CLUSTER_INTRO_HERO_SETTLE_START) return 0
   return easeInOutCubic(
     clamp01(
@@ -431,15 +386,15 @@ export function clusterIntroHeroSettleBlend(progress: number): number {
   )
 }
 
-/** Hero compresses from intro sphere → field layout during late zoom-out. */
+/** Hero compresses from intro sphere → field layout during constellation zoom-out. */
 export function clusterIntroHeroItemBlend(progress: number): number {
   return clusterIntroHeroSettleBlend(progress)
 }
 
-/** 1 while the hero is viewport-centered; eases to 0 as the constellation recenters. */
+/** 1 while the hero is viewport-centered; eases to 0 during constellation zoom. */
 export function clusterIntroGlobePanBlend(progress: number): number {
   if (!clusterIntroRevealActive(progress)) return 1
-  return 1 - easeInOutCubic(clusterIntroZoomProgress(progress))
+  return 1 - easeInOutCubic(clusterIntroConstellationZoomProgress(progress))
 }
 
 export function clusterIntroGlobePanOffset(
@@ -456,10 +411,16 @@ export function clusterIntroGlobePanOffset(
 export function clusterIntroCameraZ(
   progress: number,
   heroStartZ: number,
-  overviewZ: number,
+  heroOverviewZ: number,
+  constellationOverviewZ: number,
 ): number {
-  const t = clusterIntroZoomProgress(progress)
-  return heroStartZ + (overviewZ - heroStartZ) * t
+  const heroZoom = clusterIntroHeroZoomProgress(progress)
+  const constellationZoom = clusterIntroConstellationZoomProgress(progress)
+  const heroPhaseZ = heroStartZ + (heroOverviewZ - heroStartZ) * heroZoom
+  return (
+    heroPhaseZ +
+    (constellationOverviewZ - heroPhaseZ) * constellationZoom
+  )
 }
 
 export function clusterIntroMaxSpread(
@@ -492,7 +453,7 @@ export function clusterIntroOtherReveal(
   progress: number,
   distanceNorm: number,
 ): number {
-  const t = clusterIntroZoomProgress(progress)
+  const t = clusterIntroConstellationZoomProgress(progress)
   if (t <= 0.001) return 0
   const threshold = clamp01(distanceNorm) * 0.42
   if (t <= threshold) return 0

@@ -62,8 +62,8 @@ import {
   clusterIntroEarlyCenterLoadCaps,
   clusterIntroGlobePanOffset,
   clusterIntroHeroItemBlend,
+  clusterIntroHeroOverviewCameraZ,
   clusterIntroHeroStartCameraZ,
-  clusterIntroHeroSphereRadius,
   clusterIntroMotionEase,
   clusterIntroOtherReveal,
   clusterIntroRevealActive,
@@ -71,11 +71,9 @@ import {
   clusterIntroRotationHandoff,
   clusterIntroScreenCenterCutoutRad,
   clusterIntroTextPhaseActive,
-  clusterIntroTextSyncedRingAllowedCount,
-  clusterIntroZoomProgress,
+  clusterIntroConstellationZoomProgress,
   CLUSTER_INTRO_RING_START,
   configureClusterIntroParticipation,
-  layoutClusterIntroRingCircle,
   pickHeroClusterGlobe,
   centerHeroClusterFieldPositions,
   recenterClusterLayoutAtCentroid,
@@ -142,7 +140,7 @@ import {
   introLoadBehindSchedule,
   introGlobeSequenceComplete,
   assignParallelHemisphereRanks,
-  assignRingLoadSeqAzimuth,
+  assignRingLoadSeqOuterFirst,
   assignRingLoadSeqShuffled,
   introRingHemisphereLoadCaps,
   introCenterHemisphereLoadCaps,
@@ -283,6 +281,7 @@ export function GlobeView({
   const clusterIntroActiveRef = useRef(false)
   const heroClusterIdRef = useRef<string | null>(null)
   const heroClusterStartZRef = useRef<number | null>(null)
+  const heroClusterOverviewZRef = useRef<number | null>(null)
   const clusterIntroHeroCenterRef = useRef(new THREE.Vector3())
   const fraudAxisLabelsRef = useRef<CSS3DObject[]>([])
   const constellationRef = useRef(constellation)
@@ -1523,23 +1522,20 @@ export function GlobeView({
     clusterIntroActiveRef.current = clusterIntroActive
     heroClusterIdRef.current = null
     heroClusterStartZRef.current = null
+    heroClusterOverviewZRef.current = null
 
     if (clusterIntroActive && layout) {
       const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
       if (heroGlobe) {
         heroClusterIdRef.current = heroGlobe.id
         if (introLockedRef.current) {
-          const introRadius = clusterIntroHeroSphereRadius(
-            categoryViewRef.current.clusterSpacing,
-          )
-          configureClusterIntroParticipation(objects, heroGlobe.id)
-          layoutClusterIntroRingCircle(objects, heroGlobe.id, introRadius)
           applyHeroClusterIntroSphereLayout(
             objects,
             heroGlobe.id,
             categoryViewRef.current.clusterSpacing,
             heroGlobe.radius,
           )
+          configureClusterIntroParticipation(objects, heroGlobe.id)
           clusterGroups.forEach((group) => {
             const fieldCenter = group.userData.fieldCenter as THREE.Vector3
             group.position.copy(fieldCenter)
@@ -1548,6 +1544,10 @@ export function GlobeView({
             const el = obj.userData.element as HTMLElement | undefined
             if (el) el.style.opacity = '0'
           }
+          const heroOverviewZ = clusterIntroHeroOverviewCameraZ(
+            categoryViewRef.current.clusterSpacing,
+          )
+          heroClusterOverviewZRef.current = heroOverviewZ
           heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
             categoryViewRef.current.clusterSpacing,
           )
@@ -1570,11 +1570,23 @@ export function GlobeView({
       (obj) => !obj.userData.introHemisphereFront,
     )
     const assignRingSeq = clusterIntroActive
-      ? assignRingLoadSeqAzimuth
+      ? assignRingLoadSeqOuterFirst
       : assignRingLoadSeqShuffled
     if (clusterIntroActive) {
-      assignRingLoadSeqAzimuth(
-        ringMembers.map((obj) => ({
+      assignRingLoadSeqOuterFirst(
+        ringFrontMembers.map((obj) => ({
+          pos:
+            (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
+            (obj.userData.fieldLocal as THREE.Vector3) ??
+            new THREE.Vector3(),
+          setSeq: (seq) => {
+            obj.userData.introRingRevealIndex = seq
+            obj.userData.introRingLoadSeq = seq
+          },
+        })),
+      )
+      assignRingLoadSeqOuterFirst(
+        ringBackMembers.map((obj) => ({
           pos:
             (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
             (obj.userData.fieldLocal as THREE.Vector3) ??
@@ -1668,10 +1680,13 @@ export function GlobeView({
     if (introLockedRef.current) {
       const cameraT = globeIntroCameraProgress(introProgressRef.current)
       const introZ =
-        clusterIntroActiveRef.current && heroClusterStartZRef.current != null
+        clusterIntroActiveRef.current &&
+        heroClusterStartZRef.current != null &&
+        heroClusterOverviewZRef.current != null
           ? clusterIntroCameraZ(
               introProgressRef.current,
               heroClusterStartZRef.current,
+              heroClusterOverviewZRef.current,
               overviewCameraZ,
             )
           : overviewCameraZ *
@@ -1941,7 +1956,7 @@ export function GlobeView({
         )
         introGlobeReadyRef.current = clusterIntroActiveRef.current
           ? (introProgress >= 1 ||
-              clusterIntroZoomProgress(introProgress) >= 0.995) &&
+              clusterIntroConstellationZoomProgress(introProgress) >= 0.995) &&
             introImagesLoaded >= introImageTotal
           : introGlobeSequenceComplete(
               introProgress,
@@ -2146,7 +2161,7 @@ export function GlobeView({
           }
 
           if (clusterIntroTextSpin) {
-            interactionState.rotationX +=
+            interactionState.rotationY +=
               preset.autoRotateY * 0.42 * timeScale
           }
 
@@ -2352,7 +2367,8 @@ export function GlobeView({
               obj.userData.clusterId === heroClusterId &&
               introSphereLocal &&
               obj.userData.introIsRingMember &&
-              (!clusterIntroRevealActive(introProgress) || introItemBlend < 0.001)
+              (!clusterIntroRevealActive(introProgress) ||
+                clusterIntroConstellationZoomProgress(introProgress) < 0.001)
             ) {
               obj.position.copy(introSphereLocal)
               continue
@@ -2363,8 +2379,7 @@ export function GlobeView({
               heroClusterId &&
               obj.userData.clusterId === heroClusterId &&
               introSphereLocal &&
-              fieldLocal &&
-              !obj.userData.introIsRingMember
+              fieldLocal
             ) {
               clusterIntroBlendPos.lerpVectors(
                 introSphereLocal,
@@ -2528,10 +2543,13 @@ export function GlobeView({
           introLockedRef.current ? introProgressRef.current : 1,
         )
         const targetIntroZ =
-          clusterIntroActiveRef.current && heroClusterStartZRef.current != null
+          clusterIntroActiveRef.current &&
+          heroClusterStartZRef.current != null &&
+          heroClusterOverviewZRef.current != null
             ? clusterIntroCameraZ(
                 introLockedRef.current ? introProgressRef.current : 1,
                 heroClusterStartZRef.current,
+                heroClusterOverviewZRef.current,
                 introOverviewZ,
               )
             : introOverviewZ *
@@ -2723,26 +2741,6 @@ export function GlobeView({
             const loadStartedAt = obj.userData.introLoadStartedAt as
               | number
               | undefined
-
-            if (
-              clusterIntroActiveRef.current &&
-              !introRevealOn &&
-              heroClusterIdRef.current &&
-              obj.userData.clusterId === heroClusterIdRef.current
-            ) {
-              const revealIndex =
-                (obj.userData.introRingRevealIndex as number) ??
-                (obj.userData.introRingLoadSeq as number) ??
-                0
-              if (
-                revealIndex >=
-                clusterIntroTextSyncedRingAllowedCount(introVisualProgress)
-              ) {
-                if (el.style.opacity !== '0') el.style.opacity = '0'
-                el.style.pointerEvents = 'none'
-                continue
-              }
-            }
 
             if (introCutoutRad > 0.001) {
               worldPos.setFromMatrixPosition(obj.matrixWorld)

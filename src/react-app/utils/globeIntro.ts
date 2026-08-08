@@ -564,12 +564,12 @@ export function assignRingLoadSeqOuterFirst(
   sorted.forEach((item, seq) => item.setSeq(seq))
 }
 
-/** Assign load/reveal order evenly around the ring (azimuth on the YZ plane). */
+/** Assign load/reveal order evenly around the ring (azimuth on the XZ plane). */
 export function assignRingLoadSeqAzimuth(
   items: Array<{ pos: THREE.Vector3; setSeq: (seq: number) => void }>,
 ): void {
   const sorted = [...items].sort(
-    (a, b) => Math.atan2(a.pos.y, a.pos.z) - Math.atan2(b.pos.y, b.pos.z),
+    (a, b) => Math.atan2(a.pos.x, a.pos.z) - Math.atan2(b.pos.x, b.pos.z),
   )
   sorted.forEach((item, seq) => item.setSeq(seq))
 }
