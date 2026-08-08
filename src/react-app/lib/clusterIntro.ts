@@ -78,10 +78,6 @@ function clusterIntroRingCount(loadTotal: number): number {
   return Math.min(CLUSTER_INTRO_RING_SIZE, loadTotal)
 }
 
-function clusterIntroIsRingMember(rank: number, loadTotal: number): boolean {
-  return rank >= clusterIntroRingStartRank(loadTotal)
-}
-
 function clusterIntroCenterFillRank(rank: number, loadTotal: number): number {
   const ringStart = clusterIntroRingStartRank(loadTotal)
   if (rank >= ringStart) return -1
@@ -110,33 +106,14 @@ export function clusterIntroRingHemisphereLoadCaps(
   return introSharedHemisphereLoadCaps(frontTotal, backTotal, loadP)
 }
 
-function clusterIntroEarlyCenterLoadCaps(
-  progress: number,
-  frontTotal: number,
-  backTotal: number,
-): { frontCap: number; backCap: number } {
-  if (progress < GLOBE_INTRO_LINE3_START) {
-    return { frontCap: 0, backCap: 0 }
-  }
-  const ringP = clamp01(
-    (progress - GLOBE_INTRO_LINE3_START) /
-      Math.max(0.001, GLOBE_INTRO_LINE3_END - GLOBE_INTRO_LINE3_START),
-  )
-  return introSharedHemisphereLoadCaps(
-    frontTotal,
-    backTotal,
-    easeInOutCubic(ringP) * 0.85,
-  )
-}
-
-/** Prefetch hero center tiles during late text; fill during reveal. */
+/** Hero center tiles load only after the intro text phase ends. */
 export function clusterIntroCenterLoadCaps(
   progress: number,
   frontTotal: number,
   backTotal: number,
 ): { frontCap: number; backCap: number } {
   if (!clusterIntroRevealActive(progress)) {
-    return clusterIntroEarlyCenterLoadCaps(progress, frontTotal, backTotal)
+    return { frontCap: 0, backCap: 0 }
   }
   return introSharedHemisphereLoadCaps(
     frontTotal,
@@ -197,7 +174,7 @@ export function pickHeroClusterGlobe(
   })
 }
 
-/** Scale hero tiles onto the intro sphere — ring at full radius, center tiles inset. */
+/** Scale hero center tiles onto the intro sphere; ring uses applyHeroClusterIntroRingLayout. */
 export function applyHeroClusterIntroSphereLayout(
   objects: Array<{
     userData: Record<string, unknown>
@@ -212,26 +189,55 @@ export function applyHeroClusterIntroSphereLayout(
 
   for (const obj of objects) {
     if (obj.userData.clusterId !== heroClusterId) continue
+    if (obj.userData.introIsRingMember) continue
     const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
     if (!fieldLocal) continue
-    const isRing = Boolean(obj.userData.introIsRingMember)
-    const shellScale = isRing ? 1 : 0.42
-    const introLocal = fieldLocal.clone().multiplyScalar(scale * shellScale)
+    const introLocal = fieldLocal.clone().multiplyScalar(scale * 0.42)
     obj.userData.introSphereLocal = introLocal
     obj.position.copy(introLocal)
     obj.userData.introHemisphereFront = introLocal.z >= 0
   }
 }
 
-/** @deprecated Ring tiles use sphere layout in applyHeroClusterIntroSphereLayout. */
+/** Place hero ring tiles on an outer equatorial belt — clear of the intro text cutout. */
 export function applyHeroClusterIntroRingLayout(
-  _objects: Array<{
+  objects: Array<{
     userData: Record<string, unknown>
     position: THREE.Vector3
   }>,
-  _heroClusterId: string,
-  _separation: number,
-): void {}
+  heroClusterId: string,
+  separation: number,
+): void {
+  const introRadius = clusterIntroHeroSphereRadius(separation)
+  const ringObjects = objects
+    .filter(
+      (obj) =>
+        obj.userData.clusterId === heroClusterId &&
+        obj.userData.introIsRingMember,
+    )
+    .sort(
+      (a, b) =>
+        ((a.userData.introLoadRank as number) ?? 0) -
+        ((b.userData.introLoadRank as number) ?? 0),
+    )
+
+  const count = ringObjects.length
+  ringObjects.forEach((obj, index) => {
+    const theta = (index / Math.max(1, count)) * Math.PI * 2 - Math.PI / 2
+    const incline = 0.2 * Math.sin(theta * 2 + 0.4)
+    const y = incline * introRadius
+    const horizR =
+      Math.sqrt(Math.max(0, 1 - (y / introRadius) ** 2)) * introRadius
+    const introLocal = new THREE.Vector3(
+      Math.cos(theta) * horizR,
+      y,
+      Math.sin(theta) * horizR,
+    )
+    obj.userData.introSphereLocal = introLocal
+    obj.position.copy(introLocal)
+    obj.userData.introHemisphereFront = introLocal.z >= 0
+  })
+}
 
 export function recenterClusterLayoutAtCentroid(layout: ClusterLayout): boolean {
   if (layout.clusterGlobes.length === 0) return false
@@ -327,6 +333,10 @@ export function clusterIntroFieldBoundingRadius(layout: ClusterLayout): number {
   return maxR
 }
 
+function clusterIntroMinRingAxisAngle(): number {
+  return GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD * 0.95
+}
+
 export function configureClusterIntroParticipation(
   objects: Array<{ userData: Record<string, unknown> }>,
   heroClusterId: string,
@@ -347,9 +357,18 @@ export function configureClusterIntroParticipation(
   const heroLoadTotal = heroRanked.length
   const heroRingCount = clusterIntroRingCount(heroLoadTotal)
   const heroCenterFillCount = clusterIntroCenterFillCount(heroLoadTotal)
+  const minRingAngle = clusterIntroMinRingAxisAngle()
+  const ringEligible = heroRanked.filter(
+    (entry) => entry.centrality >= minRingAngle,
+  )
+  const ringPool =
+    ringEligible.length >= heroRingCount
+      ? ringEligible.slice(-heroRingCount)
+      : heroRanked.slice(-heroRingCount)
+  const ringObjects = new Set(ringPool.map((entry) => entry.obj))
 
   heroRanked.forEach((entry, rank) => {
-    const isRingMember = clusterIntroIsRingMember(rank, heroLoadTotal)
+    const isRingMember = ringObjects.has(entry.obj)
     const isCenterMember = !isRingMember
     entry.obj.userData.introIsRingMember = isRingMember
     entry.obj.userData.introIsCenterMember = isCenterMember

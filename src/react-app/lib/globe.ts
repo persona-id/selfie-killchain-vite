@@ -797,6 +797,17 @@ export function applyDisplaySettings(
   object.scale.set(1, 1, 1)
 }
 
+/** Restart intro blur gradient when a tile becomes visible (image may have loaded earlier). */
+export function restartIntroBlurReveal(element: HTMLElement): void {
+  const media = element.querySelector('.globe-photo-media')
+  if (!media?.classList.contains('globe-photo-media--intro')) return
+  if (!media.classList.contains('is-ready')) return
+  media.classList.add('is-loading')
+  window.setTimeout(() => {
+    media.classList.remove('is-loading')
+  }, GLOBE_INTRO_BLUR_IN_MIN_MS)
+}
+
 export function createPhotoElement(
   item: GalleryItem,
   settings: GlobeDisplaySettings,

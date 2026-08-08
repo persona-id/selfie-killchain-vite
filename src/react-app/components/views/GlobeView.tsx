@@ -31,6 +31,7 @@ import {
   layoutBoundingRadius,
   placeOnSphere,
   pullClusterIntoViewport,
+  restartIntroBlurReveal,
   sampleEvenly,
   shortestAngleDelta,
   viewAxisAngularDistance,
@@ -55,6 +56,7 @@ import {
 } from '../../lib/clusterFocusPlaque'
 import {
   applyHeroClusterIntroSphereLayout,
+  applyHeroClusterIntroRingLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
   clusterIntroDeferredLoadActive,
@@ -122,7 +124,6 @@ import { isGlobeClickableTarget } from '../../lib/clickableTarget'
 import {
   GLOBE_INTRO_CAMERA_START_FACTOR,
   GLOBE_INTRO_RING_START,
-  GLOBE_INTRO_LINE3_START,
   GLOBE_INTRO_RING_DRIFT_Z,
   GLOBE_INTRO_CENTER_PREFETCH_INTERVAL_MS,
   clamp01,
@@ -1522,6 +1523,11 @@ export function GlobeView({
             categoryViewRef.current.clusterSpacing,
             heroGlobe.radius,
           )
+          applyHeroClusterIntroRingLayout(
+            objects,
+            heroGlobe.id,
+            categoryViewRef.current.clusterSpacing,
+          )
           clusterGroups.forEach((group, clusterId) => {
             const fieldCenter = group.userData.fieldCenter as THREE.Vector3
             if (clusterId === heroGlobe.id) {
@@ -1982,8 +1988,7 @@ export function GlobeView({
         }
 
         const centerPrefetchOn = clusterIntroActiveRef.current
-          ? introProgress >= GLOBE_INTRO_LINE3_START ||
-            clusterIntroRevealActive(introProgress)
+          ? clusterIntroRevealActive(introProgress)
           : introCenterPrefetchActive(introProgress)
 
         if (centerPrefetchOn) {
@@ -2695,13 +2700,19 @@ export function GlobeView({
                 (obj.userData.introRingRevealIndex as number) ??
                 (obj.userData.introRingLoadSeq as number) ??
                 0
-              if (
-                revealIndex >=
+              const allowed =
                 clusterIntroTextSyncedRingAllowedCount(introVisualProgress)
-              ) {
+              if (revealIndex >= allowed) {
                 if (el.style.opacity !== '0') el.style.opacity = '0'
                 el.style.pointerEvents = 'none'
                 continue
+              }
+              if (
+                img?.src &&
+                obj.userData.introRingVisualStartedAt == null
+              ) {
+                obj.userData.introRingVisualStartedAt = now
+                restartIntroBlurReveal(el)
               }
             }
 
@@ -2728,7 +2739,11 @@ export function GlobeView({
               continue
             }
 
-            introOpacity = introTileOpacity(loadStartedAt, now, imageLoaded)
+            const visualStartedAt = clusterIntroActiveRef.current
+              ? ((obj.userData.introRingVisualStartedAt as number | undefined) ??
+                loadStartedAt)
+              : loadStartedAt
+            introOpacity = introTileOpacity(visualStartedAt, now, imageLoaded)
             if (
               isBackHemisphere &&
               !introBackHemisphereMayShow(
@@ -2744,8 +2759,8 @@ export function GlobeView({
           } else if (
             isCenterMember &&
             introRevealOn &&
-            (clusterIntroActiveRef.current ||
-              introCenterPrefetchActive(introVisualProgress))
+            (!clusterIntroActiveRef.current ||
+              clusterIntroCenterFillProgress(introVisualProgress) > 0.001)
           ) {
             const centerFillRank =
               (obj.userData.introCenterFillRank as number) ?? -1
@@ -2766,6 +2781,14 @@ export function GlobeView({
             let loadStartedAt = obj.userData.introLoadStartedAt as
               | number
               | undefined
+            if (
+              clusterIntroActiveRef.current &&
+              img?.src &&
+              obj.userData.introCenterVisualStartedAt == null
+            ) {
+              obj.userData.introCenterVisualStartedAt = now
+              restartIntroBlurReveal(el)
+            }
             if (!loadStartedAt && img?.src) {
               loadStartedAt = now
               obj.userData.introLoadStartedAt = loadStartedAt
@@ -2782,8 +2805,13 @@ export function GlobeView({
               obj.userData.introLoadStartedAt = loadStartedAt
             }
 
+            const centerVisualStartedAt = clusterIntroActiveRef.current
+              ? ((obj.userData.introCenterVisualStartedAt as number | undefined) ??
+                loadStartedAt)
+              : loadStartedAt
             introOpacity =
-              introCenterTileOpacity(loadStartedAt, now, imageLoaded) * stagger
+              introCenterTileOpacity(centerVisualStartedAt, now, imageLoaded) *
+              stagger
             if (
               isBackHemisphere &&
               !introBackHemisphereMayShow(
