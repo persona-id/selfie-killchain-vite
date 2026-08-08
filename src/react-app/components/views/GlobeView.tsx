@@ -57,7 +57,6 @@ import {
   applyHeroClusterIntroSphereLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
-  clusterIntroConstellationSpreadProgress,
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
   clusterIntroCenterLoadCaps,
@@ -404,7 +403,11 @@ export function GlobeView({
     clusterGroupsRef.current.forEach((group, clusterId) => {
       const fieldCenter = group.userData.fieldCenter as THREE.Vector3
       if (introLayoutActive) {
-        group.position.set(0, 0, 0)
+        if (clusterId === heroId) {
+          group.position.set(0, 0, 0)
+        } else {
+          group.position.copy(fieldCenter)
+        }
       } else if (clusterId === heroId) {
         group.position.set(0, 0, 0)
       } else {
@@ -1519,8 +1522,13 @@ export function GlobeView({
             categoryViewRef.current.clusterSpacing,
             heroGlobe.radius,
           )
-          clusterGroups.forEach((group) => {
-            group.position.set(0, 0, 0)
+          clusterGroups.forEach((group, clusterId) => {
+            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+            if (clusterId === heroGlobe.id) {
+              group.position.set(0, 0, 0)
+            } else {
+              group.position.copy(fieldCenter)
+            }
           })
           for (const obj of objects) {
             const el = obj.userData.element as HTMLElement | undefined
@@ -2254,11 +2262,10 @@ export function GlobeView({
             clusterIntroActiveRef.current &&
             heroClusterIdRef.current
           ) {
-            const spread = clusterIntroConstellationSpreadProgress(introProgress)
-            if (clusterId === heroClusterIdRef.current || spread <= 0.001) {
+            if (clusterId === heroClusterIdRef.current) {
               group.position.set(0, 0, 0)
             } else {
-              group.position.copy(fieldCenter).multiplyScalar(spread)
+              group.position.copy(fieldCenter)
             }
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(1)
@@ -2652,9 +2659,6 @@ export function GlobeView({
               heroClusterIdRef.current &&
               obj.userData.clusterId
             ) {
-              const spread = clusterIntroConstellationSpreadProgress(
-                introVisualProgress,
-              )
               const distanceNorm = clusterIntroDistanceNorm(
                 layoutClusterGlobesRef.current,
                 heroClusterIdRef.current,
@@ -2664,7 +2668,7 @@ export function GlobeView({
                 introVisualProgress,
                 distanceNorm,
               )
-              if (reveal > 0.001 && spread > 0.06 && img?.src) {
+              if (reveal > 0.001 && img?.src) {
                 const loadStartedAt = obj.userData.introLoadStartedAt as
                   | number
                   | undefined

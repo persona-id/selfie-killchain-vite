@@ -492,14 +492,14 @@ export function clusterIntroOtherReveal(
   return clusterIntroOtherOpacity(progress, distanceNorm)
 }
 
-/** Opacity for non-hero clusters — synced to zoom spread so they never pop at the origin. */
+/** Opacity for non-hero clusters — fade in at final layout positions as the camera zooms out. */
 export function clusterIntroOtherOpacity(
   progress: number,
   distanceNorm: number,
 ): number {
-  const spread = clusterIntroZoomProgress(progress)
-  if (spread <= 0.001) return 0
-  const threshold = 0.08 + clamp01(distanceNorm) * 0.3
-  const fadeWindow = 0.36
-  return smoothstep(clamp01((spread - threshold) / Math.max(0.001, fadeWindow)))
+  const zoomP = clusterIntroZoomProgress(progress)
+  if (zoomP <= 0.001) return 0
+  const threshold = 0.04 + clamp01(distanceNorm) * 0.26
+  const fadeWindow = 0.44
+  return smoothstep(clamp01((zoomP - threshold) / Math.max(0.001, fadeWindow)))
 }
