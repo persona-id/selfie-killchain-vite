@@ -58,18 +58,19 @@ import {
   applyHeroClusterIntroSphereLayout,
   applyHeroClusterIntroRingLayout,
   clusterIntroCameraZ,
-  clusterIntroCenterFillProgress,
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
   clusterIntroCenterLoadCaps,
   clusterIntroFieldBoundingRadius,
   clusterIntroHeroItemBlend,
+  clusterIntroHeroFormProgress,
   clusterIntroHeroStartCameraZ,
   clusterIntroMotionEase,
   clusterIntroOtherOpacity,
   clusterIntroRevealActive,
   clusterIntroRingHemisphereLoadCaps,
   clusterIntroRotationHandoff,
+  clusterIntroSpinYScale,
   clusterIntroScreenCenterCutoutRad,
   clusterIntroTextPhaseActive,
   clusterIntroTextSyncedRingAllowedCount,
@@ -2113,41 +2114,50 @@ export function GlobeView({
 
           const revealSpin =
             introLockedRef.current &&
-            (clusterIntroNow
-              ? clusterIntroRevealActive(introProgress)
-              : introRevealActive(introProgress))
+            !clusterIntroNow &&
+            introRevealActive(introProgress)
           const clusterIntroTextSpin =
             clusterIntroNow &&
             introLockedRef.current &&
             clusterIntroTextPhaseActive(introProgress)
-          const ySpinScale = revealSpin
-            ? introMotionP
-            : clusterIntroTextSpin
-              ? 0.42
-              : introLockedRef.current
-                ? 0
-                : 1
+          const ySpinScale =
+            clusterIntroNow && introLockedRef.current
+              ? clusterIntroSpinYScale(introProgress)
+              : revealSpin
+                ? introMotionP
+                : clusterIntroTextSpin
+                  ? 0.55
+                  : introLockedRef.current
+                    ? 0
+                    : 1
+
+          const clusterIntroZDrift =
+            clusterIntroNow &&
+            introLockedRef.current &&
+            introRotationHandoff < 0.9
 
           if (introRotationHandoff < 1) {
             const handoffEased = easeInOutCubic(introRotationHandoff)
-            const xyDamp = Math.pow(
-              0.92 + 0.08 * handoffEased,
-              timeScale,
-            )
-            interactionState.rotationX *= xyDamp
-            interactionState.rotationY *= xyDamp
-            if (handoffEased < 0.82) {
-              interactionState.rotationZ +=
-                GLOBE_INTRO_RING_DRIFT_Z *
-                (clusterIntroTextSpin ? 2.8 : 1) *
-                (1 - handoffEased) *
-                timeScale
+            const skipClusterFormDamp =
+              clusterIntroNow && introRotationHandoff < 0.06
+            if (!skipClusterFormDamp) {
+              const xyDamp = Math.pow(
+                0.92 + 0.08 * handoffEased,
+                timeScale,
+              )
+              interactionState.rotationX *= xyDamp
+              interactionState.rotationY *= xyDamp
             }
-          }
-
-          if (clusterIntroTextSpin) {
-            interactionState.rotationY +=
-              preset.autoRotateY * 0.55 * timeScale
+            if (handoffEased < 0.82) {
+              const driftActive = clusterIntroZDrift || clusterIntroTextSpin
+              if (driftActive) {
+                interactionState.rotationZ +=
+                  GLOBE_INTRO_RING_DRIFT_Z *
+                  (clusterIntroTextSpin ? 2.8 : 1) *
+                  (1 - handoffEased) *
+                  timeScale
+              }
+            }
           }
 
           const zDecay =
@@ -2605,7 +2615,7 @@ export function GlobeView({
           : introRevealActive(introVisualProgress))
       const introFillP = introVisualActive
         ? clusterIntroActiveRef.current
-          ? clusterIntroCenterFillProgress(introVisualProgress)
+          ? clusterIntroHeroFormProgress(introVisualProgress)
           : globeIntroFillProgress(introVisualProgress)
         : 0
       const introCutoutRad = introVisualActive
@@ -2756,12 +2766,16 @@ export function GlobeView({
             ) {
               introOpacity = 0
             }
-          } else if (
-            isCenterMember &&
-            introRevealOn &&
-            (!clusterIntroActiveRef.current ||
-              clusterIntroCenterFillProgress(introVisualProgress) > 0.001)
-          ) {
+          } else if (isCenterMember && introRevealOn) {
+            if (clusterIntroActiveRef.current) {
+              const formP = clusterIntroHeroFormProgress(introVisualProgress)
+              if (formP <= 0.001) {
+                if (el.style.opacity !== '0') el.style.opacity = '0'
+                el.style.pointerEvents = 'none'
+                continue
+              }
+            }
+
             const centerFillRank =
               (obj.userData.introCenterFillRank as number) ?? -1
             const centerFillCount =
