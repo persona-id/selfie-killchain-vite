@@ -25,8 +25,16 @@ import {
 } from './globe'
 import { type ClusterGlobe, type ClusterLayout } from './clusterLayout'
 
-/** Share of post-reveal timeline for hero ring → globe morph (center tiles included). */
+/** Share of post-reveal timeline for hero ring → globe morph. */
 export const CLUSTER_INTRO_FILL_PHASE_SHARE = 0.38
+
+/** Zoom fraction before overview rotation/spin handoff begins. */
+export const CLUSTER_INTRO_ROTATION_HANDOFF_ZOOM_START = 0.94
+
+/** Larger cutout during intro text so ring tiles never cover type. */
+export function clusterIntroTextCenterCutoutRad(): number {
+  return GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD * 1.2
+}
 
 /** Hero ring tiles placed evenly around the intro text. */
 export const CLUSTER_INTRO_RING_SIZE = 12
@@ -127,7 +135,7 @@ export function clusterIntroScreenCenterCutoutRad(progress: number): number {
     progress >= CLUSTER_INTRO_RING_START &&
     progress < CLUSTER_INTRO_REVEAL_START
   ) {
-    return GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD
+    return clusterIntroTextCenterCutoutRad()
   }
 
   if (clusterIntroRevealActive(progress)) {
@@ -135,7 +143,7 @@ export function clusterIntroScreenCenterCutoutRad(progress: number): number {
     const cutoutP = easeInOutCubic(
       clamp01(zoomT / GLOBE_INTRO_CUTOUT_CLOSE_BY_ZOOM),
     )
-    return GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD * (1 - cutoutP)
+    return clusterIntroTextCenterCutoutRad() * (1 - cutoutP)
   }
 
   return 0
@@ -199,7 +207,7 @@ export function applyHeroClusterIntroSphereLayout(
   }
 }
 
-/** Place hero ring tiles on an outer equatorial belt — clear of the intro text cutout. */
+/** Place hero ring tiles in an XY-plane belt (constant distance from view axis). */
 export function applyHeroClusterIntroRingLayout(
   objects: Array<{
     userData: Record<string, unknown>
@@ -209,6 +217,7 @@ export function applyHeroClusterIntroRingLayout(
   separation: number,
 ): void {
   const introRadius = clusterIntroHeroSphereRadius(separation)
+  const ringRadius = introRadius * 1.1
   const ringObjects = objects
     .filter(
       (obj) =>
@@ -224,14 +233,10 @@ export function applyHeroClusterIntroRingLayout(
   const count = ringObjects.length
   ringObjects.forEach((obj, index) => {
     const theta = (index / Math.max(1, count)) * Math.PI * 2 - Math.PI / 2
-    const incline = 0.2 * Math.sin(theta * 2 + 0.4)
-    const y = incline * introRadius
-    const horizR =
-      Math.sqrt(Math.max(0, 1 - (y / introRadius) ** 2)) * introRadius
     const introLocal = new THREE.Vector3(
-      Math.cos(theta) * horizR,
-      y,
-      Math.sin(theta) * horizR,
+      Math.cos(theta) * ringRadius,
+      Math.sin(theta) * ringRadius,
+      Math.sin(theta * 1.6 + 0.3) * introRadius * 0.07,
     )
     obj.userData.introSphereLocal = introLocal
     obj.position.copy(introLocal)
@@ -334,7 +339,7 @@ export function clusterIntroFieldBoundingRadius(layout: ClusterLayout): number {
 }
 
 function clusterIntroMinRingAxisAngle(): number {
-  return GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD * 0.95
+  return clusterIntroTextCenterCutoutRad() * 1.05
 }
 
 export function configureClusterIntroParticipation(
@@ -403,19 +408,30 @@ export function clusterIntroMotionEase(progress: number): number {
   return easeInOutCubic(clusterIntroPostRevealT(progress))
 }
 
-/** Rotation eases to overview spin only during the constellation zoom (not at reveal). */
+/** Rotation eases to overview spin only near the end of constellation zoom. */
 export function clusterIntroRotationHandoff(progress: number): number {
-  return easeInOutCubic(clusterIntroZoomProgress(progress))
+  const zoomP = clusterIntroZoomProgress(progress)
+  if (zoomP < CLUSTER_INTRO_ROTATION_HANDOFF_ZOOM_START) return 0
+  return easeInOutCubic(
+    clamp01(
+      (zoomP - CLUSTER_INTRO_ROTATION_HANDOFF_ZOOM_START) /
+        Math.max(0.001, 1 - CLUSTER_INTRO_ROTATION_HANDOFF_ZOOM_START),
+    ),
+  )
 }
 
-/** Y auto-rotate scale — steady through text + hero form, then blends to 1 during zoom. */
+/** Y auto-rotate scale — locked through text + hero form, blends only at zoom end. */
 export function clusterIntroSpinYScale(progress: number): number {
   const introSpin = 0.55
   if (clusterIntroTextPhaseActive(progress)) return introSpin
   if (!clusterIntroRevealActive(progress)) return 0
   const zoomP = clusterIntroZoomProgress(progress)
-  if (zoomP <= 0.001) return introSpin
-  return introSpin + (1 - introSpin) * easeInOutCubic(zoomP)
+  if (zoomP < CLUSTER_INTRO_ROTATION_HANDOFF_ZOOM_START) return introSpin
+  const t = clamp01(
+    (zoomP - CLUSTER_INTRO_ROTATION_HANDOFF_ZOOM_START) /
+      Math.max(0.001, 1 - CLUSTER_INTRO_ROTATION_HANDOFF_ZOOM_START),
+  )
+  return introSpin + (1 - introSpin) * easeInOutCubic(t)
 }
 
 /** Center fill is part of hero form — no separate pre-zoom center burst. */

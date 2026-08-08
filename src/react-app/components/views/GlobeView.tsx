@@ -2134,13 +2134,16 @@ export function GlobeView({
           const clusterIntroZDrift =
             clusterIntroNow &&
             introLockedRef.current &&
-            introRotationHandoff < 0.9
+            clusterIntroTextPhaseActive(introProgress)
+
+          const clusterIntroRotationLocked =
+            clusterIntroNow &&
+            introLockedRef.current &&
+            introRotationHandoff < 0.01
 
           if (introRotationHandoff < 1) {
             const handoffEased = easeInOutCubic(introRotationHandoff)
-            const skipClusterFormDamp =
-              clusterIntroNow && introRotationHandoff < 0.06
-            if (!skipClusterFormDamp) {
+            if (!clusterIntroRotationLocked) {
               const xyDamp = Math.pow(
                 0.92 + 0.08 * handoffEased,
                 timeScale,
@@ -2148,23 +2151,25 @@ export function GlobeView({
               interactionState.rotationX *= xyDamp
               interactionState.rotationY *= xyDamp
             }
-            if (handoffEased < 0.82) {
-              const driftActive = clusterIntroZDrift || clusterIntroTextSpin
-              if (driftActive) {
-                interactionState.rotationZ +=
-                  GLOBE_INTRO_RING_DRIFT_Z *
-                  (clusterIntroTextSpin ? 2.8 : 1) *
-                  (1 - handoffEased) *
-                  timeScale
-              }
+            if (handoffEased < 0.82 && clusterIntroZDrift) {
+              interactionState.rotationZ +=
+                GLOBE_INTRO_RING_DRIFT_Z *
+                2.8 *
+                (1 - handoffEased) *
+                timeScale
             }
           }
 
-          const zDecay =
-            introRotationHandoff > 0.75 ? 0.72 : 0.84 + 0.16 * (1 - introRotationHandoff)
-          interactionState.rotationZ *= Math.pow(zDecay, timeScale)
+          if (!clusterIntroRotationLocked) {
+            const zDecay =
+              introRotationHandoff > 0.75
+                ? 0.72
+                : 0.84 + 0.16 * (1 - introRotationHandoff)
+            interactionState.rotationZ *= Math.pow(zDecay, timeScale)
+          }
 
           if (
+            !clusterIntroNow &&
             introRotationHandoff > 0.05 &&
             introRotationHandoff < 0.72 &&
             Math.abs(interactionState.rotationZ) > 0.0005
@@ -2185,9 +2190,12 @@ export function GlobeView({
           if (preset.wobble) {
             const amp = preset.wobbleAmplitude ?? 0.15
             const speed = preset.wobbleSpeed ?? 0.001
-            const wobbleP = introLockedRef.current
-              ? Math.max(introRotationHandoff, introMotionP)
-              : 1
+            const wobbleP =
+              introLockedRef.current && clusterIntroNow
+                ? 0
+                : introLockedRef.current
+                  ? Math.max(introRotationHandoff, introMotionP)
+                  : 1
             interactionState.rotationX +=
               Math.sin(time * speed) * amp * 0.02 * timeScale * wobbleP
             interactionState.rotationY +=
@@ -2195,9 +2203,11 @@ export function GlobeView({
           } else {
             const xSpinScale = revealSpin
               ? introMotionP
-              : introLockedRef.current
-                ? introRotationHandoff
-                : 1
+              : clusterIntroNow && introLockedRef.current
+                ? 0
+                : introLockedRef.current
+                  ? introRotationHandoff
+                  : 1
             interactionState.rotationX += preset.autoRotateX * timeScale * xSpinScale
           }
         }
