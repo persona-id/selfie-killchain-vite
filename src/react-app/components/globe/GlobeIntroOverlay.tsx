@@ -14,6 +14,7 @@ import {
   globeIntroLine3OutProgress,
   introZoomTimelineComplete,
 } from '../../utils/globeIntro'
+import { clusterIntroHeroZoomTimelineComplete } from '../../lib/clusterIntro'
 import { CHROME_MENU_REVEAL_MS } from '../../constants/shellMotion'
 
 import './GlobeIntro.css'
@@ -31,6 +32,7 @@ type GlobeIntroOverlayProps = {
   onGlobeReady?: () => void
   introGlobeReadyRef?: React.MutableRefObject<boolean>
   fraudAxisEnabled?: boolean
+  clusterIntroTest?: boolean
 }
 
 function lineStrength(inP: number, outP: number): number {
@@ -55,6 +57,7 @@ export function GlobeIntroOverlay({
   onGlobeReady,
   introGlobeReadyRef,
   fraudAxisEnabled = false,
+  clusterIntroTest = false,
 }: GlobeIntroOverlayProps) {
   const [chromeRevealing, setChromeRevealing] = useState(false)
   const [completed, setCompleted] = useState(false)
@@ -121,7 +124,9 @@ export function GlobeIntroOverlay({
 
   const tryCompleteIntro = useCallback(() => {
     if (completedRef.current) return
-    const zoomReady = introZoomTimelineComplete(progressRef.current)
+    const zoomReady = clusterIntroTest
+      ? clusterIntroHeroZoomTimelineComplete(progressRef.current)
+      : introZoomTimelineComplete(progressRef.current)
     const globeReady = introGlobeReadyRef?.current ?? false
     if (!zoomReady || !globeReady) return
 
@@ -137,7 +142,7 @@ export function GlobeIntroOverlay({
         onComplete()
       }, CHROME_MENU_REVEAL_MS)
     }
-  }, [introGlobeReadyRef, onComplete, onGlobeReady, onProgress, updateIntroLines])
+  }, [clusterIntroTest, introGlobeReadyRef, onComplete, onGlobeReady, onProgress, updateIntroLines])
 
   useEffect(
     () => () => {

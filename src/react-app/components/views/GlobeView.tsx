@@ -57,10 +57,12 @@ import {
   applyHeroClusterIntroSphereLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
+  clusterIntroConstellationZoomProgress,
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
-  clusterIntroEarlyCenterLoadCaps,
+  clusterIntroFieldBoundingRadius,
   clusterIntroGlobePanOffset,
+  clusterIntroHeroGlobeSequenceComplete,
   clusterIntroHeroItemBlend,
   clusterIntroHeroOverviewCameraZ,
   clusterIntroHeroStartCameraZ,
@@ -71,7 +73,6 @@ import {
   clusterIntroRotationHandoff,
   clusterIntroScreenCenterCutoutRad,
   clusterIntroTextPhaseActive,
-  clusterIntroConstellationZoomProgress,
   CLUSTER_INTRO_RING_START,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
@@ -140,7 +141,6 @@ import {
   introLoadBehindSchedule,
   introGlobeSequenceComplete,
   assignParallelHemisphereRanks,
-  assignRingLoadSeqOuterFirst,
   assignRingLoadSeqShuffled,
   introRingHemisphereLoadCaps,
   introCenterHemisphereLoadCaps,
@@ -1425,7 +1425,7 @@ export function GlobeView({
     const centerFillCount = introCenterFillCount(loadTotal)
     const introLockedNow = introLockedRef.current
     const clusterIntroSetup =
-      Boolean(clusterIntroHeroId) && introLockedNow && isClusters && layout
+      Boolean(clusterIntroHeroId) && isClusters && layout
 
     displayItems.forEach((item, i) => {
       const loadRank = loadRankByIndex.get(i) ?? i
@@ -1528,35 +1528,30 @@ export function GlobeView({
       const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
       if (heroGlobe) {
         heroClusterIdRef.current = heroGlobe.id
+        applyHeroClusterIntroSphereLayout(
+          objects,
+          heroGlobe.id,
+          categoryViewRef.current.clusterSpacing,
+          heroGlobe.radius,
+        )
+        configureClusterIntroParticipation(objects, heroGlobe.id)
+        clusterGroups.forEach((group) => {
+          const fieldCenter = group.userData.fieldCenter as THREE.Vector3
+          group.position.copy(fieldCenter)
+        })
         if (introLockedRef.current) {
-          applyHeroClusterIntroSphereLayout(
-            objects,
-            heroGlobe.id,
-            categoryViewRef.current.clusterSpacing,
-            heroGlobe.radius,
-          )
-          configureClusterIntroParticipation(objects, heroGlobe.id)
-          clusterGroups.forEach((group) => {
-            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-            group.position.copy(fieldCenter)
-          })
           for (const obj of objects) {
             const el = obj.userData.element as HTMLElement | undefined
             if (el) el.style.opacity = '0'
           }
-          const heroOverviewZ = clusterIntroHeroOverviewCameraZ(
-            categoryViewRef.current.clusterSpacing,
-          )
-          heroClusterOverviewZRef.current = heroOverviewZ
-          heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
-            categoryViewRef.current.clusterSpacing,
-          )
-        } else {
-          clusterGroups.forEach((group) => {
-            const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-            group.position.copy(fieldCenter)
-          })
         }
+        const heroOverviewZ = clusterIntroHeroOverviewCameraZ(
+          categoryViewRef.current.clusterSpacing,
+        )
+        heroClusterOverviewZRef.current = heroOverviewZ
+        heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
+          categoryViewRef.current.clusterSpacing,
+        )
       } else {
         clusterIntroActiveRef.current = false
       }
@@ -1569,60 +1564,37 @@ export function GlobeView({
     const ringBackMembers = ringMembers.filter(
       (obj) => !obj.userData.introHemisphereFront,
     )
-    const assignRingSeq = clusterIntroActive
-      ? assignRingLoadSeqOuterFirst
-      : assignRingLoadSeqShuffled
-    if (clusterIntroActive) {
-      assignRingLoadSeqOuterFirst(
-        ringFrontMembers.map((obj) => ({
-          pos:
-            (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
-            (obj.userData.fieldLocal as THREE.Vector3) ??
-            new THREE.Vector3(),
-          setSeq: (seq) => {
+    const assignRingSeq = assignRingLoadSeqShuffled
+    assignRingSeq(
+      ringFrontMembers.map((obj) => ({
+        pos:
+          (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
+          (obj.userData.fieldLocal as THREE.Vector3) ??
+          (obj.userData.sphereLocal as THREE.Vector3) ??
+          new THREE.Vector3(),
+        setSeq: (seq) => {
+          if (clusterIntroActive) {
             obj.userData.introRingRevealIndex = seq
-            obj.userData.introRingLoadSeq = seq
-          },
-        })),
-      )
-      assignRingLoadSeqOuterFirst(
-        ringBackMembers.map((obj) => ({
-          pos:
-            (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
-            (obj.userData.fieldLocal as THREE.Vector3) ??
-            new THREE.Vector3(),
-          setSeq: (seq) => {
+          }
+          obj.userData.introRingLoadSeq = seq
+        },
+      })),
+    )
+    assignRingSeq(
+      ringBackMembers.map((obj) => ({
+        pos:
+          (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
+          (obj.userData.fieldLocal as THREE.Vector3) ??
+          (obj.userData.sphereLocal as THREE.Vector3) ??
+          new THREE.Vector3(),
+        setSeq: (seq) => {
+          if (clusterIntroActive) {
             obj.userData.introRingRevealIndex = seq
-            obj.userData.introRingLoadSeq = seq
-          },
-        })),
-      )
-    } else {
-      assignRingSeq(
-        ringFrontMembers.map((obj) => ({
-          pos:
-            (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
-            (obj.userData.fieldLocal as THREE.Vector3) ??
-            (obj.userData.sphereLocal as THREE.Vector3) ??
-            new THREE.Vector3(),
-          setSeq: (seq) => {
-            obj.userData.introRingLoadSeq = seq
-          },
-        })),
-      )
-      assignRingSeq(
-        ringBackMembers.map((obj) => ({
-          pos:
-            (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
-            (obj.userData.fieldLocal as THREE.Vector3) ??
-            (obj.userData.sphereLocal as THREE.Vector3) ??
-            new THREE.Vector3(),
-          setSeq: (seq) => {
-            obj.userData.introRingLoadSeq = seq
-          },
-        })),
-      )
-    }
+          }
+          obj.userData.introRingLoadSeq = seq
+        },
+      })),
+    )
     const sortRingBySeq = (a: CSS3DObject, b: CSS3DObject) =>
       ((a.userData.introRingRevealIndex as number) ??
         (a.userData.introRingLoadSeq as number) ??
@@ -1668,7 +1640,9 @@ export function GlobeView({
 
     const overviewBoundingRadius =
       isClusters && layout
-        ? layoutBoundingRadius(layout.positions, layout.fieldRadius)
+        ? categoryViewRef.current.clusterIntroTest
+          ? clusterIntroFieldBoundingRadius(layout)
+          : layoutBoundingRadius(layout.positions, layout.fieldRadius)
         : GLOBE_RADIUS
     const overviewCameraZ = computeGlobeOverviewCameraZ(
       overviewBoundingRadius,
@@ -1917,8 +1891,7 @@ export function GlobeView({
         }
         if (
           clusterIntroActiveRef.current &&
-          heroClusterIdRef.current &&
-          !clusterIntroRevealActive(introProgress)
+          heroClusterIdRef.current
         ) {
           introImageTotal =
             ringFrontQueue.length +
@@ -1937,17 +1910,6 @@ export function GlobeView({
             const img = obj.userData.img as HTMLImageElement | undefined
             if (img?.src) introImagesLoaded += 1
           }
-        } else if (
-          clusterIntroActiveRef.current &&
-          heroClusterIdRef.current &&
-          clusterIntroRevealActive(introProgress)
-        ) {
-          introImageTotal = sceneObjects.length
-          introImagesLoaded = 0
-          for (const obj of sceneObjects) {
-            const img = obj.userData.img as HTMLImageElement | undefined
-            if (img?.src) introImagesLoaded += 1
-          }
         }
         const loadBehind = introLoadBehindSchedule(
           introProgress,
@@ -1955,9 +1917,11 @@ export function GlobeView({
           introImageTotal,
         )
         introGlobeReadyRef.current = clusterIntroActiveRef.current
-          ? (introProgress >= 1 ||
-              clusterIntroConstellationZoomProgress(introProgress) >= 0.995) &&
-            introImagesLoaded >= introImageTotal
+          ? clusterIntroHeroGlobeSequenceComplete(
+              introProgress,
+              introImagesLoaded,
+              introImageTotal,
+            )
           : introGlobeSequenceComplete(
               introProgress,
               introImagesLoaded,
@@ -2003,9 +1967,7 @@ export function GlobeView({
           )
         }
 
-        const centerPrefetchOn = clusterIntroActiveRef.current
-          ? clusterIntroRevealActive(introProgress)
-          : introCenterPrefetchActive(introProgress)
+        const centerPrefetchOn = introCenterPrefetchActive(introProgress)
 
         if (centerPrefetchOn) {
           if (
@@ -2025,17 +1987,11 @@ export function GlobeView({
             }
           }
 
-          const centerCaps = clusterIntroActiveRef.current
-            ? clusterIntroEarlyCenterLoadCaps(
-                introProgress,
-                centerFrontQueue.length,
-                centerBackQueue.length,
-              )
-            : introCenterHemisphereLoadCaps(
-                introProgress,
-                centerFrontQueue.length,
-                centerBackQueue.length,
-              )
+          const centerCaps = introCenterHemisphereLoadCaps(
+            introProgress,
+            centerFrontQueue.length,
+            centerBackQueue.length,
+          )
           drainHemispherePairBalanced(
             centerFrontQueue,
             centerFrontLoadIndexRef,
@@ -2366,21 +2322,15 @@ export function GlobeView({
               heroClusterId &&
               obj.userData.clusterId === heroClusterId &&
               introSphereLocal &&
-              obj.userData.introIsRingMember &&
-              (!clusterIntroRevealActive(introProgress) ||
-                clusterIntroConstellationZoomProgress(introProgress) < 0.001)
-            ) {
-              obj.position.copy(introSphereLocal)
-              continue
-            }
-
-            if (
-              clusterIntroActiveNow &&
-              heroClusterId &&
-              obj.userData.clusterId === heroClusterId &&
-              introSphereLocal &&
               fieldLocal
             ) {
+              const holdIntroSphere =
+                !clusterIntroRevealActive(introProgress) ||
+                clusterIntroConstellationZoomProgress(introProgress) < 0.001
+              if (holdIntroSphere) {
+                obj.position.copy(introSphereLocal)
+                continue
+              }
               clusterIntroBlendPos.lerpVectors(
                 introSphereLocal,
                 fieldLocal,
@@ -3177,6 +3127,7 @@ export function GlobeView({
     categoryView.imageFlutter,
     categoryView.motionSpeed,
     categoryView.clusterIntroTest,
+    introLocked,
     constellation.clusterSpread,
     constellation.elementSeparation,
     constellation.elementLayout,
