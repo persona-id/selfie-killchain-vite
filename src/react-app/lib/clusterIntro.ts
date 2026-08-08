@@ -2,7 +2,6 @@ import * as THREE from 'three'
 import {
   clamp01,
   easeInOutCubic,
-  easeOutCubic,
   GLOBE_INTRO_CAMERA_START_FACTOR,
   GLOBE_INTRO_CUTOUT_CLOSE_BY_ZOOM,
   GLOBE_INTRO_LINE1_START,
@@ -16,6 +15,7 @@ import {
   globeIntroLine2InProgress,
   globeIntroLine3InProgress,
   introSharedHemisphereLoadCaps,
+  smoothstep,
 } from '../utils/globeIntro'
 import {
   computeGlobeOverviewCameraZ,
@@ -197,7 +197,7 @@ export function pickHeroClusterGlobe(
   })
 }
 
-/** Scale hero center tiles onto the intro sphere; ring layout is applied separately. */
+/** Scale hero tiles onto the intro sphere — ring at full radius, center tiles inset. */
 export function applyHeroClusterIntroSphereLayout(
   objects: Array<{
     userData: Record<string, unknown>
@@ -212,50 +212,26 @@ export function applyHeroClusterIntroSphereLayout(
 
   for (const obj of objects) {
     if (obj.userData.clusterId !== heroClusterId) continue
-    if (obj.userData.introIsRingMember) continue
     const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
     if (!fieldLocal) continue
-    const introLocal = fieldLocal.clone().multiplyScalar(scale * 0.42)
+    const isRing = Boolean(obj.userData.introIsRingMember)
+    const shellScale = isRing ? 1 : 0.42
+    const introLocal = fieldLocal.clone().multiplyScalar(scale * shellScale)
     obj.userData.introSphereLocal = introLocal
     obj.position.copy(introLocal)
     obj.userData.introHemisphereFront = introLocal.z >= 0
   }
 }
 
-/** Place hero ring tiles in a flat circle around the intro text. */
+/** @deprecated Ring tiles use sphere layout in applyHeroClusterIntroSphereLayout. */
 export function applyHeroClusterIntroRingLayout(
-  objects: Array<{
+  _objects: Array<{
     userData: Record<string, unknown>
     position: THREE.Vector3
   }>,
-  heroClusterId: string,
-  separation: number,
-): void {
-  const ringRadius = clusterIntroHeroSphereRadius(separation) * 0.96
-  const ringObjects = objects
-    .filter(
-      (obj) =>
-        obj.userData.clusterId === heroClusterId &&
-        obj.userData.introIsRingMember,
-    )
-    .sort(
-      (a, b) =>
-        ((a.userData.introLoadRank as number) ?? 0) -
-        ((b.userData.introLoadRank as number) ?? 0),
-    )
-
-  ringObjects.forEach((obj, index) => {
-    const theta = (index / Math.max(1, ringObjects.length)) * Math.PI * 2 - Math.PI / 2
-    const introLocal = new THREE.Vector3(
-      Math.cos(theta) * ringRadius,
-      0,
-      Math.sin(theta) * ringRadius,
-    )
-    obj.userData.introSphereLocal = introLocal
-    obj.position.copy(introLocal)
-    obj.userData.introHemisphereFront = introLocal.z >= 0
-  })
-}
+  _heroClusterId: string,
+  _separation: number,
+): void {}
 
 export function recenterClusterLayoutAtCentroid(layout: ClusterLayout): boolean {
   if (layout.clusterGlobes.length === 0) return false
@@ -454,7 +430,7 @@ export function clusterIntroZoomActive(progress: number): boolean {
 }
 
 export function clusterIntroDeferredLoadActive(progress: number): boolean {
-  return clusterIntroZoomProgress(progress) > 0.08
+  return clusterIntroZoomProgress(progress) > 0.02
 }
 
 export function clusterIntroHeroItemBlend(progress: number): number {
@@ -513,11 +489,17 @@ export function clusterIntroOtherReveal(
   progress: number,
   distanceNorm: number,
 ): number {
-  const zoomP = clusterIntroZoomProgress(progress)
-  if (zoomP <= 0.001) return 0
-  const threshold = clamp01(distanceNorm) * 0.38
-  if (zoomP <= threshold) return 0
-  return easeOutCubic(
-    clamp01((zoomP - threshold) / Math.max(0.001, 1 - threshold)),
-  )
+  return clusterIntroOtherOpacity(progress, distanceNorm)
+}
+
+/** Opacity for non-hero clusters — synced to zoom spread so they never pop at the origin. */
+export function clusterIntroOtherOpacity(
+  progress: number,
+  distanceNorm: number,
+): number {
+  const spread = clusterIntroZoomProgress(progress)
+  if (spread <= 0.001) return 0
+  const threshold = 0.08 + clamp01(distanceNorm) * 0.3
+  const fadeWindow = 0.36
+  return smoothstep(clamp01((spread - threshold) / Math.max(0.001, fadeWindow)))
 }

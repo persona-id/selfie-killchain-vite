@@ -55,7 +55,6 @@ import {
 } from '../../lib/clusterFocusPlaque'
 import {
   applyHeroClusterIntroSphereLayout,
-  applyHeroClusterIntroRingLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
   clusterIntroConstellationSpreadProgress,
@@ -66,7 +65,7 @@ import {
   clusterIntroHeroItemBlend,
   clusterIntroHeroStartCameraZ,
   clusterIntroMotionEase,
-  clusterIntroOtherReveal,
+  clusterIntroOtherOpacity,
   clusterIntroRevealActive,
   clusterIntroRingHemisphereLoadCaps,
   clusterIntroRotationHandoff,
@@ -1520,11 +1519,6 @@ export function GlobeView({
             categoryViewRef.current.clusterSpacing,
             heroGlobe.radius,
           )
-          applyHeroClusterIntroRingLayout(
-            objects,
-            heroGlobe.id,
-            categoryViewRef.current.clusterSpacing,
-          )
           clusterGroups.forEach((group) => {
             group.position.set(0, 0, 0)
           })
@@ -1998,6 +1992,7 @@ export function GlobeView({
                 continue
               }
               obj.userData.introDeferredLoadQueued = true
+              obj.userData.introLoadStartedAt = now
               flushDeferredLoad()
             }
           }
@@ -2139,7 +2134,7 @@ export function GlobeView({
 
           if (clusterIntroTextSpin) {
             interactionState.rotationY +=
-              preset.autoRotateY * 0.42 * timeScale
+              preset.autoRotateY * 0.55 * timeScale
           }
 
           const zDecay =
@@ -2657,26 +2652,30 @@ export function GlobeView({
               heroClusterIdRef.current &&
               obj.userData.clusterId
             ) {
+              const spread = clusterIntroConstellationSpreadProgress(
+                introVisualProgress,
+              )
               const distanceNorm = clusterIntroDistanceNorm(
                 layoutClusterGlobesRef.current,
                 heroClusterIdRef.current,
                 obj.userData.clusterId as string,
               )
-              const reveal = clusterIntroOtherReveal(
+              const reveal = clusterIntroOtherOpacity(
                 introVisualProgress,
                 distanceNorm,
               )
-              if (reveal > 0.001 && img?.src) {
-                let loadStartedAt = obj.userData.introLoadStartedAt as
+              if (reveal > 0.001 && spread > 0.06 && img?.src) {
+                const loadStartedAt = obj.userData.introLoadStartedAt as
                   | number
                   | undefined
-                if (!loadStartedAt) {
-                  loadStartedAt = now
-                  obj.userData.introLoadStartedAt = loadStartedAt
-                }
-                introOpacity =
-                  reveal *
-                  introCenterTileOpacity(loadStartedAt, now, imageLoaded)
+                const loadFade = imageLoaded
+                  ? loadStartedAt
+                    ? introTileOpacity(loadStartedAt, now, true)
+                    : 1
+                  : loadStartedAt
+                    ? introTileOpacity(loadStartedAt, now, false)
+                    : 0
+                introOpacity = reveal * loadFade * 0.94
               }
             }
           } else if (isRingMember) {
@@ -2845,9 +2844,11 @@ export function GlobeView({
               )
               settledOpacity *= introDepthOpacityAtDistance(depthFade, t)
             }
-            introOpacity =
-              introOpacity * introExitBlend +
-              settledOpacity * (1 - introExitBlend)
+            if (introOpacity > 0.001) {
+              introOpacity =
+                introOpacity * introExitBlend +
+                settledOpacity * (1 - introExitBlend)
+            }
           }
 
           const introOpacityStr = String(introOpacity)
