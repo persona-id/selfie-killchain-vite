@@ -64,6 +64,7 @@ import {
   clusterIntroFieldBoundingRadius,
   clusterIntroHeroItemBlend,
   clusterIntroHeroFormProgress,
+  clusterIntroImagesLoadActive,
   clusterIntroHeroStartCameraZ,
   clusterIntroMotionEase,
   clusterIntroOtherOpacity,
@@ -73,9 +74,8 @@ import {
   clusterIntroSpinYScale,
   clusterIntroScreenCenterCutoutRad,
   clusterIntroTextPhaseActive,
-  clusterIntroTextSyncedRingAllowedCount,
   clusterIntroZoomProgress,
-  CLUSTER_INTRO_RING_START,
+  CLUSTER_INTRO_REVEAL_START,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
   anchorHeroClusterAtOrigin,
@@ -819,7 +819,7 @@ export function GlobeView({
         state.velocityY = 0
       }
       introProgressRef.current = 1
-      introRotationHandoffRef.current = 1
+      introRotationHandoffRef.current = clusterIntroActiveRef.current ? 0 : 1
 
       for (const obj of objectsRef.current) {
         const el = obj.userData.element as HTMLElement | undefined
@@ -1903,7 +1903,7 @@ export function GlobeView({
         if (
           clusterIntroActiveRef.current &&
           heroClusterIdRef.current &&
-          !clusterIntroRevealActive(introProgress)
+          !clusterIntroImagesLoadActive(introProgress)
         ) {
           introImageTotal =
             ringFrontQueue.length +
@@ -1957,7 +1957,7 @@ export function GlobeView({
           (ringFrontQueue.length > 0 || ringBackQueue.length > 0) &&
           introProgress >=
             (clusterIntroActiveRef.current
-              ? CLUSTER_INTRO_RING_START
+              ? CLUSTER_INTRO_REVEAL_START
               : GLOBE_INTRO_RING_START)
         ) {
           const ringCaps = clusterIntroActiveRef.current
@@ -1989,7 +1989,7 @@ export function GlobeView({
         }
 
         const centerPrefetchOn = clusterIntroActiveRef.current
-          ? clusterIntroRevealActive(introProgress)
+          ? clusterIntroImagesLoadActive(introProgress)
           : introCenterPrefetchActive(introProgress)
 
         if (centerPrefetchOn) {
@@ -2121,8 +2121,11 @@ export function GlobeView({
             introLockedRef.current &&
             clusterIntroTextPhaseActive(introProgress)
           const ySpinScale =
-            clusterIntroNow && introLockedRef.current
-              ? clusterIntroSpinYScale(introProgress)
+            clusterIntroNow &&
+            (introLockedRef.current || introExitBlend > 0.01)
+              ? introLockedRef.current
+                ? clusterIntroSpinYScale(introProgress)
+                : 0.55 * introExitBlend + (1 - introExitBlend)
               : revealSpin
                 ? introMotionP
                 : clusterIntroTextSpin
@@ -2138,8 +2141,7 @@ export function GlobeView({
 
           const clusterIntroRotationLocked =
             clusterIntroNow &&
-            introLockedRef.current &&
-            introRotationHandoff < 0.01
+            (introLockedRef.current || introExitBlend > 0.01)
 
           if (introRotationHandoff < 1) {
             const handoffEased = easeInOutCubic(introRotationHandoff)
@@ -2671,6 +2673,15 @@ export function GlobeView({
         if (!updateObjectVisibility(obj, camera, el, visibilityZ)) continue
 
         if (introVisualActive) {
+          if (
+            clusterIntroActiveRef.current &&
+            !clusterIntroImagesLoadActive(introVisualProgress)
+          ) {
+            if (el.style.opacity !== '0') el.style.opacity = '0'
+            el.style.pointerEvents = 'none'
+            continue
+          }
+
           const isRingMember = Boolean(obj.userData.introIsRingMember)
           const isCenterMember = Boolean(obj.userData.introIsCenterMember)
           const isBackHemisphere = !obj.userData.introHemisphereFront
@@ -2714,26 +2725,11 @@ export function GlobeView({
 
             if (
               clusterIntroActiveRef.current &&
-              !introRevealOn
+              img?.src &&
+              obj.userData.introRingVisualStartedAt == null
             ) {
-              const revealIndex =
-                (obj.userData.introRingRevealIndex as number) ??
-                (obj.userData.introRingLoadSeq as number) ??
-                0
-              const allowed =
-                clusterIntroTextSyncedRingAllowedCount(introVisualProgress)
-              if (revealIndex >= allowed) {
-                if (el.style.opacity !== '0') el.style.opacity = '0'
-                el.style.pointerEvents = 'none'
-                continue
-              }
-              if (
-                img?.src &&
-                obj.userData.introRingVisualStartedAt == null
-              ) {
-                obj.userData.introRingVisualStartedAt = now
-                restartIntroBlurReveal(el)
-              }
+              obj.userData.introRingVisualStartedAt = now
+              restartIntroBlurReveal(el)
             }
 
             if (
