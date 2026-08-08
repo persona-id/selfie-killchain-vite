@@ -5,15 +5,10 @@ import {
   easeOutCubic,
   GLOBE_INTRO_CAMERA_START_FACTOR,
   GLOBE_INTRO_CUTOUT_CLOSE_BY_ZOOM,
-  GLOBE_INTRO_LINE1_START,
-  GLOBE_INTRO_LINE2_START,
-  GLOBE_INTRO_LINE3_START,
   GLOBE_INTRO_LINE3_END,
   GLOBE_INTRO_SCREEN_CENTER_CUTOUT_RAD,
   GLOBE_INTRO_ZOOM_DURATION_SCALE,
   GLOBE_INTRO_ZOOM_END,
-  globeIntroLine1InProgress,
-  globeIntroLine2InProgress,
   globeIntroLine3InProgress,
   introRingLoadProgress,
   introSharedHemisphereLoadCaps,
@@ -51,26 +46,16 @@ export function clusterIntroTextPhaseActive(progress: number): boolean {
   )
 }
 
-/** How many ring tiles may appear — 4 per intro line, synced to type-in progress. */
+/** How many ring tiles may appear — one at a time across the intro text phase. */
 export function clusterIntroTextSyncedRingAllowedCount(progress: number): number {
-  const perLine = CLUSTER_INTRO_RING_SIZE / 3
-  const line1 = globeIntroLine1InProgress(progress)
-  const line2 = globeIntroLine2InProgress(progress)
-  const line3 = globeIntroLine3InProgress(progress)
+  if (progress < CLUSTER_INTRO_RING_START) return 0
+  if (clusterIntroRevealActive(progress)) return CLUSTER_INTRO_RING_SIZE
 
-  if (progress < GLOBE_INTRO_LINE1_START) return 0
-
-  let allowed = perLine * line1
-  if (progress >= GLOBE_INTRO_LINE2_START) {
-    allowed = perLine + perLine * line2
-  }
-  if (progress >= GLOBE_INTRO_LINE3_START) {
-    allowed = perLine * 2 + perLine * line3
-  }
-
+  const span = CLUSTER_INTRO_REVEAL_START - CLUSTER_INTRO_RING_START
+  const t = clamp01((progress - CLUSTER_INTRO_RING_START) / Math.max(0.0001, span))
   return Math.min(
     CLUSTER_INTRO_RING_SIZE,
-    Math.max(0, Math.ceil(allowed - 1e-6)),
+    Math.max(0, Math.ceil(easeOutCubic(t) * CLUSTER_INTRO_RING_SIZE - 1e-6)),
   )
 }
 
@@ -204,6 +189,7 @@ export function applyHeroClusterIntroSphereLayout(
 
   for (const obj of objects) {
     if (obj.userData.clusterId !== heroClusterId) continue
+    if (obj.userData.introIsRingMember) continue
     const fieldLocal = obj.userData.fieldLocal as THREE.Vector3 | undefined
     if (!fieldLocal) continue
     const introLocal = fieldLocal.clone().multiplyScalar(scale)

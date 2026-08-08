@@ -164,6 +164,7 @@ export default function GlobePage() {
       {introActive ? (
         <GlobeIntroOverlay
           introGlobeReadyRef={introGlobeReadyRef}
+          fraudAxisEnabled={categoryView.fraudAxisEnabled}
           onProgress={(progress) => {
             introProgressRef.current = progress
           }}

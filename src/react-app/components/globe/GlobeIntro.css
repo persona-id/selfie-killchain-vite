@@ -18,6 +18,29 @@
   pointer-events: none;
 }
 
+.globe-intro__copy--interactive {
+  pointer-events: auto;
+}
+
+.globe-intro__medium-tag {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + min(34vw, 280px));
+  transform: translateY(-50%);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  font-family: var(--font-sans);
+  font-size: calc(clamp(10px, 1.1vw, 12px) * var(--type-scale));
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  color: #5a5a5a;
+  text-transform: capitalize;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .globe-intro__line {
   position: absolute;
   top: 50%;
