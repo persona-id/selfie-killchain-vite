@@ -54,6 +54,7 @@ import {
   playClusterFocusPlaqueEntrance,
 } from '../../lib/clusterFocusPlaque'
 import {
+  anchorHeroClusterAtOrigin,
   applyHeroClusterIntroSphereLayout,
   clusterIntroCameraZ,
   clusterIntroCenterFillProgress,
@@ -61,7 +62,7 @@ import {
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
   clusterIntroFieldBoundingRadius,
-  clusterIntroGlobePanOffset,
+  clusterIntroGroupPosition,
   clusterIntroHeroGlobeSequenceComplete,
   clusterIntroHeroItemBlend,
   clusterIntroHeroOverviewCameraZ,
@@ -78,6 +79,7 @@ import {
   pickHeroClusterGlobe,
   centerHeroClusterFieldPositions,
   recenterClusterLayoutAtCentroid,
+  snapshotClusterCenters,
 } from '../../lib/clusterIntro'
 import {
   focusOrbitDepthOpacity,
@@ -282,7 +284,9 @@ export function GlobeView({
   const heroClusterIdRef = useRef<string | null>(null)
   const heroClusterStartZRef = useRef<number | null>(null)
   const heroClusterOverviewZRef = useRef<number | null>(null)
-  const clusterIntroHeroCenterRef = useRef(new THREE.Vector3())
+  const clusterIntroIntroCentersRef = useRef<Map<string, THREE.Vector3>>(new Map())
+  const clusterIntroFinalCentersRef = useRef<Map<string, THREE.Vector3>>(new Map())
+  const clusterIntroConstellationRadiusRef = useRef(GLOBE_RADIUS)
   const fraudAxisLabelsRef = useRef<CSS3DObject[]>([])
   const constellationRef = useRef(constellation)
   const closeModalRef = useRef(closeModal)
@@ -1294,8 +1298,20 @@ export function GlobeView({
       const introHero = pickHeroClusterGlobe(layout.clusterGlobes)
       if (introHero) {
         recenterClusterLayoutAtCentroid(layout)
+        clusterIntroFinalCentersRef.current = snapshotClusterCenters(
+          layout.clusterGlobes,
+        )
+        clusterIntroConstellationRadiusRef.current =
+          clusterIntroFieldBoundingRadius(
+            layout.clusterGlobes,
+            clusterIntroFinalCentersRef.current,
+            layout.fieldRadius,
+          )
+        anchorHeroClusterAtOrigin(layout, introHero.id)
         centerHeroClusterFieldPositions(layout, introHero.id)
-        clusterIntroHeroCenterRef.current.copy(introHero.center)
+        clusterIntroIntroCentersRef.current = snapshotClusterCenters(
+          layout.clusterGlobes,
+        )
         clusterIntroHeroId = introHero.id
         displayItems.forEach((item, i) => {
           const clusterId = layout.itemClusterId.get(item.id)
@@ -1528,16 +1544,16 @@ export function GlobeView({
       const heroGlobe = pickHeroClusterGlobe(layout.clusterGlobes)
       if (heroGlobe) {
         heroClusterIdRef.current = heroGlobe.id
-        applyHeroClusterIntroSphereLayout(
-          objects,
-          heroGlobe.id,
-          categoryViewRef.current.clusterSpacing,
-          heroGlobe.radius,
-        )
+        applyHeroClusterIntroSphereLayout(objects, heroGlobe.id)
         configureClusterIntroParticipation(objects, heroGlobe.id)
-        clusterGroups.forEach((group) => {
-          const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-          group.position.copy(fieldCenter)
+        clusterGroups.forEach((group, clusterId) => {
+          const introCenter =
+            clusterIntroIntroCentersRef.current.get(clusterId) ??
+            (group.userData.fieldCenter as THREE.Vector3)
+          const finalCenter =
+            clusterIntroFinalCentersRef.current.get(clusterId) ?? introCenter
+          ;(group.userData.fieldCenter as THREE.Vector3).copy(finalCenter)
+          group.position.copy(introCenter)
         })
         if (introLockedRef.current) {
           for (const obj of objects) {
@@ -1545,13 +1561,8 @@ export function GlobeView({
             if (el) el.style.opacity = '0'
           }
         }
-        const heroOverviewZ = clusterIntroHeroOverviewCameraZ(
-          categoryViewRef.current.clusterSpacing,
-        )
-        heroClusterOverviewZRef.current = heroOverviewZ
-        heroClusterStartZRef.current = clusterIntroHeroStartCameraZ(
-          categoryViewRef.current.clusterSpacing,
-        )
+        heroClusterOverviewZRef.current = clusterIntroHeroOverviewCameraZ()
+        heroClusterStartZRef.current = clusterIntroHeroStartCameraZ()
       } else {
         clusterIntroActiveRef.current = false
       }
@@ -1641,7 +1652,7 @@ export function GlobeView({
     const overviewBoundingRadius =
       isClusters && layout
         ? categoryViewRef.current.clusterIntroTest
-          ? clusterIntroFieldBoundingRadius(layout)
+          ? clusterIntroConstellationRadiusRef.current
           : layoutBoundingRadius(layout.positions, layout.fieldRadius)
         : GLOBE_RADIUS
     const overviewCameraZ = computeGlobeOverviewCameraZ(
@@ -2225,20 +2236,15 @@ export function GlobeView({
           exitConstellationFocus(false)
         }
 
-        if (
+        globe.position.set(0, 0, 0)
+
+        const clusterIntroActiveNow =
           clusterIntroActiveRef.current &&
           heroClusterIdRef.current &&
           !focusId
-        ) {
-          globe.position.copy(
-            clusterIntroGlobePanOffset(
-              clusterIntroHeroCenterRef.current,
-              introProgress,
-            ),
-          )
-        } else {
-          globe.position.set(0, 0, 0)
-        }
+        const clusterIntroGroupBlend = clusterIntroActiveNow
+          ? clusterIntroConstellationZoomProgress(introProgress)
+          : 0
 
         clusterGroupsRef.current.forEach((group, clusterId) => {
           const fieldCenter = group.userData.fieldCenter as THREE.Vector3
@@ -2246,6 +2252,16 @@ export function GlobeView({
             group.position.set(0, 0, 0)
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(CLUSTER_FOCUS_SCALE)
+          } else if (clusterIntroActiveNow) {
+            clusterIntroGroupPosition(
+              clusterId,
+              clusterIntroIntroCentersRef.current,
+              clusterIntroFinalCentersRef.current,
+              clusterIntroGroupBlend,
+              group.position,
+            )
+            group.rotation.set(0, 0, 0)
+            group.scale.setScalar(1)
           } else {
             group.position.copy(fieldCenter)
             group.rotation.set(0, 0, 0)
@@ -2669,6 +2685,7 @@ export function GlobeView({
                 layoutClusterGlobesRef.current,
                 heroClusterIdRef.current,
                 obj.userData.clusterId as string,
+                clusterIntroIntroCentersRef.current,
               )
               const reveal = clusterIntroOtherReveal(
                 introVisualProgress,
