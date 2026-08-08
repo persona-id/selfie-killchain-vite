@@ -58,7 +58,7 @@ import {
   applyHeroClusterIntroSphereLayout,
   applyHeroClusterIntroRingLayout,
   clusterIntroCameraZ,
-  clusterIntroHeroFormProgress,
+  clusterIntroCenterFillProgress,
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
   clusterIntroCenterLoadCaps,
@@ -74,6 +74,7 @@ import {
   clusterIntroTextPhaseActive,
   clusterIntroTextSyncedRingAllowedCount,
   clusterIntroZoomProgress,
+  clusterIntroZoomActive,
   CLUSTER_INTRO_RING_START,
   configureClusterIntroParticipation,
   pickHeroClusterGlobe,
@@ -1926,7 +1927,24 @@ export function GlobeView({
           heroClusterIdRef.current &&
           clusterIntroRevealActive(introProgress)
         ) {
-          introImageTotal = sceneObjects.length
+          const zoomP = clusterIntroZoomProgress(introProgress)
+          const ringTotal =
+            ringFrontQueue.length +
+            ringBackQueue.length
+          const centerTotal =
+            centerFrontQueue.length + centerBackQueue.length
+          const deferredTotal = Math.max(
+            0,
+            sceneObjects.length - ringTotal - centerTotal,
+          )
+          const centerLoadP = clusterIntroCenterFillProgress(introProgress)
+          const otherLoadP = clamp01(
+            (zoomP - 0.18) / Math.max(0.001, 0.82),
+          )
+          introImageTotal =
+            ringTotal +
+            Math.ceil(centerTotal * centerLoadP) +
+            Math.ceil(deferredTotal * otherLoadP)
           introImagesLoaded = 0
           for (const obj of sceneObjects) {
             const img = obj.userData.img as HTMLImageElement | undefined
@@ -1983,12 +2001,12 @@ export function GlobeView({
             ringCaps.frontCap,
             ringCaps.backCap,
             loadBehind,
-            clusterIntroActiveRef.current ? (loadBehind ? 28 : 14) : loadBehind ? 7 : 2,
+            clusterIntroActiveRef.current ? (loadBehind ? 10 : 3) : loadBehind ? 7 : 2,
           )
         }
 
         const centerPrefetchOn = clusterIntroActiveRef.current
-          ? clusterIntroRevealActive(introProgress)
+          ? clusterIntroZoomActive(introProgress)
           : introCenterPrefetchActive(introProgress)
 
         if (centerPrefetchOn) {
@@ -2032,7 +2050,7 @@ export function GlobeView({
             centerCaps.frontCap,
             centerCaps.backCap,
             loadBehind,
-            loadBehind ? 7 : 2,
+            clusterIntroActiveRef.current ? (loadBehind ? 8 : 2) : loadBehind ? 7 : 2,
           )
         }
       } else {
@@ -2605,7 +2623,7 @@ export function GlobeView({
           : introRevealActive(introVisualProgress))
       const introFillP = introVisualActive
         ? clusterIntroActiveRef.current
-          ? clusterIntroHeroFormProgress(introVisualProgress)
+          ? clusterIntroCenterFillProgress(introVisualProgress)
           : globeIntroFillProgress(introVisualProgress)
         : 0
       const introCutoutRad = introVisualActive
@@ -2760,7 +2778,7 @@ export function GlobeView({
             isCenterMember &&
             introRevealOn &&
             (!clusterIntroActiveRef.current ||
-              clusterIntroHeroFormProgress(introVisualProgress) > 0.1)
+              clusterIntroCenterFillProgress(introVisualProgress) > 0.001)
           ) {
             const centerFillRank =
               (obj.userData.introCenterFillRank as number) ?? -1
