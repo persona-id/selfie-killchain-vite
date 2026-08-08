@@ -194,18 +194,17 @@ function perfectSpherePositions(count: number, radius: number): THREE.Vector3[] 
   return points
 }
 
-function applyFraudAxisToClusterFieldPositions(
-  members: GalleryItem[],
-  positions: THREE.Vector3[],
-  miniRadius: number,
+function applyFraudAxisToClusterCenters(
+  groups: GalleryItem[][],
+  centers: THREE.Vector3[],
   spread: number,
 ): void {
-  const bandOffset = miniRadius * 0.38 * spread
+  const bandOffset = BASE_CLUSTER_SPREAD * spread * 0.72
 
-  for (let i = 0; i < members.length; i++) {
-    const medium = fraudMediumForItem(members[i])
-    positions[i].y *= 0.55
-    positions[i].y += medium === 'physical' ? bandOffset : -bandOffset
+  for (let i = 0; i < groups.length; i++) {
+    const medium = fraudMediumForItem(groups[i][0])
+    centers[i].y *= 0.4
+    centers[i].y += medium === 'physical' ? bandOffset : -bandOffset
   }
 }
 
@@ -744,8 +743,9 @@ export function computeClusterLayout(
   const groupMode = categoryView?.clusterGroupMode ?? 'subcategory'
   const groups = groupItems(items, groupMode)
   const centers = clusterFieldCenters(settings.fieldLayout, groups.length, spread)
-  const fraudAxisSpread = categoryView?.fraudAxisSpread ?? 1
-  const fraudAxisEnabled = categoryView?.fraudAxisEnabled ?? false
+  if (categoryView?.fraudAxisEnabled) {
+    applyFraudAxisToClusterCenters(groups, centers, categoryView.fraudAxisSpread)
+  }
   const positions = new Array<THREE.Vector3>(items.length)
   const itemIndex = new Map(items.map((item, index) => [item.id, index]))
   const clusters: ImageCluster[] = []
@@ -768,20 +768,6 @@ export function computeClusterLayout(
       members.length,
       focusMiniRadius,
     )
-    if (fraudAxisEnabled) {
-      applyFraudAxisToClusterFieldPositions(
-        members,
-        fieldMini,
-        fieldMiniRadius,
-        fraudAxisSpread,
-      )
-      applyFraudAxisToClusterFieldPositions(
-        members,
-        focusMini,
-        focusMiniRadius,
-        fraudAxisSpread,
-      )
-    }
 
     const clusterId = `layout-${anchor.id}`
     const label = clusterGroupLabel(anchor, groupMode)

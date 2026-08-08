@@ -14,7 +14,6 @@ import {
   globeIntroLine3OutProgress,
   introZoomTimelineComplete,
 } from '../../utils/globeIntro'
-import { clusterIntroHeroZoomTimelineComplete } from '../../lib/clusterIntro'
 import { CHROME_MENU_REVEAL_MS } from '../../constants/shellMotion'
 
 import './GlobeIntro.css'
@@ -31,8 +30,6 @@ type GlobeIntroOverlayProps = {
   onSkip: () => void
   onGlobeReady?: () => void
   introGlobeReadyRef?: React.MutableRefObject<boolean>
-  fraudAxisEnabled?: boolean
-  clusterIntroTest?: boolean
 }
 
 function lineStrength(inP: number, outP: number): number {
@@ -56,12 +53,9 @@ export function GlobeIntroOverlay({
   onSkip,
   onGlobeReady,
   introGlobeReadyRef,
-  fraudAxisEnabled = false,
-  clusterIntroTest = false,
 }: GlobeIntroOverlayProps) {
   const [chromeRevealing, setChromeRevealing] = useState(false)
   const [completed, setCompleted] = useState(false)
-  const [mediumTag, setMediumTag] = useState<'physical' | 'digital' | null>(null)
   const progressRef = useRef(0)
   const completedRef = useRef(false)
   const chromeRevealStartedRef = useRef(false)
@@ -70,29 +64,6 @@ export function GlobeIntroOverlay({
   const line1Ref = useRef<HTMLParagraphElement>(null)
   const line2Ref = useRef<HTMLParagraphElement>(null)
   const line3Ref = useRef<HTMLParagraphElement>(null)
-  const copyRef = useRef<HTMLDivElement>(null)
-
-  const updateMediumTag = useCallback(
-    (clientY: number) => {
-      if (!fraudAxisEnabled) {
-        setMediumTag(null)
-        return
-      }
-      setMediumTag(clientY < window.innerHeight * 0.5 ? 'physical' : 'digital')
-    },
-    [fraudAxisEnabled],
-  )
-
-  const handleCopyPointerMove = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      updateMediumTag(event.clientY)
-    },
-    [updateMediumTag],
-  )
-
-  const handleCopyPointerLeave = useCallback(() => {
-    setMediumTag(null)
-  }, [])
 
   const updateIntroLines = useCallback((introProgress: number) => {
     const line1 = lineStrength(
@@ -124,9 +95,7 @@ export function GlobeIntroOverlay({
 
   const tryCompleteIntro = useCallback(() => {
     if (completedRef.current) return
-    const zoomReady = clusterIntroTest
-      ? clusterIntroHeroZoomTimelineComplete(progressRef.current)
-      : introZoomTimelineComplete(progressRef.current)
+    const zoomReady = introZoomTimelineComplete(progressRef.current)
     const globeReady = introGlobeReadyRef?.current ?? false
     if (!zoomReady || !globeReady) return
 
@@ -142,7 +111,7 @@ export function GlobeIntroOverlay({
         onComplete()
       }, CHROME_MENU_REVEAL_MS)
     }
-  }, [clusterIntroTest, introGlobeReadyRef, onComplete, onGlobeReady, onProgress, updateIntroLines])
+  }, [introGlobeReadyRef, onComplete, onGlobeReady, onProgress, updateIntroLines])
 
   useEffect(
     () => () => {
@@ -198,12 +167,7 @@ export function GlobeIntroOverlay({
       }}
       aria-hidden={completed}
     >
-      <div
-        ref={copyRef}
-        className={`globe-intro__copy${fraudAxisEnabled ? ' globe-intro__copy--interactive' : ''}`}
-        onPointerMove={fraudAxisEnabled ? handleCopyPointerMove : undefined}
-        onPointerLeave={fraudAxisEnabled ? handleCopyPointerLeave : undefined}
-      >
+      <div className="globe-intro__copy">
         <p ref={line1Ref} className="globe-intro__line">
           {LINE1}
         </p>
@@ -213,11 +177,6 @@ export function GlobeIntroOverlay({
         <p ref={line3Ref} className="globe-intro__line">
           {LINE3}
         </p>
-        {mediumTag ? (
-          <span className="globe-intro__medium-tag" aria-hidden>
-            {mediumTag === 'physical' ? 'Physical' : 'Digital'}
-          </span>
-        ) : null}
       </div>
 
       <button type="button" className="globe-intro__skip" onClick={onSkip}>

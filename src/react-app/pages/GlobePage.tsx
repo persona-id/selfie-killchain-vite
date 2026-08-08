@@ -21,6 +21,7 @@ export default function GlobePage() {
     activeComplexity,
     setActiveComplexity,
     setGlobeArrangement,
+    globeArrangement,
     categoryView,
   } = useGallery()
   const {
@@ -51,12 +52,17 @@ export default function GlobePage() {
 
   useLayoutEffect(() => {
     if (categoryView.clusterIntroTest) {
-      restartIntro()
       setGlobeArrangement('clusters')
     } else {
       setGlobeArrangement(DEFAULT_GLOBE_ARRANGEMENT)
     }
-  }, [categoryView.clusterIntroTest, setGlobeArrangement, restartIntro])
+  }, [categoryView.clusterIntroTest, setGlobeArrangement])
+
+  useEffect(() => {
+    if (categoryView.clusterIntroTest && globeArrangement === 'clusters') {
+      restartIntro()
+    }
+  }, [categoryView.clusterIntroTest, globeArrangement, restartIntro])
 
   useLayoutEffect(() => {
     if (introActive) return
@@ -158,8 +164,6 @@ export default function GlobePage() {
       {introActive ? (
         <GlobeIntroOverlay
           introGlobeReadyRef={introGlobeReadyRef}
-          fraudAxisEnabled={categoryView.fraudAxisEnabled}
-          clusterIntroTest={categoryView.clusterIntroTest}
           onProgress={(progress) => {
             introProgressRef.current = progress
           }}
