@@ -60,7 +60,7 @@ import {
   clusterIntroDeferredLoadActive,
   clusterIntroDistanceNorm,
   clusterIntroEarlyCenterLoadCaps,
-  clusterIntroFieldBoundingRadius,
+  clusterIntroGlobePanOffset,
   clusterIntroHeroItemBlend,
   clusterIntroHeroStartCameraZ,
   clusterIntroHeroSphereRadius,
@@ -77,8 +77,8 @@ import {
   configureClusterIntroParticipation,
   layoutClusterIntroRingCircle,
   pickHeroClusterGlobe,
-  anchorHeroClusterAtOrigin,
   centerHeroClusterFieldPositions,
+  recenterClusterLayoutAtCentroid,
 } from '../../lib/clusterIntro'
 import {
   focusOrbitDepthOpacity,
@@ -142,7 +142,7 @@ import {
   introLoadBehindSchedule,
   introGlobeSequenceComplete,
   assignParallelHemisphereRanks,
-  assignRingLoadSeqOuterFirst,
+  assignRingLoadSeqAzimuth,
   assignRingLoadSeqShuffled,
   introRingHemisphereLoadCaps,
   introCenterHemisphereLoadCaps,
@@ -283,6 +283,7 @@ export function GlobeView({
   const clusterIntroActiveRef = useRef(false)
   const heroClusterIdRef = useRef<string | null>(null)
   const heroClusterStartZRef = useRef<number | null>(null)
+  const clusterIntroHeroCenterRef = useRef(new THREE.Vector3())
   const fraudAxisLabelsRef = useRef<CSS3DObject[]>([])
   const constellationRef = useRef(constellation)
   const closeModalRef = useRef(closeModal)
@@ -400,13 +401,9 @@ export function GlobeView({
     const introLayoutActive =
       clusterIntroActiveRef.current && Boolean(heroId)
 
-    clusterGroupsRef.current.forEach((group, clusterId) => {
+    clusterGroupsRef.current.forEach((group) => {
       const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-      if (introLayoutActive && heroId && clusterId === heroId) {
-        group.position.set(0, 0, 0)
-      } else {
-        group.position.copy(fieldCenter)
-      }
+      group.position.copy(fieldCenter)
       group.rotation.set(0, 0, 0)
       group.scale.setScalar(1)
     })
@@ -1297,8 +1294,9 @@ export function GlobeView({
     ) {
       const introHero = pickHeroClusterGlobe(layout.clusterGlobes)
       if (introHero) {
-        anchorHeroClusterAtOrigin(layout, introHero.id)
+        recenterClusterLayoutAtCentroid(layout)
         centerHeroClusterFieldPositions(layout, introHero.id)
+        clusterIntroHeroCenterRef.current.copy(introHero.center)
         clusterIntroHeroId = introHero.id
         displayItems.forEach((item, i) => {
           const clusterId = layout.itemClusterId.get(item.id)
@@ -1542,13 +1540,9 @@ export function GlobeView({
             categoryViewRef.current.clusterSpacing,
             heroGlobe.radius,
           )
-          clusterGroups.forEach((group, clusterId) => {
+          clusterGroups.forEach((group) => {
             const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-            if (clusterId === heroGlobe.id) {
-              group.position.set(0, 0, 0)
-            } else {
-              group.position.copy(fieldCenter)
-            }
+            group.position.copy(fieldCenter)
           })
           for (const obj of objects) {
             const el = obj.userData.element as HTMLElement | undefined
@@ -1558,13 +1552,9 @@ export function GlobeView({
             categoryViewRef.current.clusterSpacing,
           )
         } else {
-          clusterGroups.forEach((group, clusterId) => {
+          clusterGroups.forEach((group) => {
             const fieldCenter = group.userData.fieldCenter as THREE.Vector3
-            if (clusterId === heroGlobe.id) {
-              group.position.set(0, 0, 0)
-            } else {
-              group.position.copy(fieldCenter)
-            }
+            group.position.copy(fieldCenter)
           })
         }
       } else {
@@ -1580,10 +1570,10 @@ export function GlobeView({
       (obj) => !obj.userData.introHemisphereFront,
     )
     const assignRingSeq = clusterIntroActive
-      ? assignRingLoadSeqOuterFirst
+      ? assignRingLoadSeqAzimuth
       : assignRingLoadSeqShuffled
     if (clusterIntroActive) {
-      assignRingLoadSeqOuterFirst(
+      assignRingLoadSeqAzimuth(
         ringMembers.map((obj) => ({
           pos:
             (obj.userData.introSphereLocal as THREE.Vector3 | undefined) ??
@@ -1666,9 +1656,7 @@ export function GlobeView({
 
     const overviewBoundingRadius =
       isClusters && layout
-        ? categoryViewRef.current.clusterIntroTest
-          ? clusterIntroFieldBoundingRadius(layout)
-          : layoutBoundingRadius(layout.positions, layout.fieldRadius)
+        ? layoutBoundingRadius(layout.positions, layout.fieldRadius)
         : GLOBE_RADIUS
     const overviewCameraZ = computeGlobeOverviewCameraZ(
       overviewBoundingRadius,
@@ -2158,7 +2146,7 @@ export function GlobeView({
           }
 
           if (clusterIntroTextSpin) {
-            interactionState.rotationY +=
+            interactionState.rotationX +=
               preset.autoRotateY * 0.42 * timeScale
           }
 
@@ -2266,7 +2254,20 @@ export function GlobeView({
           exitConstellationFocus(false)
         }
 
-        globe.position.set(0, 0, 0)
+        if (
+          clusterIntroActiveRef.current &&
+          heroClusterIdRef.current &&
+          !focusId
+        ) {
+          globe.position.copy(
+            clusterIntroGlobePanOffset(
+              clusterIntroHeroCenterRef.current,
+              introProgress,
+            ),
+          )
+        } else {
+          globe.position.set(0, 0, 0)
+        }
 
         clusterGroupsRef.current.forEach((group, clusterId) => {
           const fieldCenter = group.userData.fieldCenter as THREE.Vector3
@@ -2274,15 +2275,6 @@ export function GlobeView({
             group.position.set(0, 0, 0)
             group.rotation.set(0, 0, 0)
             group.scale.setScalar(CLUSTER_FOCUS_SCALE)
-          } else if (
-            !focusId &&
-            clusterIntroActiveRef.current &&
-            heroClusterIdRef.current &&
-            clusterId === heroClusterIdRef.current
-          ) {
-            group.position.set(0, 0, 0)
-            group.rotation.set(0, 0, 0)
-            group.scale.setScalar(1)
           } else {
             group.position.copy(fieldCenter)
             group.rotation.set(0, 0, 0)

@@ -199,7 +199,7 @@ export function applyHeroClusterIntroSphereLayout(
   }
 }
 
-/** Lay hero ring tiles on an equatorial circle like the standard globe intro. */
+/** Lay hero ring tiles on a vertical circle in the YZ plane (rotates around X). */
 export function layoutClusterIntroRingCircle(
   objects: Array<{
     userData: Record<string, unknown>
@@ -218,13 +218,13 @@ export function layoutClusterIntroRingCircle(
   ring.forEach((obj, index) => {
     const theta = (index / ring.length) * Math.PI * 2 - Math.PI / 2
     const introLocal = new THREE.Vector3(
-      Math.cos(theta) * introRadius,
       0,
+      Math.cos(theta) * introRadius,
       Math.sin(theta) * introRadius,
     )
     obj.userData.introSphereLocal = introLocal
     obj.position.copy(introLocal)
-    obj.userData.introHemisphereFront = introLocal.z >= 0
+    obj.userData.introHemisphereFront = introLocal.y >= 0
   })
 }
 
@@ -434,6 +434,23 @@ export function clusterIntroHeroSettleBlend(progress: number): number {
 /** Hero compresses from intro sphere → field layout during late zoom-out. */
 export function clusterIntroHeroItemBlend(progress: number): number {
   return clusterIntroHeroSettleBlend(progress)
+}
+
+/** 1 while the hero is viewport-centered; eases to 0 as the constellation recenters. */
+export function clusterIntroGlobePanBlend(progress: number): number {
+  if (!clusterIntroRevealActive(progress)) return 1
+  return 1 - easeInOutCubic(clusterIntroZoomProgress(progress))
+}
+
+export function clusterIntroGlobePanOffset(
+  heroCenter: THREE.Vector3,
+  progress: number,
+): THREE.Vector3 {
+  const blend = clusterIntroGlobePanBlend(progress)
+  if (blend <= 0.001) {
+    return new THREE.Vector3(0, 0, 0)
+  }
+  return heroCenter.clone().multiplyScalar(-blend)
 }
 
 export function clusterIntroCameraZ(
